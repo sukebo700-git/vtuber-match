@@ -11,6 +11,8 @@ export async function POST(request: Request) {
   }
 
   const payload = {
+    application_id: clean(body.application_id, 120),
+    streamer_id: clean(body.streamer_id, 120),
     email,
     youtube_url: youtubeUrl,
     name: clean(body.name, 80),

@@ -20,7 +20,8 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const form = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     const desiredPlan = String(form.get("desired_plan") || "free");
     const payload = {
       name: form.get("name"),
@@ -50,13 +51,17 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
 
     const data = await response.json();
     const applicationId = data.application?.id || data.id;
+    const streamerId = data.streamer_id || data.streamer?.id || "";
+    if (applicationId) localStorage.setItem("vtuber-match-creator-application-id", applicationId);
+    if (streamerId) localStorage.setItem("vtuber-match-creator-streamer-id", streamerId);
+
     if (desiredPlan === "paid" || desiredPlan === "boost") {
       window.location.assign(`/checkout?application_id=${applicationId}`);
       return;
     }
 
-    setStatus("無料掲載の申し込みを受け付け、掲載しました。トップページで確認できます。");
-    event.currentTarget.reset();
+    setStatus(`無料掲載の申し込みを受け付け、掲載しました。申込ID: ${applicationId}${streamerId ? ` / 掲載ID: ${streamerId}` : ""}`);
+    formElement.reset();
     setSelectedCategories([]);
     setSelectedTags([]);
     setImages([]);
@@ -118,9 +123,9 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
           <option value="boost">さらに上位表示 980円</option>
         </select>
         {selectedPlan === "free" ? (
-          <p className="notice-text">無料掲載は申し込み後すぐに掲載されます。カテゴリ1件、タグ1件のみ選択できます。</p>
+          <p className="notice-text">無料掲載は申し込み後すぐ掲載されます。カテゴリ1件、タグ1件のみ選択できます。</p>
         ) : (
-          <p className="notice-text">申し込み送信後、決済画面へ進みます。決済完了後に掲載されます。</p>
+          <p className="notice-text">送信後に決済画面へ進みます。決済完了後、自動で掲載されます。</p>
         )}
       </div>
       <div className="field">

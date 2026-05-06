@@ -26,12 +26,11 @@ export async function POST(request: Request) {
   for (const streamer of demoStreamers) {
     const ref = db.collection("streamers").doc(streamer.id);
     const snapshot = await ref.get();
-    if (snapshot.exists) continue;
-    batch.set(ref, streamer);
+    if (!snapshot.exists) created += 1;
+    batch.set(ref, streamer, { merge: true });
     streamers.push(streamer);
-    created += 1;
   }
-  if (created) await batch.commit();
+  await batch.commit();
 
   return NextResponse.json({ created, streamers, source: "firestore" });
 }

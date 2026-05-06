@@ -50,7 +50,13 @@ export async function POST(request: Request) {
       youtube_url: application.youtube_url,
       desired_plan: application.desired_plan
     }).catch((error) => console.error(error));
-    return NextResponse.json({ application: { ...application, status: streamer ? "approved" : application.status }, streamer, source: "local" }, { status: 201 });
+    return NextResponse.json({
+      application: { ...application, status: streamer ? "approved" : application.status },
+      streamer,
+      streamer_id: streamer?.id || "",
+      auto_approved: Boolean(streamer),
+      source: "local"
+    }, { status: 201 });
   }
 
   const applicationData = {

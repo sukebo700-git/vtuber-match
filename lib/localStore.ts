@@ -36,7 +36,7 @@ export async function addLocalStreamer(input: Omit<Streamer, "id" | "impressions
   return streamer;
 }
 
-export async function updateLocalStreamer(id: string, patch: Partial<Pick<Streamer, "is_visible" | "plan_type" | "is_initial_scout">>) {
+export async function updateLocalStreamer(id: string, patch: Partial<Streamer>) {
   const streamers = await readAllLocalStreamers();
   const updated = streamers.map((streamer) => (
     streamer.id === id ? { ...streamer, ...patch } : streamer

@@ -1,14 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Send } from "lucide-react";
 import { CATEGORIES, TAGS } from "@/lib/constants";
 
 export function CreatorProfileEditForm() {
+  const [applicationId, setApplicationId] = useState("");
+  const [streamerId, setStreamerId] = useState("");
   const [categories, setCategories] = useState<string[]>([]);
   const [tags, setTags] = useState<string[]>([]);
   const [image, setImage] = useState("");
   const [status, setStatus] = useState("");
+
+  useEffect(() => {
+    setApplicationId(localStorage.getItem("vtuber-match-creator-application-id") || "");
+    setStreamerId(localStorage.getItem("vtuber-match-creator-streamer-id") || "");
+  }, []);
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -18,6 +25,8 @@ export function CreatorProfileEditForm() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        application_id: form.get("application_id"),
+        streamer_id: form.get("streamer_id"),
         email: form.get("email"),
         youtube_url: form.get("youtube_url"),
         name: form.get("name"),
@@ -29,7 +38,7 @@ export function CreatorProfileEditForm() {
         tags
       })
     });
-    setStatus(response.ok ? "修正申請を送信しました。運営確認後に反映されます。" : "送信に失敗しました。必須項目を確認してください。");
+    setStatus(response.ok ? "修正申請を送信しました。運営確認後に掲載情報へ反映されます。" : "送信に失敗しました。必須項目を確認してください。");
   }
 
   async function onFile(event: React.ChangeEvent<HTMLInputElement>) {
@@ -46,6 +55,26 @@ export function CreatorProfileEditForm() {
 
   return (
     <form className="form compact-form" onSubmit={submit}>
+      <div className="field">
+        <label htmlFor="edit_application_id">申込ID</label>
+        <input
+          id="edit_application_id"
+          name="application_id"
+          value={applicationId}
+          onChange={(event) => setApplicationId(event.target.value)}
+          placeholder="申し込み後に固定されます"
+        />
+      </div>
+      <div className="field">
+        <label htmlFor="edit_streamer_id">掲載ID</label>
+        <input
+          id="edit_streamer_id"
+          name="streamer_id"
+          value={streamerId}
+          onChange={(event) => setStreamerId(event.target.value)}
+          placeholder="掲載後に固定されます"
+        />
+      </div>
       <div className="field">
         <label htmlFor="edit_email">登録メール</label>
         <input id="edit_email" name="email" type="email" required />
@@ -75,7 +104,7 @@ export function CreatorProfileEditForm() {
         <input id="edit_image" type="file" accept="image/*" onChange={onFile} />
         {image && (
           <div className="image-preview-row">
-            <img src={image} alt="修正画像" />
+            <img src={image} alt="修正申請画像" />
           </div>
         )}
       </div>
@@ -101,9 +130,7 @@ export function CreatorProfileEditForm() {
           ))}
         </div>
       </div>
-      <p className="help-text">
-        不正な書き換えを防ぐため、プロフィール変更は直接反映されません。運営確認後に掲載情報へ反映します。
-      </p>
+      <p className="help-text">修正申請は固定された申込ID・掲載IDに紐づきます。IDが空の場合は、掲載済みの情報と照合して運営が確認します。</p>
       <button className="primary-button" type="submit">
         <Send size={18} />
         修正申請を送る

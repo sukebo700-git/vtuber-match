@@ -45,6 +45,7 @@ export type StreamerApplication = {
   paid_at?: string;
   subscription_status?: "active" | "canceled";
   stripe_subscription_id?: string;
+  streamer_id?: string;
 };
 
 export type PaymentRecord = {
@@ -79,6 +80,8 @@ export type ViewerProfileWithStats = ViewerProfile & {
 
 export type StreamerProfileEdit = {
   id: string;
+  application_id?: string;
+  streamer_id?: string;
   email: string;
   youtube_url: string;
   name?: string;

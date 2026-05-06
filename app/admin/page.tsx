@@ -33,9 +33,6 @@ export default async function AdminPage() {
         </nav>
       </header>
       <main className="main grid-page">
-        <ReportAdminPanel reports={reports} />
-        <ViewerAdminPanel viewers={viewers} />
-
         <section className="status-band">
           <h2>プロフィール修正申請</h2>
           <p>配信者用画面から届いた修正申請です。メール、YouTube URL、画像、自己アピール、カテゴリ、タグを確認できます。</p>
@@ -49,6 +46,8 @@ export default async function AdminPage() {
               </div>
               <dl className="data-list">
                 <div><dt>申請ID</dt><dd>{edit.id}</dd></div>
+                <div><dt>申込ID</dt><dd>{edit.application_id || "未入力"}</dd></div>
+                <div><dt>掲載ID</dt><dd>{edit.streamer_id || "未入力"}</dd></div>
                 <div><dt>登録メール</dt><dd>{edit.email}</dd></div>
                 <div><dt>YouTube URL</dt><dd>{edit.youtube_url}</dd></div>
                 <div><dt>一言</dt><dd>{edit.one_liner || "未入力"}</dd></div>
@@ -73,6 +72,8 @@ export default async function AdminPage() {
         </section>
 
         <AdminDashboard initialApplications={applications} initialStreamers={streamers} adminKey="" />
+        <ViewerAdminPanel viewers={viewers} />
+        <ReportAdminPanel reports={reports} />
       </main>
     </div>
   );
@@ -139,6 +140,8 @@ async function readFirestoreProfileEdits(): Promise<StreamerProfileEdit[]> {
     const data = doc.data();
     return {
       id: doc.id,
+      application_id: data.application_id || "",
+      streamer_id: data.streamer_id || "",
       email: data.email || "",
       youtube_url: data.youtube_url || "",
       name: data.name || "",
@@ -180,7 +183,8 @@ async function readFirestoreApplications(): Promise<StreamerApplication[]> {
       reviewed_at: typeof data.reviewed_at === "string" ? data.reviewed_at : data.reviewed_at?.toDate?.().toISOString(),
       paid_at: typeof data.paid_at === "string" ? data.paid_at : data.paid_at?.toDate?.().toISOString(),
       subscription_status: data.subscription_status,
-      stripe_subscription_id: data.stripe_subscription_id
+      stripe_subscription_id: data.stripe_subscription_id,
+      streamer_id: data.streamer_id
     };
   });
 }
