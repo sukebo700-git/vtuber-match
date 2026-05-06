@@ -35,15 +35,15 @@ export async function POST(request: Request) {
   }
 
   const appUrl = getAppUrl();
+  const cancelParams = new URLSearchParams(
+    applicationId ? { application_id: applicationId } : { streamer_id: streamerId, plan: planType }
+  );
   const params = new URLSearchParams();
   params.set("mode", "subscription");
   params.set("line_items[0][price]", priceId);
   params.set("line_items[0][quantity]", "1");
   params.set("success_url", `${appUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`);
-  params.set(
-    "cancel_url",
-    `${appUrl}/checkout?${applicationId ? `application_id=${applicationId}` : `streamer_id=${streamerId}&plan=${planType}`}`
-  );
+  params.set("cancel_url", `${appUrl}/checkout?${cancelParams.toString()}`);
   params.set("metadata[plan_type]", planType);
   params.set("subscription_data[metadata][plan_type]", planType);
   if (applicationId) params.set("metadata[application_id]", applicationId);

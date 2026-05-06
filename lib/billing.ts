@@ -10,7 +10,7 @@ export function getStripePriceId(planType: Exclude<PlanType, "free">) {
 }
 
 export function getAppUrl() {
-  return (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(/\/$/, "");
+  return (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").trim().replace(/\/$/, "");
 }
 
 export function isPaidPlan(value: string): value is Exclude<PlanType, "free"> {
