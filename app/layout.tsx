@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { PublicFooter } from "@/components/PublicFooter";
 import { ServiceWorker } from "@/components/ServiceWorker";
 import "./globals.css";
 
@@ -26,6 +27,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <ServiceWorker />
         {children}
+        <PublicFooter />
       </body>
     </html>
   );

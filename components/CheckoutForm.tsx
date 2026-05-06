@@ -75,9 +75,17 @@ export function CheckoutForm({ applicationId, streamerId, planType, amount, emai
         </div>
         <div>
           <span>お支払い金額</span>
-          <strong>{amount.toLocaleString("ja-JP")}円</strong>
+          <strong>{amount.toLocaleString("ja-JP")}円/月</strong>
         </div>
       </div>
+
+      <p className="help-text">
+        決済前に
+        <a href="/commercial-disclosure"> 特定商取引法に基づく表記 </a>
+        と
+        <a href="/terms"> ヘルプ・利用上の注意 </a>
+        を確認してください。
+      </p>
 
       {testPaymentEnabled ? (
         <form className="checkout-fields" onSubmit={submitTestPayment}>
