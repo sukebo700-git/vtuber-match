@@ -20,7 +20,8 @@ export async function POST(request: Request, { params }: { params: { id: string 
       const applicationDoc = await tx.get(applicationRef);
       if (!applicationDoc.exists) throw new Error("application not found");
       const application = applicationDoc.data() || {};
-      if (application.desired_plan !== "free" && application.payment_status !== "paid") {
+      const paid = application.payment_status === "paid" || application.subscription_status === "active" || Boolean(application.stripe_subscription_id);
+      if (application.desired_plan !== "free" && !paid) {
         throw new Error("payment required");
       }
 
@@ -36,6 +37,8 @@ export async function POST(request: Request, { params }: { params: { id: string 
         one_liner: application.one_liner || application.description,
         stream_time: application.stream_time || "",
         plan_type: application.desired_plan || "free",
+        subscription_status: application.subscription_status || null,
+        stripe_subscription_id: application.stripe_subscription_id || null,
         is_initial_scout: false,
         is_visible: true,
         impressions: 0,

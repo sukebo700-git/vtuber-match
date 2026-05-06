@@ -50,12 +50,14 @@ async function readFirestoreApplications(): Promise<StreamerApplication[]> {
       one_liner: data.one_liner || "",
       stream_time: data.stream_time,
       desired_plan: normalizePlan(data.desired_plan),
-      payment_status: normalizePaymentStatus(data.payment_status, data.desired_plan),
+      payment_status: normalizePaymentStatus(data.payment_status, data.desired_plan, data.subscription_status, data.stripe_subscription_id),
       status: normalizeStatus(data.status),
       admin_note: data.admin_note,
       created_at: typeof data.created_at === "string" ? data.created_at : data.created_at?.toDate?.().toISOString(),
       reviewed_at: typeof data.reviewed_at === "string" ? data.reviewed_at : data.reviewed_at?.toDate?.().toISOString(),
-      paid_at: typeof data.paid_at === "string" ? data.paid_at : data.paid_at?.toDate?.().toISOString()
+      paid_at: typeof data.paid_at === "string" ? data.paid_at : data.paid_at?.toDate?.().toISOString(),
+      subscription_status: data.subscription_status,
+      stripe_subscription_id: data.stripe_subscription_id
     };
   });
 }
@@ -71,8 +73,9 @@ function normalizeStatus(status: string): ApplicationStatus {
   return "pending";
 }
 
-function normalizePaymentStatus(status: string, plan: string): StreamerApplication["payment_status"] {
+function normalizePaymentStatus(status: string, plan: string, subscriptionStatus?: string, subscriptionId?: string): StreamerApplication["payment_status"] {
   if (status === "paid" || status === "pending" || status === "not_required") return status;
+  if (subscriptionStatus === "active" || subscriptionId) return "paid";
   return plan === "free" ? "not_required" : "pending";
 }
 

@@ -15,6 +15,7 @@ export function AdminDashboard({ initialApplications, initialStreamers, adminKey
   const [applications, setApplications] = useState(initialApplications);
   const [streamers, setStreamers] = useState(initialStreamers);
   const [busyId, setBusyId] = useState("");
+  const [actionMessage, setActionMessage] = useState("");
   const [images, setImages] = useState<string[]>([]);
   const [directStatus, setDirectStatus] = useState("");
   const [directPlan, setDirectPlan] = useState<PlanType>("free");
@@ -26,14 +27,21 @@ export function AdminDashboard({ initialApplications, initialStreamers, adminKey
 
   async function approve(id: string) {
     setBusyId(id);
+    setActionMessage("");
     const response = await fetch(`/api/admin/applications/${id}/approve`, {
       method: "POST",
       headers: { "x-admin-key": adminKey }
     });
     if (response.ok) {
+      const data = await response.json();
       setApplications((current) => current.map((item) => (
         item.id === id ? { ...item, status: "approved", reviewed_at: new Date().toISOString() } : item
       )));
+      if (data.streamer) setStreamers((current) => [data.streamer, ...current]);
+      setActionMessage("掲載を承認しました。トップページに反映されます。");
+    } else {
+      const data = await response.json().catch(() => ({}));
+      setActionMessage(data.error === "payment required" ? "決済反映がまだ確認できません。少し待ってページを更新してください。" : "承認に失敗しました。");
     }
     setBusyId("");
   }
@@ -311,7 +319,10 @@ function paymentLabel(status: StreamerApplication["payment_status"]) {
 }
 
 function needsPayment(application: StreamerApplication) {
-  return application.desired_plan !== "free" && application.payment_status !== "paid";
+  return application.desired_plan !== "free"
+    && application.payment_status !== "paid"
+    && application.subscription_status !== "active"
+    && !application.stripe_subscription_id;
 }
 
 function formatDate(value?: string) {
