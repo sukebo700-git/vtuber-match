@@ -59,6 +59,7 @@ export function ViewerLoginForm() {
       </div>
       <p className="help-text">ログインなしでもスワイプは利用できます。プロフィール登録と配信者への自己アピールにはログインが必要です。</p>
       <button className="primary-button" type="submit" disabled={busy}>{busy ? "確認中..." : "視聴者としてログイン"}</button>
+      <p className="help-text"><a href="/password-reset?type=viewer">パスワードを忘れた方</a></p>
       {status && <p className="help-text">{status}</p>}
     </form>
   );

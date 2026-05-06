@@ -120,3 +120,16 @@ export type StreamerReport = {
   status: "open" | "reviewed";
   created_at?: string;
 };
+
+export type PasswordResetRequest = {
+  id: string;
+  user_type: "creator" | "viewer";
+  email: string;
+  application_id?: string;
+  streamer_id?: string;
+  viewer_id?: string;
+  note?: string;
+  status: "open" | "completed";
+  created_at?: string;
+  completed_at?: string;
+};

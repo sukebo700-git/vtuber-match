@@ -16,7 +16,7 @@ export default function CreatorUpgradePage() {
       <main className="main grid-page">
         <section className="status-band">
           <h2>アップグレード</h2>
-          <p>申し込み時に固定された掲載IDに紐づけて、有料掲載またはさらに上位表示へ変更できます。</p>
+          <p>申し込み時のメールアドレスとパスワードで本人確認し、有料掲載またはさらに上位表示へ変更できます。</p>
         </section>
         <CreatorUpgradeForm />
       </main>

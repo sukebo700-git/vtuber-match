@@ -1,13 +1,14 @@
 import { AdminDashboard } from "@/components/AdminDashboard";
 import { ReportAdminPanel } from "@/components/ReportAdminPanel";
 import { ViewerAdminPanel } from "@/components/ViewerAdminPanel";
+import { PasswordResetAdminPanel } from "@/components/PasswordResetAdminPanel";
 import { adminCookieName, verifyAdminSession } from "@/lib/adminSession";
 import { getAdminDb } from "@/lib/firebaseAdmin";
-import { readAllLocalStreamers, readLocalApplications, readLocalReports, readLocalViewerProfilesWithStats } from "@/lib/localStore";
+import { readAllLocalStreamers, readLocalApplications, readLocalPasswordResetRequests, readLocalReports, readLocalViewerProfilesWithStats } from "@/lib/localStore";
 import { normalizeStreamer } from "@/lib/streamers";
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
-import type { ApplicationStatus, PlanType, StreamerApplication, StreamerProfileEdit, ViewerProfile, ViewerProfileWithStats, StreamerReport } from "@/lib/types";
+import type { ApplicationStatus, PlanType, StreamerApplication, StreamerProfileEdit, ViewerProfile, ViewerProfileWithStats, StreamerReport, PasswordResetRequest } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +21,7 @@ export default async function AdminPage() {
   const streamers = db ? await readAllFirestoreStreamers() : await readAllLocalStreamers();
   const viewers = db ? await readFirestoreViewerProfiles() : await readLocalViewerProfilesWithStats();
   const reports = db ? await readFirestoreReports() : await readLocalReports();
+  const passwordResetRequests = db ? await readFirestorePasswordResetRequests() : await readLocalPasswordResetRequests();
 
   return (
     <div className="app-shell">
@@ -34,10 +36,32 @@ export default async function AdminPage() {
       <main className="main grid-page">
         <AdminDashboard initialApplications={applications} initialStreamers={streamers} adminKey="" />
         <ViewerAdminPanel viewers={viewers} />
+        <PasswordResetAdminPanel requests={passwordResetRequests} adminKey="" />
         <ReportAdminPanel reports={reports} />
       </main>
     </div>
   );
+}
+
+async function readFirestorePasswordResetRequests(): Promise<PasswordResetRequest[]> {
+  const db = getAdminDb();
+  if (!db) return [];
+  const snapshot = await db.collection("password_reset_requests").orderBy("created_at", "desc").limit(120).get();
+  return snapshot.docs.map((doc) => {
+    const data = doc.data();
+    return {
+      id: doc.id,
+      user_type: data.user_type === "viewer" ? "viewer" : "creator",
+      email: data.email || "",
+      application_id: data.application_id || "",
+      streamer_id: data.streamer_id || "",
+      viewer_id: data.viewer_id || "",
+      note: data.note || "",
+      status: data.status === "completed" ? "completed" : "open",
+      created_at: timestampToIso(data.created_at),
+      completed_at: timestampToIso(data.completed_at)
+    };
+  });
 }
 
 async function readFirestoreReports(): Promise<StreamerReport[]> {

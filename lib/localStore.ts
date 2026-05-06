@@ -2,7 +2,7 @@ import { promises as fs } from "fs";
 import path from "path";
 import { mockStreamers } from "./mockData";
 import { rankStreamers } from "./ranking";
-import type { PaymentRecord, PlanType, Streamer, StreamerApplication, StreamerProfileEdit, ViewerProfile, ViewerProfileWithStats, StreamerReport } from "./types";
+import type { PaymentRecord, PlanType, Streamer, StreamerApplication, StreamerProfileEdit, ViewerProfile, ViewerProfileWithStats, StreamerReport, PasswordResetRequest } from "./types";
 
 const dataDir = path.join(process.cwd(), "data");
 const streamersPath = path.join(dataDir, "local-streamers.json");
@@ -13,6 +13,7 @@ const viewerProfilesPath = path.join(dataDir, "local-viewer-profiles.json");
 const profileEditsPath = path.join(dataDir, "local-profile-edits.json");
 const reportsPath = path.join(dataDir, "local-reports.json");
 const creatorLikesPath = path.join(dataDir, "local-creator-likes.json");
+const passwordResetRequestsPath = path.join(dataDir, "local-password-reset-requests.json");
 
 export async function readLocalStreamers() {
   return rankStreamers(await readAllLocalStreamers());
@@ -64,6 +65,12 @@ export async function readLocalApplications() {
 export async function findLocalApplication(id: string) {
   const applications = await readLocalApplications();
   return applications.find((application) => application.id === id) || null;
+}
+
+export async function findLocalApplicationByEmail(email: string) {
+  const applications = await readLocalApplications();
+  const normalized = email.toLowerCase();
+  return applications.find((application) => application.email.toLowerCase() === normalized) || null;
 }
 
 export async function addLocalApplication(input: Omit<StreamerApplication, "id" | "status" | "created_at">) {
@@ -346,6 +353,68 @@ export async function readLocalReports() {
   return JSON.parse(raw) as StreamerReport[];
 }
 
+export async function addLocalPasswordResetRequest(input: Omit<PasswordResetRequest, "id" | "status" | "created_at">) {
+  await ensureFiles();
+  const raw = await fs.readFile(passwordResetRequestsPath, "utf8");
+  const requests = JSON.parse(raw) as PasswordResetRequest[];
+  const request: PasswordResetRequest = {
+    ...input,
+    id: `reset-${Date.now()}`,
+    status: "open",
+    created_at: new Date().toISOString()
+  };
+  await fs.writeFile(passwordResetRequestsPath, JSON.stringify([request, ...requests], null, 2));
+  return request;
+}
+
+export async function readLocalPasswordResetRequests() {
+  await ensureFiles();
+  const raw = await fs.readFile(passwordResetRequestsPath, "utf8");
+  return JSON.parse(raw) as PasswordResetRequest[];
+}
+
+export async function completeLocalPasswordResetRequest(id: string) {
+  const requests = await readLocalPasswordResetRequests();
+  const updated = requests.map((request) => (
+    request.id === id ? { ...request, status: "completed" as const, completed_at: new Date().toISOString() } : request
+  ));
+  await fs.writeFile(passwordResetRequestsPath, JSON.stringify(updated, null, 2));
+  return updated.find((request) => request.id === id) || null;
+}
+
+export async function updateLocalCreatorPassword(input: { email: string; application_id?: string; streamer_id?: string; password_hash: string }) {
+  const applications = await readLocalApplications();
+  const email = input.email.toLowerCase();
+  const updated = applications.map((application) => {
+    const matched = (
+      application.email.toLowerCase() === email ||
+      (input.application_id && application.id === input.application_id) ||
+      (input.streamer_id && application.streamer_id === input.streamer_id)
+    );
+    return matched ? { ...application, creator_password_hash: input.password_hash } : application;
+  });
+  await fs.writeFile(applicationsPath, JSON.stringify(updated, null, 2));
+  return updated.find((application) => application.creator_password_hash === input.password_hash && (
+    application.email.toLowerCase() === email ||
+    application.id === input.application_id ||
+    application.streamer_id === input.streamer_id
+  )) || null;
+}
+
+export async function updateLocalViewerPassword(input: { email: string; viewer_id?: string; password_hash: string }) {
+  const profiles = await readLocalViewerProfilesRaw();
+  const email = input.email.toLowerCase();
+  const updated = profiles.map((profile) => {
+    const matched = profile.email?.toLowerCase() === email || (input.viewer_id && profile.id === input.viewer_id);
+    return matched ? { ...profile, viewer_password_hash: input.password_hash } : profile;
+  });
+  await fs.writeFile(viewerProfilesPath, JSON.stringify(updated, null, 2));
+  return updated.find((profile) => profile.viewer_password_hash === input.password_hash && (
+    profile.email?.toLowerCase() === email ||
+    profile.id === input.viewer_id
+  )) || null;
+}
+
 async function ensureFiles() {
   await fs.mkdir(dataDir, { recursive: true });
   try {
@@ -387,5 +456,10 @@ async function ensureFiles() {
     await fs.access(creatorLikesPath);
   } catch {
     await fs.writeFile(creatorLikesPath, "[]");
+  }
+  try {
+    await fs.access(passwordResetRequestsPath);
+  } catch {
+    await fs.writeFile(passwordResetRequestsPath, "[]");
   }
 }

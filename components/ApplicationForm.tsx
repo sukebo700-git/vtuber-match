@@ -8,30 +8,39 @@ type ApplicationFormProps = {
   tags: string[];
 };
 
+type CompletionInfo = {
+  email: string;
+  password: string;
+};
+
 export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [images, setImages] = useState<string[]>([]);
   const [selectedPlan, setSelectedPlan] = useState("free");
   const [status, setStatus] = useState("");
+  const [completion, setCompletion] = useState<CompletionInfo | null>(null);
 
   const categoryLimit = selectedPlan === "free" ? 1 : 3;
   const tagLimit = selectedPlan === "free" ? 1 : 5;
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setCompletion(null);
     const formElement = event.currentTarget;
     const form = new FormData(formElement);
     const desiredPlan = String(form.get("desired_plan") || "free");
+    const email = String(form.get("email") || "");
+    const password = String(form.get("creator_password") || "");
     const payload = {
       name: form.get("name"),
-      email: form.get("email"),
+      email,
       youtube_url: form.get("youtube_url"),
       youtube_channel_id: form.get("youtube_channel_id"),
       description: form.get("description"),
       one_liner: form.get("one_liner"),
       stream_time: form.get("stream_time"),
-      creator_password: form.get("creator_password"),
+      creator_password: password,
       desired_plan: desiredPlan,
       thumbnails: images,
       categories: selectedCategories,
@@ -63,12 +72,8 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
       return;
     }
 
-    setStatus([
-      "無料掲載の申し込みを受け付け、掲載しました。",
-      `管理ID: ${creatorLoginId}`,
-      `申込ID: ${applicationId}`,
-      streamerId ? `掲載ID: ${streamerId}` : ""
-    ].filter(Boolean).join(" / "));
+    setStatus("無料掲載の申し込みを受け付け、掲載しました。");
+    setCompletion({ email, password });
     formElement.reset();
     setSelectedCategories([]);
     setSelectedTags([]);
@@ -111,9 +116,9 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
         <input id="name" name="name" required maxLength={60} />
       </div>
       <div className="field">
-        <label htmlFor="email">連絡先メール</label>
+        <label htmlFor="email">ログイン用メールアドレス</label>
         <input id="email" name="email" type="email" required />
-        <p className="help-text">連絡先メールは運営確認のみに使用し、公開ページやスワイプ画面には表示されません。</p>
+        <p className="help-text">このメールアドレスで配信者ログインを行います。公開ページやスワイプ画面には表示されません。</p>
       </div>
       <div className="field">
         <label htmlFor="youtube_url">YouTube URL</label>
@@ -139,7 +144,7 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
       <div className="field">
         <label htmlFor="creator_password">配信者ログイン用パスワード</label>
         <input id="creator_password" name="creator_password" type="password" required minLength={8} autoComplete="new-password" />
-        <p className="help-text">ログインはメールアドレスを使います。申し込み後に発行される管理IDは、運営確認や修正申請の照合で使用します。</p>
+        <p className="help-text">ログインはメールアドレスとこのパスワードで行います。</p>
       </div>
       <div className="field">
         <label htmlFor="description">プロフィール画面に表示する自己アピール</label>
@@ -191,6 +196,17 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
         申し込む
       </button>
       {status && <p className="notice-text">{status}</p>}
+      {completion && (
+        <section className="status-band">
+          <h2>ログイン情報</h2>
+          <p>こちらの画面をスクリーンショット等で保管してください。</p>
+          <dl className="data-list">
+            <div><dt>ログイン用メールアドレス</dt><dd>{completion.email}</dd></div>
+            <div><dt>パスワード</dt><dd>{completion.password}</dd></div>
+          </dl>
+          <p className="help-text">管理ID、申込ID、掲載IDは運営管理用のため、この画面には表示していません。</p>
+        </section>
+      )}
     </form>
   );
 }

@@ -40,6 +40,7 @@ export function CreatorLoginForm() {
       </div>
       <p className="help-text">申し込み時のメールアドレスとパスワードでログインできます。管理IDはログインには使いません。</p>
       <button className="primary-button" type="submit">ログイン</button>
+      <p className="help-text"><a href="/password-reset?type=creator">パスワードを忘れた方</a></p>
       {status && <p className="help-text">{status}</p>}
     </form>
   );
