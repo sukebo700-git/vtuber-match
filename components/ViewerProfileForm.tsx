@@ -1,0 +1,123 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { Save } from "lucide-react";
+import { CATEGORIES } from "@/lib/constants";
+import type { ViewerProfile } from "@/lib/types";
+
+const storageKey = "vtuber-match-viewer-profile";
+const idKey = "vtuber-match-viewer-id";
+
+const emptyProfile: ViewerProfile = {
+  id: "",
+  display_name: "",
+  youtube_display_name: "",
+  image: "",
+  profile: "",
+  favorite_categories: [],
+  visible_to_matched_streamers: true
+};
+
+export function ViewerProfileForm() {
+  const [profile, setProfile] = useState<ViewerProfile>(emptyProfile);
+  const [status, setStatus] = useState("");
+
+  useEffect(() => {
+    const id = localStorage.getItem(idKey) || crypto.randomUUID();
+    localStorage.setItem(idKey, id);
+    const saved = localStorage.getItem(storageKey);
+    setProfile(saved ? { ...emptyProfile, ...JSON.parse(saved), id } : { ...emptyProfile, id });
+  }, []);
+
+  function update(patch: Partial<ViewerProfile>) {
+    setProfile((current) => ({ ...current, ...patch }));
+  }
+
+  async function submit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    localStorage.setItem(storageKey, JSON.stringify(profile));
+    setStatus("保存中...");
+    const response = await fetch("/api/viewer-profile", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(profile)
+    });
+    setStatus(response.ok ? "保存しました。未入力でもそのままスワイプできます。" : "保存に失敗しました。時間をおいて再度お試しください。");
+  }
+
+  async function onFile(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const image = await fileToDataUrl(file);
+    update({ image });
+    if (!image) setStatus("画像が大きすぎます。別の画像を選んでください。");
+  }
+
+  function toggleCategory(category: string) {
+    const current = profile.favorite_categories || [];
+    update({
+      favorite_categories: current.includes(category)
+        ? current.filter((item) => item !== category)
+        : [...current, category].slice(0, 5)
+    });
+  }
+
+  return (
+    <form className="form compact-form" onSubmit={submit}>
+      <div className="field">
+        <label htmlFor="display_name">表示名</label>
+        <input id="display_name" value={profile.display_name || ""} onChange={(event) => update({ display_name: event.target.value })} placeholder="未入力でも利用できます" />
+      </div>
+      <div className="field">
+        <label htmlFor="youtube_display_name">YouTube表示名</label>
+        <input id="youtube_display_name" value={profile.youtube_display_name || ""} onChange={(event) => update({ youtube_display_name: event.target.value })} placeholder="@name など" />
+      </div>
+      <div className="field">
+        <label htmlFor="viewer_profile">プロフィール</label>
+        <textarea id="viewer_profile" value={profile.profile || ""} onChange={(event) => update({ profile: event.target.value })} placeholder="好きな配信ジャンル、応援スタイル、推し活の雰囲気など" />
+      </div>
+      <div className="field">
+        <label htmlFor="viewer_image">プロフィール画像</label>
+        <input id="viewer_image" type="file" accept="image/*" onChange={onFile} />
+        {profile.image && (
+          <div className="image-preview-row">
+            <img src={profile.image} alt="視聴者プロフィール画像" />
+          </div>
+        )}
+      </div>
+      <div className="field">
+        <label>好きなカテゴリ {profile.favorite_categories?.length || 0}/5</label>
+        <div className="choice-grid dense">
+          {CATEGORIES.map((category) => (
+            <label className="choice" key={category}>
+              <input type="checkbox" checked={profile.favorite_categories?.includes(category) || false} onChange={() => toggleCategory(category)} />
+              {category}
+            </label>
+          ))}
+        </div>
+      </div>
+      <label className="choice">
+        <input type="checkbox" checked={profile.visible_to_matched_streamers} onChange={(event) => update({ visible_to_matched_streamers: event.target.checked })} />
+        いいねした配信者にプロフィールを共有する
+      </label>
+      <p className="help-text">
+        プロフィールは任意です。入力した場合、いいねでマッチした配信者が、あなたのプロフィール・画像・YouTube表示名を確認できるようになります。
+      </p>
+      <button className="primary-button" type="submit">
+        <Save size={18} />
+        保存する
+      </button>
+      {status && <p className="help-text">{status}</p>}
+    </form>
+  );
+}
+
+async function fileToDataUrl(file: File) {
+  const dataUrl = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+  return dataUrl.length > 400000 ? "" : dataUrl;
+}

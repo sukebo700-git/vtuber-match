@@ -4,11 +4,22 @@ import { useState } from "react";
 
 export function AdminEntryForm() {
   const [password, setPassword] = useState("");
+  const [message, setMessage] = useState("");
 
-  function submit(event: React.FormEvent<HTMLFormElement>) {
+  async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!password.trim()) return;
-    window.location.assign(`/admin?key=${encodeURIComponent(password.trim())}`);
+    setMessage("確認中...");
+    const response = await fetch("/api/admin/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password: password.trim() })
+    });
+    if (response.ok) {
+      window.location.assign("/admin");
+      return;
+    }
+    setMessage(response.status === 429 ? "入力回数が多すぎます。少し待ってください。" : "パスワードが違います。");
   }
 
   return (
@@ -24,6 +35,7 @@ export function AdminEntryForm() {
         />
         <button type="submit">入る</button>
       </div>
+      {message && <p className="help-text">{message}</p>}
     </form>
   );
 }

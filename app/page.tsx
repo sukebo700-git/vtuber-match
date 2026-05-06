@@ -11,6 +11,7 @@ export default async function HomePage() {
       <header className="topbar">
         <a className="brand" href="/">Vtuberマッチ</a>
         <nav className="nav" aria-label="メイン">
+          <a href="/viewer">視聴者用</a>
           <a href="/creator">配信者用</a>
           <a href="/terms">ヘルプ</a>
         </nav>

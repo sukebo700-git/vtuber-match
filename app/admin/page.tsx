@@ -2,18 +2,21 @@ import { AdminDashboard } from "@/components/AdminDashboard";
 import { getAdminDb } from "@/lib/firebaseAdmin";
 import { readAllLocalStreamers, readLocalApplications } from "@/lib/localStore";
 import { normalizeStreamer } from "@/lib/streamers";
+import { adminCookieName, verifyAdminSession } from "@/lib/adminSession";
+import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
-import type { ApplicationStatus, PlanType, StreamerApplication } from "@/lib/types";
+import type { ApplicationStatus, PlanType, StreamerApplication, StreamerProfileEdit } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminPage({ searchParams }: { searchParams: { key?: string } }) {
-  const adminKey = process.env.ADMIN_ACCESS_KEY || "kiya0110";
-  if (searchParams.key !== adminKey) notFound();
+export default async function AdminPage() {
+  const hasCookie = verifyAdminSession(cookies().get(adminCookieName)?.value);
+  if (!hasCookie) notFound();
 
   const db = getAdminDb();
   const applications = db ? await readFirestoreApplications() : await readLocalApplications();
   const streamers = db ? await readAllFirestoreStreamers() : await readAllLocalStreamers();
+  const profileEdits = db ? await readFirestoreProfileEdits() : [];
 
   return (
     <div className="app-shell">
@@ -25,10 +28,73 @@ export default async function AdminPage({ searchParams }: { searchParams: { key?
         </nav>
       </header>
       <main className="main grid-page">
-        <AdminDashboard initialApplications={applications} initialStreamers={streamers} adminKey={adminKey} />
+        <section className="status-band">
+          <h2>プロフィール修正申請</h2>
+          <p>配信者用画面から届いた修正申請です。メール、YouTube URL、画像、自己アピール、カテゴリ、タグを確認できます。</p>
+        </section>
+        <section className="admin-list wide-list">
+          {profileEdits.length ? profileEdits.map((edit) => (
+            <article className="admin-card" key={edit.id}>
+              <div className="admin-card-head">
+                <h3>{edit.name || "名前未入力"}</h3>
+                <span className={`state ${edit.status === "reviewed" ? "approved" : "pending"}`}>{edit.status === "reviewed" ? "確認済み" : "未確認"}</span>
+              </div>
+              <dl className="data-list">
+                <div><dt>申請ID</dt><dd>{edit.id}</dd></div>
+                <div><dt>登録メール</dt><dd>{edit.email}</dd></div>
+                <div><dt>YouTube URL</dt><dd>{edit.youtube_url}</dd></div>
+                <div><dt>一言</dt><dd>{edit.one_liner || "未入力"}</dd></div>
+                <div><dt>自己アピール</dt><dd>{edit.description || "未入力"}</dd></div>
+                <div><dt>配信時間帯</dt><dd>{edit.stream_time || "未入力"}</dd></div>
+                <div><dt>カテゴリ</dt><dd>{edit.categories?.join(" / ") || "未選択"}</dd></div>
+                <div><dt>タグ</dt><dd>{edit.tags?.map((tag) => `#${tag}`).join(" ") || "未選択"}</dd></div>
+                <div><dt>申請日</dt><dd>{formatDate(edit.created_at)}</dd></div>
+              </dl>
+              {edit.image && (
+                <div className="image-preview-row">
+                  <img src={edit.image} alt="修正申請画像" />
+                </div>
+              )}
+            </article>
+          )) : (
+            <article className="admin-card">
+              <h3>現在の修正申請はありません</h3>
+              <p>配信者から申請が届くとここに表示されます。</p>
+            </article>
+          )}
+        </section>
+        <AdminDashboard initialApplications={applications} initialStreamers={streamers} adminKey="" />
       </main>
     </div>
   );
+}
+
+async function readFirestoreProfileEdits(): Promise<StreamerProfileEdit[]> {
+  const db = getAdminDb();
+  if (!db) return [];
+  const snapshot = await db.collection("profile_edits").orderBy("created_at", "desc").limit(50).get();
+  return snapshot.docs.map((doc) => {
+    const data = doc.data();
+    return {
+      id: doc.id,
+      email: data.email || "",
+      youtube_url: data.youtube_url || "",
+      name: data.name || "",
+      image: data.image || "",
+      description: data.description || "",
+      one_liner: data.one_liner || "",
+      stream_time: data.stream_time || "",
+      categories: Array.isArray(data.categories) ? data.categories : [],
+      tags: Array.isArray(data.tags) ? data.tags : [],
+      status: data.status === "reviewed" ? "reviewed" : "pending",
+      created_at: typeof data.created_at === "string" ? data.created_at : data.created_at?.toDate?.().toISOString()
+    };
+  });
+}
+
+function formatDate(value?: string) {
+  if (!value) return "未記録";
+  return new Date(value).toLocaleString("ja-JP");
 }
 
 async function readFirestoreApplications(): Promise<StreamerApplication[]> {

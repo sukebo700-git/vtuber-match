@@ -2,13 +2,15 @@ import { promises as fs } from "fs";
 import path from "path";
 import { mockStreamers } from "./mockData";
 import { rankStreamers } from "./ranking";
-import type { PaymentRecord, PlanType, Streamer, StreamerApplication } from "./types";
+import type { PaymentRecord, PlanType, Streamer, StreamerApplication, StreamerProfileEdit, ViewerProfile } from "./types";
 
 const dataDir = path.join(process.cwd(), "data");
 const streamersPath = path.join(dataDir, "local-streamers.json");
 const likesPath = path.join(dataDir, "local-likes.json");
 const applicationsPath = path.join(dataDir, "local-applications.json");
 const paymentsPath = path.join(dataDir, "local-payments.json");
+const viewerProfilesPath = path.join(dataDir, "local-viewer-profiles.json");
+const profileEditsPath = path.join(dataDir, "local-profile-edits.json");
 
 export async function readLocalStreamers() {
   return rankStreamers(await readAllLocalStreamers());
@@ -154,12 +156,36 @@ function normalizePlan(plan: string): PlanType {
   return "free";
 }
 
-export async function addLocalLike(userId: string, streamerId: string) {
+export async function addLocalLike(userId: string, streamerId: string, viewerProfile?: Record<string, unknown>) {
   await ensureFiles();
   const raw = await fs.readFile(likesPath, "utf8");
-  const likes = JSON.parse(raw) as Array<Record<string, string>>;
-  likes.push({ user_id: userId, streamer_id: streamerId, timestamp: new Date().toISOString() });
+  const likes = JSON.parse(raw) as Array<Record<string, unknown>>;
+  likes.push({ user_id: userId, streamer_id: streamerId, viewer_profile: viewerProfile || null, timestamp: new Date().toISOString() });
   await fs.writeFile(likesPath, JSON.stringify(likes, null, 2));
+}
+
+export async function upsertLocalViewerProfile(input: ViewerProfile) {
+  await ensureFiles();
+  const raw = await fs.readFile(viewerProfilesPath, "utf8");
+  const profiles = JSON.parse(raw) as ViewerProfile[];
+  const profile = { ...input, updated_at: new Date().toISOString() };
+  const next = [profile, ...profiles.filter((item) => item.id !== input.id)];
+  await fs.writeFile(viewerProfilesPath, JSON.stringify(next, null, 2));
+  return profile;
+}
+
+export async function addLocalProfileEdit(input: Omit<StreamerProfileEdit, "id" | "status" | "created_at">) {
+  await ensureFiles();
+  const raw = await fs.readFile(profileEditsPath, "utf8");
+  const edits = JSON.parse(raw) as StreamerProfileEdit[];
+  const edit: StreamerProfileEdit = {
+    ...input,
+    id: `edit-${Date.now()}`,
+    status: "pending",
+    created_at: new Date().toISOString()
+  };
+  await fs.writeFile(profileEditsPath, JSON.stringify([edit, ...edits], null, 2));
+  return edit;
 }
 
 async function ensureFiles() {
@@ -183,5 +209,15 @@ async function ensureFiles() {
     await fs.access(paymentsPath);
   } catch {
     await fs.writeFile(paymentsPath, "[]");
+  }
+  try {
+    await fs.access(viewerProfilesPath);
+  } catch {
+    await fs.writeFile(viewerProfilesPath, "[]");
+  }
+  try {
+    await fs.access(profileEditsPath);
+  } catch {
+    await fs.writeFile(profileEditsPath, "[]");
   }
 }

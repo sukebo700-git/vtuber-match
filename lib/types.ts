@@ -60,7 +60,34 @@ export type PaymentRecord = {
   created_at: string;
 };
 
+export type ViewerProfile = {
+  id: string;
+  display_name?: string;
+  youtube_display_name?: string;
+  image?: string;
+  profile?: string;
+  favorite_categories?: string[];
+  visible_to_matched_streamers: boolean;
+  updated_at?: string;
+};
+
+export type StreamerProfileEdit = {
+  id: string;
+  email: string;
+  youtube_url: string;
+  name?: string;
+  image?: string;
+  description?: string;
+  one_liner?: string;
+  stream_time?: string;
+  categories?: string[];
+  tags?: string[];
+  status: "pending" | "reviewed";
+  created_at?: string;
+};
+
 export type LikePayload = {
   user_id: string;
   streamer_id: string;
+  viewer_profile?: Partial<ViewerProfile>;
 };
