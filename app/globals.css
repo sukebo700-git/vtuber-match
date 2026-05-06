@@ -891,12 +891,21 @@ button {
   .swipe-stage,
   .detail-hero {
     grid-template-columns: 1fr;
-    gap: 18px;
+    gap: 14px;
     align-items: start;
   }
 
+  .swipe-stage {
+    min-height: auto;
+  }
+
+  .swipe-search {
+    width: min(100%, 386px);
+    margin-bottom: 10px;
+  }
+
   .deck {
-    width: min(100%, 372px);
+    width: min(100%, 386px);
   }
 
   .deck::before {
@@ -919,7 +928,22 @@ button {
   }
 
   .side-panel {
-    order: -1;
+    gap: 12px;
+  }
+
+  .side-panel .status-band:first-child {
+    padding: 15px;
+  }
+
+  .side-panel .status-band:first-child h2 {
+    font-size: 25px;
+  }
+
+  .side-panel .status-band:first-child p {
+    margin-top: 8px;
+    padding: 9px 11px;
+    font-size: 13px;
+    line-height: 1.55;
   }
 
   .status-band {
