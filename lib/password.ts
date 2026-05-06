@@ -10,3 +10,8 @@ export function makeCreatorLoginId(seed = Date.now().toString(36)) {
   const random = Math.random().toString(36).slice(2, 8);
   return `vm-${seed}-${random}`;
 }
+
+export function makeViewerLoginId(seed = Date.now().toString(36)) {
+  const random = Math.random().toString(36).slice(2, 8);
+  return `vv-${seed}-${random}`;
+}

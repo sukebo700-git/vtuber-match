@@ -11,7 +11,7 @@ export async function GET(request: Request) {
   if (!db) {
     const profiles = await readLocalViewerProfilesWithStats();
     const profile = profiles.find((item) => item.id === id);
-    return NextResponse.json({ profile: profile || { id, match_count: 0, fan_level: "starter" } });
+    return NextResponse.json({ profile: sanitizeProfile(profile || { id, match_count: 0, fan_level: "starter" }) });
   }
 
   const profileDoc = await db.collection("viewer_profiles").doc(id).get();
@@ -24,13 +24,13 @@ export async function GET(request: Request) {
   const profile = profileDoc.exists ? profileDoc.data() : {};
 
   return NextResponse.json({
-    profile: {
+    profile: sanitizeProfile({
       id,
       ...profile,
       match_count: matchCount,
       streamer_like_count: streamerLikeCount,
       fan_level: fanLevel(matchCount)
-    }
+    })
   });
 }
 
@@ -41,6 +41,8 @@ export async function POST(request: Request) {
 
   const profile: ViewerProfile = {
     id,
+    email: clean(body.email, 120).toLowerCase(),
+    viewer_login_id: clean(body.viewer_login_id, 80),
     display_name: clean(body.display_name, 40),
     youtube_display_name: clean(body.youtube_display_name, 60),
     image: clean(body.image, 400000),
@@ -75,4 +77,9 @@ function fanLevel(matchCount: number) {
   if (matchCount >= 20) return "super";
   if (matchCount >= 5) return "active";
   return "starter";
+}
+
+function sanitizeProfile<T extends Record<string, unknown>>(profile: T) {
+  const { viewer_password_hash, ...safeProfile } = profile;
+  return safeProfile;
 }

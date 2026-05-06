@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/adminAuth";
-import { notifyAdminApplication } from "@/lib/email";
 import { FieldValue, getAdminDb } from "@/lib/firebaseAdmin";
 import { addLocalApplication, autoApproveLocalApplication, readLocalApplications } from "@/lib/localStore";
 import { hashPassword, makeCreatorLoginId } from "@/lib/password";
@@ -46,13 +45,6 @@ export async function POST(request: Request) {
   if (!db) {
     const application = await addLocalApplication(payload);
     const streamer = payload.desired_plan === "free" ? await autoApproveLocalApplication(application.id) : null;
-    await notifyAdminApplication({
-      id: application.id,
-      name: application.name,
-      email: application.email,
-      youtube_url: application.youtube_url,
-      desired_plan: application.desired_plan
-    }).catch((error) => console.error(error));
     return NextResponse.json({
       application: { ...application, status: streamer ? "approved" : application.status },
       streamer,
@@ -97,14 +89,6 @@ export async function POST(request: Request) {
       streamer_id: streamerId
     }, { merge: true });
   }
-
-  await notifyAdminApplication({
-    id: doc.id,
-    name: payload.name,
-    email: payload.email,
-    youtube_url: payload.youtube_url,
-    desired_plan: payload.desired_plan
-  }).catch((error) => console.error(error));
 
   return NextResponse.json({
     id: doc.id,

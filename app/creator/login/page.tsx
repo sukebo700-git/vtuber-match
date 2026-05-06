@@ -13,7 +13,7 @@ export default function CreatorLoginPage() {
       <main className="main grid-page">
         <section className="status-band">
           <h2>配信者ログイン</h2>
-          <p>申し込み後に発行されたログインID、または申し込み時のメールアドレスとパスワードでログインできます。</p>
+          <p>申し込み時のメールアドレスとパスワードでログインできます。管理IDは運営確認用として保存されます。</p>
         </section>
         <CreatorLoginForm />
       </main>

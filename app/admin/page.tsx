@@ -62,17 +62,25 @@ async function readFirestoreReports(): Promise<StreamerReport[]> {
 async function readFirestoreViewerProfiles(): Promise<ViewerProfileWithStats[]> {
   const db = getAdminDb();
   if (!db) return [];
-  const [profileSnapshot, likeSnapshot] = await Promise.all([
+  const [profileSnapshot, likeSnapshot, creatorLikeSnapshot] = await Promise.all([
     db.collection("viewer_profiles").limit(120).get(),
-    db.collection("likes").limit(1000).get()
+    db.collection("likes").limit(1000).get(),
+    db.collection("creator_likes").limit(1000).get()
   ]);
 
   const counts = new Map<string, number>();
+  const streamerLikeCounts = new Map<string, number>();
   likeSnapshot.docs.forEach((doc) => {
     const data = doc.data();
     const id = String(data.viewer_profile_id || data.viewer_profile?.id || "");
     if (!id) return;
     counts.set(id, (counts.get(id) || 0) + 1);
+  });
+  creatorLikeSnapshot.docs.forEach((doc) => {
+    const data = doc.data();
+    const id = String(data.viewer_profile_id || "");
+    if (!id) return;
+    streamerLikeCounts.set(id, (streamerLikeCounts.get(id) || 0) + 1);
   });
 
   return profileSnapshot.docs.map((doc) => {
@@ -83,12 +91,15 @@ async function readFirestoreViewerProfiles(): Promise<ViewerProfileWithStats[]> 
       display_name: data.display_name || "",
       youtube_display_name: data.youtube_display_name || "",
       image: data.image || "",
+      email: data.email || "",
+      viewer_login_id: data.viewer_login_id || "",
+      viewer_password_hash: data.viewer_password_hash || "",
       profile: data.profile || "",
       favorite_categories: Array.isArray(data.favorite_categories) ? data.favorite_categories : [],
       visible_to_matched_streamers: data.visible_to_matched_streamers !== false,
       updated_at: timestampToIso(data.updated_at),
       match_count: matchCount,
-      streamer_like_count: data.streamer_like_count || 0,
+      streamer_like_count: streamerLikeCounts.get(doc.id) || data.streamer_like_count || 0,
       fan_level: fanLevel(matchCount)
     };
   });

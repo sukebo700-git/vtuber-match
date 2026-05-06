@@ -242,6 +242,8 @@ export function AdminDashboard({ initialApplications, initialStreamers, adminKey
               <dl className="data-list">
                 <div><dt>掲載ID</dt><dd>{streamer.id}</dd></div>
                 <div><dt>申込ID</dt><dd>{application?.id || streamer.source_application_id || "運営登録/未連携"}</dd></div>
+                <div><dt>管理ID</dt><dd>{application?.creator_login_id || "未発行/未連携"}</dd></div>
+                <div><dt>パスワード</dt><dd>{application?.creator_password_hash ? "設定済み" : "未設定"}</dd></div>
                 <div><dt>非公開メール</dt><dd>{application?.email || "未連携"}</dd></div>
                 <div><dt>プラン</dt><dd>{PLAN_LABELS[streamer.plan_type]}{streamer.is_initial_scout ? " / 初期スカウト" : ""}</dd></div>
                 <div><dt>決済状態</dt><dd>{formatPayment(application)}</dd></div>

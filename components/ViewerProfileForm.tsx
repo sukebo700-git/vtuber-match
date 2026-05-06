@@ -7,9 +7,12 @@ import type { ViewerProfile } from "@/lib/types";
 
 const storageKey = "vtuber-match-viewer-profile";
 const idKey = "vtuber-match-viewer-id";
+const authKey = "vtuber-match-viewer-auth";
 
 const emptyProfile: ViewerProfile = {
   id: "",
+  email: "",
+  viewer_login_id: "",
   display_name: "",
   youtube_display_name: "",
   image: "",
@@ -27,8 +30,16 @@ export function ViewerProfileForm() {
   useEffect(() => {
     const id = localStorage.getItem(idKey) || crypto.randomUUID();
     localStorage.setItem(idKey, id);
+    const auth = safeParse(localStorage.getItem(authKey));
     const saved = localStorage.getItem(storageKey);
-    const nextProfile = saved ? { ...emptyProfile, ...JSON.parse(saved), id } : { ...emptyProfile, id };
+    const stored = saved ? JSON.parse(saved) : {};
+    const nextProfile = {
+      ...emptyProfile,
+      ...stored,
+      id,
+      email: auth?.email || stored.email || "",
+      viewer_login_id: auth?.viewer_login_id || stored.viewer_login_id || ""
+    };
     setProfile(nextProfile);
 
     fetch(`/api/viewer-profile?id=${encodeURIComponent(id)}`)
@@ -37,6 +48,10 @@ export function ViewerProfileForm() {
         if (data.profile) {
           setProfile((current) => ({
             ...current,
+            ...data.profile,
+            id,
+            email: data.profile.email || current.email || "",
+            viewer_login_id: data.profile.viewer_login_id || current.viewer_login_id || "",
             match_count: data.profile.match_count || 0,
             streamer_like_count: data.profile.streamer_like_count || 0
           }));
@@ -58,7 +73,9 @@ export function ViewerProfileForm() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(profile)
     });
-    setStatus(response.ok ? "保存しました。マッチした配信者にプロフィールを見てもらえます。" : "保存に失敗しました。時間をおいて再度お試しください。");
+    setStatus(response.ok
+      ? "保存しました。マッチした配信者があなたのプロフィールを確認できます。"
+      : "保存に失敗しました。時間をおいてもう一度お試しください。");
   }
 
   async function onFile(event: React.ChangeEvent<HTMLInputElement>) {
@@ -100,6 +117,12 @@ export function ViewerProfileForm() {
         </div>
       </div>
 
+      <dl className="data-list">
+        <div><dt>視聴者ID</dt><dd>{profile.id || "未発行"}</dd></div>
+        <div><dt>視聴者管理ID</dt><dd>{profile.viewer_login_id || "ログイン後に発行"}</dd></div>
+        <div><dt>メール</dt><dd>{profile.email || "未登録"}</dd></div>
+      </dl>
+
       <div className="field">
         <label htmlFor="display_name">表示名</label>
         <input id="display_name" value={profile.display_name || ""} onChange={(event) => update({ display_name: event.target.value })} placeholder="未入力でも利用できます" />
@@ -137,7 +160,7 @@ export function ViewerProfileForm() {
         いいねした配信者にプロフィールを共有する
       </label>
       <p className="help-text">
-        プロフィールを共有すると、いいねした配信者があなたのプロフィールを確認でき、配信者側からもいいねが届くことがあります。
+        プロフィールを共有すると、マッチした配信者があなたのプロフィールを確認できます。連絡先メールは公開されません。
       </p>
       <button className="primary-button" type="submit">
         <Save size={18} />
@@ -152,6 +175,15 @@ function fanAppeal(matchCount: number) {
   if (matchCount >= 20) return "たくさんの配信者と出会っている、かなり積極的なファンです。";
   if (matchCount >= 5) return "気になる配信者をしっかり見つけているアクティブなファンです。";
   return "これから推しを見つけていくファンです。";
+}
+
+function safeParse(value: string | null) {
+  if (!value) return null;
+  try {
+    return JSON.parse(value) as { email?: string; viewer_login_id?: string };
+  } catch {
+    return null;
+  }
 }
 
 async function fileToDataUrl(file: File) {

@@ -5,7 +5,7 @@ export function ViewerAdminPanel({ viewers }: { viewers: ViewerProfileWithStats[
     <>
       <section className="status-band">
         <h2>視聴者管理</h2>
-        <p>視聴者プロフィール、好きなカテゴリ、マッチ数、ファンの積極度を確認できます。</p>
+        <p>視聴者プロフィール、視聴者管理ID、マッチ数、配信者からのいいね数を確認できます。</p>
       </section>
       <section className="admin-list wide-list">
         {viewers.length ? viewers.map((viewer) => (
@@ -23,8 +23,12 @@ export function ViewerAdminPanel({ viewers }: { viewers: ViewerProfileWithStats[
             )}
             <dl className="data-list">
               <div><dt>視聴者ID</dt><dd>{viewer.id}</dd></div>
+              <div><dt>視聴者管理ID</dt><dd>{viewer.viewer_login_id || "未発行"}</dd></div>
+              <div><dt>メール</dt><dd>{viewer.email || "未登録"}</dd></div>
+              <div><dt>パスワード</dt><dd>{viewer.viewer_password_hash ? "設定済み" : "未設定"}</dd></div>
               <div><dt>YouTube表示名</dt><dd>{viewer.youtube_display_name || "未入力"}</dd></div>
               <div><dt>マッチ数</dt><dd>{viewer.match_count}</dd></div>
+              <div><dt>配信者からのいいね</dt><dd>{viewer.streamer_like_count}</dd></div>
               <div><dt>好きなカテゴリ</dt><dd>{viewer.favorite_categories?.join(" / ") || "未選択"}</dd></div>
               <div><dt>プロフィール</dt><dd>{viewer.profile || "未入力"}</dd></div>
               <div><dt>配信者への共有</dt><dd>{viewer.visible_to_matched_streamers ? "共有する" : "共有しない"}</dd></div>
@@ -43,7 +47,7 @@ export function ViewerAdminPanel({ viewers }: { viewers: ViewerProfileWithStats[
 }
 
 function fanLabel(level: ViewerProfileWithStats["fan_level"]) {
-  if (level === "super") return "積極ファン";
+  if (level === "super") return "積極的なファン";
   if (level === "active") return "アクティブ";
   return "これから";
 }

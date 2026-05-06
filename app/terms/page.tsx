@@ -13,7 +13,7 @@ export default function TermsPage() {
       <main className="main grid-page">
         <section className="status-band">
           <h2>ヘルプ</h2>
-          <p>Vtuberマッチを安心して使うための案内です。</p>
+          <p>Vtuberマッチを安心して利用するための案内です。</p>
         </section>
 
         <section className="terms-list">
@@ -27,7 +27,7 @@ export default function TermsPage() {
           </article>
           <article className="status-band">
             <h2>ログインについて</h2>
-            <p>視聴者はログインなしでもスワイプを利用できます。プロフィール登録には視聴者ログインが必要です。配信者は申し込み後に発行されるログインID、またはメールアドレスとパスワードでログインできます。</p>
+            <p>視聴者はログインなしでもスワイプを利用できます。プロフィール登録には視聴者ログインが必要です。配信者は申し込み時のメールアドレスとパスワードでログインできます。管理IDは運営確認用として保存されます。</p>
           </article>
           <article className="status-band">
             <h2>連絡先メール</h2>

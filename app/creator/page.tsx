@@ -16,17 +16,17 @@ export default function CreatorPage() {
       <main className="main grid-page">
         <section className="status-band">
           <h2>配信者用ページ</h2>
-          <p>掲載申し込み、ログイン、プロフィール修正、上位表示へのアップグレードをここから行えます。申し込み後に発行されるログインIDを保管してください。</p>
+          <p>掲載申し込み、ログイン、プロフィール修正、上位表示へのアップグレードをここから行えます。ログインには申し込み時のメールアドレスを使います。</p>
         </section>
 
         <section className="creator-action-grid">
           <a className="creator-action-card" href="/apply">
             <strong>申し込み</strong>
-            <span>無料掲載は申し込み後すぐ掲載されます。有料掲載・上位表示は決済完了後に掲載されます。</span>
+            <span>無料掲載は申し込み後すぐ掲載されます。有料掲載と上位表示は決済完了後に掲載されます。</span>
           </a>
           <a className="creator-action-card" href="/creator/login">
             <strong>ログイン</strong>
-            <span>ログインIDまたはメールアドレスとパスワードで、申し込みデータに紐づいて操作できます。</span>
+            <span>申し込み時のメールアドレスとパスワードで、申し込みデータに紐づいて操作できます。</span>
           </a>
           <a className="creator-action-card" href="/creator/edit">
             <strong>修正申請</strong>

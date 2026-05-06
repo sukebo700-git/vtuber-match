@@ -217,10 +217,17 @@ export async function upsertLocalViewerProfile(input: ViewerProfile) {
   await ensureFiles();
   const raw = await fs.readFile(viewerProfilesPath, "utf8");
   const profiles = JSON.parse(raw) as ViewerProfile[];
-  const profile = { ...input, updated_at: new Date().toISOString() };
+  const existing = profiles.find((item) => item.id === input.id);
+  const profile = { ...existing, ...input, updated_at: new Date().toISOString() };
   const next = [profile, ...profiles.filter((item) => item.id !== input.id)];
   await fs.writeFile(viewerProfilesPath, JSON.stringify(next, null, 2));
   return profile;
+}
+
+export async function readLocalViewerProfilesRaw(): Promise<ViewerProfile[]> {
+  await ensureFiles();
+  const raw = await fs.readFile(viewerProfilesPath, "utf8");
+  return JSON.parse(raw) as ViewerProfile[];
 }
 
 export async function readLocalViewerProfilesWithStats(): Promise<ViewerProfileWithStats[]> {

@@ -66,6 +66,9 @@ export type PaymentRecord = {
 
 export type ViewerProfile = {
   id: string;
+  email?: string;
+  viewer_login_id?: string;
+  viewer_password_hash?: string;
   display_name?: string;
   youtube_display_name?: string;
   image?: string;

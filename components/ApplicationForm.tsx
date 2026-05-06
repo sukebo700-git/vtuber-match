@@ -51,7 +51,7 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
     }
 
     const data = await response.json();
-    const applicationId = data.application?.id || data.id;
+    const applicationId = data.application?.id || data.id || "";
     const streamerId = data.streamer_id || data.streamer?.id || "";
     const creatorLoginId = data.creator_login_id || data.application?.creator_login_id || "";
     if (applicationId) localStorage.setItem("vtuber-match-creator-application-id", applicationId);
@@ -63,7 +63,12 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
       return;
     }
 
-    setStatus(`無料掲載の申し込みを受け付け、掲載しました。ログインID: ${creatorLoginId} / 申込ID: ${applicationId}${streamerId ? ` / 掲載ID: ${streamerId}` : ""}`);
+    setStatus([
+      "無料掲載の申し込みを受け付け、掲載しました。",
+      `管理ID: ${creatorLoginId}`,
+      `申込ID: ${applicationId}`,
+      streamerId ? `掲載ID: ${streamerId}` : ""
+    ].filter(Boolean).join(" / "));
     formElement.reset();
     setSelectedCategories([]);
     setSelectedTags([]);
@@ -134,7 +139,7 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
       <div className="field">
         <label htmlFor="creator_password">配信者ログイン用パスワード</label>
         <input id="creator_password" name="creator_password" type="password" required minLength={8} autoComplete="new-password" />
-        <p className="help-text">申し込み後にログインIDが発行されます。修正申請やアップグレードで使用します。</p>
+        <p className="help-text">ログインはメールアドレスを使います。申し込み後に発行される管理IDは、運営確認や修正申請の照合で使用します。</p>
       </div>
       <div className="field">
         <label htmlFor="description">プロフィール画面に表示する自己アピール</label>
@@ -154,7 +159,7 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
         {!!images.length && (
           <div className="image-preview-row">
             {images.map((image, index) => (
-              <img src={image} alt={`アップロード画像${index + 1}`} key={image.slice(0, 40)} />
+              <img src={image} alt={`アップロード画像 ${index + 1}`} key={image.slice(0, 40)} />
             ))}
           </div>
         )}
@@ -185,7 +190,7 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
         <Send size={18} />
         申し込む
       </button>
-      {status && <p>{status}</p>}
+      {status && <p className="notice-text">{status}</p>}
     </form>
   );
 }
