@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/adminAuth";
 import { notifyAdminApplication } from "@/lib/email";
 import { FieldValue, getAdminDb } from "@/lib/firebaseAdmin";
 import { addLocalApplication, autoApproveLocalApplication, readLocalApplications } from "@/lib/localStore";
+import { hashPassword, makeCreatorLoginId } from "@/lib/password";
 import type { PlanType } from "@/lib/types";
 
 export async function GET(request: Request) {
@@ -36,6 +37,8 @@ export async function POST(request: Request) {
     one_liner: String(body.one_liner || body.description).trim().slice(0, 80),
     stream_time: String(body.stream_time || "").trim(),
     desired_plan: (body.desired_plan || "free") as PlanType,
+    creator_login_id: makeCreatorLoginId(),
+    creator_password_hash: hashPassword(String(body.creator_password || "")),
     admin_note: ""
   };
 
@@ -54,6 +57,7 @@ export async function POST(request: Request) {
       application: { ...application, status: streamer ? "approved" : application.status },
       streamer,
       streamer_id: streamer?.id || "",
+      creator_login_id: application.creator_login_id,
       auto_approved: Boolean(streamer),
       source: "local"
     }, { status: 201 });
@@ -102,7 +106,13 @@ export async function POST(request: Request) {
     desired_plan: payload.desired_plan
   }).catch((error) => console.error(error));
 
-  return NextResponse.json({ id: doc.id, streamer_id: streamerId, auto_approved: payload.desired_plan === "free", source: "firestore" }, { status: 201 });
+  return NextResponse.json({
+    id: doc.id,
+    streamer_id: streamerId,
+    creator_login_id: payload.creator_login_id,
+    auto_approved: payload.desired_plan === "free",
+    source: "firestore"
+  }, { status: 201 });
 }
 
 function validate(body: Record<string, unknown>) {
@@ -113,6 +123,7 @@ function validate(body: Record<string, unknown>) {
   if (!body.email) return "email is required";
   if (!body.youtube_url) return "youtube_url is required";
   if (!body.description) return "profile appeal is required";
+  if (String(body.creator_password || "").length < 8) return "creator password must be at least 8 characters";
   if (sanitizeArray(body.thumbnails).length > 3) return "thumbnails max is 3";
   if (plan === "free" && categoryCount > 1) return "free plan category max is 1";
   if (plan === "free" && tagCount > 1) return "free plan tag max is 1";

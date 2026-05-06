@@ -7,20 +7,24 @@ export default function CreatorPage() {
         <a className="brand" href="/">Vtuberマッチ</a>
         <nav className="nav" aria-label="メイン">
           <a href="/viewer">視聴者用</a>
-          <a href="/creator">配信者用</a>
+          <a href="/creator/login">ログイン</a>
           <a href="/terms">ヘルプ</a>
         </nav>
       </header>
       <main className="main grid-page">
         <section className="status-band">
           <h2>配信者用ページ</h2>
-          <p>掲載申込、プロフィール修正申請、有料掲載へのアップグレードをここから行えます。</p>
+          <p>掲載申し込み、ログイン、プロフィール修正、上位表示へのアップグレードをここから行えます。申し込み後に発行されるログインIDを保管してください。</p>
         </section>
 
         <section className="creator-action-grid">
           <a className="creator-action-card" href="/apply">
             <strong>申し込み</strong>
-            <span>無料掲載は申し込み後すぐに掲載されます。有料掲載は決済後に掲載されます。</span>
+            <span>無料掲載は申し込み後すぐ掲載されます。有料掲載・上位表示は決済完了後に掲載されます。</span>
+          </a>
+          <a className="creator-action-card" href="/creator/login">
+            <strong>ログイン</strong>
+            <span>ログインIDまたはメールアドレスとパスワードで、申し込みデータに紐づいて操作できます。</span>
           </a>
           <a className="creator-action-card" href="/creator/edit">
             <strong>修正申請</strong>
@@ -28,13 +32,13 @@ export default function CreatorPage() {
           </a>
           <a className="creator-action-card" href="/creator/upgrade">
             <strong>アップグレード</strong>
-            <span>無料掲載から有料掲載、さらに上位表示へ変更できます。</span>
+            <span>有料掲載や上位表示へ切り替えて、より見つけてもらいやすい掲載にできます。</span>
           </a>
         </section>
 
         <section className="status-band">
           <h2>無料掲載からアップグレード</h2>
-          <p>無料掲載ではカテゴリ1件、タグ1件のみです。有料掲載にすると公式バッジが付き、カテゴリは最大3件、タグは最大5件まで選択できます。</p>
+          <p>無料掲載ではカテゴリ1件、タグ1件のみです。有料掲載にすると公式バッジが付き、無料掲載より目立つ位置で表示されやすくなります。さらに上位表示では、推しを探している視聴者の目に入りやすい掲載枠を強化できます。</p>
         </section>
       </main>
     </div>

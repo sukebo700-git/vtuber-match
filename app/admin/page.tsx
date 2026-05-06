@@ -145,7 +145,9 @@ async function readFirestoreApplications(): Promise<StreamerApplication[]> {
       paid_at: typeof data.paid_at === "string" ? data.paid_at : data.paid_at?.toDate?.().toISOString(),
       subscription_status: data.subscription_status,
       stripe_subscription_id: data.stripe_subscription_id,
-      streamer_id: data.streamer_id
+      streamer_id: data.streamer_id,
+      creator_login_id: data.creator_login_id,
+      creator_password_hash: data.creator_password_hash
     };
   });
 }

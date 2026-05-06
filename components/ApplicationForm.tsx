@@ -31,6 +31,7 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
       description: form.get("description"),
       one_liner: form.get("one_liner"),
       stream_time: form.get("stream_time"),
+      creator_password: form.get("creator_password"),
       desired_plan: desiredPlan,
       thumbnails: images,
       categories: selectedCategories,
@@ -52,15 +53,17 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
     const data = await response.json();
     const applicationId = data.application?.id || data.id;
     const streamerId = data.streamer_id || data.streamer?.id || "";
+    const creatorLoginId = data.creator_login_id || data.application?.creator_login_id || "";
     if (applicationId) localStorage.setItem("vtuber-match-creator-application-id", applicationId);
     if (streamerId) localStorage.setItem("vtuber-match-creator-streamer-id", streamerId);
+    if (creatorLoginId) localStorage.setItem("vtuber-match-creator-login-id", creatorLoginId);
 
     if (desiredPlan === "paid" || desiredPlan === "boost") {
       window.location.assign(`/checkout?application_id=${applicationId}`);
       return;
     }
 
-    setStatus(`無料掲載の申し込みを受け付け、掲載しました。申込ID: ${applicationId}${streamerId ? ` / 掲載ID: ${streamerId}` : ""}`);
+    setStatus(`無料掲載の申し込みを受け付け、掲載しました。ログインID: ${creatorLoginId} / 申込ID: ${applicationId}${streamerId ? ` / 掲載ID: ${streamerId}` : ""}`);
     formElement.reset();
     setSelectedCategories([]);
     setSelectedTags([]);
@@ -127,6 +130,11 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
         ) : (
           <p className="notice-text">送信後に決済画面へ進みます。決済完了後、自動で掲載されます。</p>
         )}
+      </div>
+      <div className="field">
+        <label htmlFor="creator_password">配信者ログイン用パスワード</label>
+        <input id="creator_password" name="creator_password" type="password" required minLength={8} autoComplete="new-password" />
+        <p className="help-text">申し込み後にログインIDが発行されます。修正申請やアップグレードで使用します。</p>
       </div>
       <div className="field">
         <label htmlFor="description">プロフィール画面に表示する自己アピール</label>

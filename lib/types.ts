@@ -47,6 +47,8 @@ export type StreamerApplication = {
   subscription_status?: "active" | "canceled";
   stripe_subscription_id?: string;
   streamer_id?: string;
+  creator_login_id?: string;
+  creator_password_hash?: string;
 };
 
 export type PaymentRecord = {

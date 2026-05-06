@@ -80,11 +80,7 @@ export function CheckoutForm({ applicationId, streamerId, planType, amount, emai
       </div>
 
       <p className="help-text">
-        決済前に
-        <a href="/commercial-disclosure"> 特定商取引法に基づく表記 </a>
-        と
-        <a href="/terms"> ヘルプ・利用上の注意 </a>
-        を確認してください。
+        決済前に<a href="/terms">ヘルプ・利用上の注意</a>を確認してください。
       </p>
 
       {testPaymentEnabled ? (
