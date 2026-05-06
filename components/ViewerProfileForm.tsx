@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { HeartHandshake, Save } from "lucide-react";
+import { Heart, HeartHandshake, Save } from "lucide-react";
 import { CATEGORIES } from "@/lib/constants";
 import type { ViewerProfile } from "@/lib/types";
 
@@ -16,7 +16,8 @@ const emptyProfile: ViewerProfile = {
   profile: "",
   favorite_categories: [],
   visible_to_matched_streamers: true,
-  match_count: 0
+  match_count: 0,
+  streamer_like_count: 0
 };
 
 export function ViewerProfileForm() {
@@ -34,7 +35,11 @@ export function ViewerProfileForm() {
       .then((response) => response.json())
       .then((data) => {
         if (data.profile) {
-          setProfile((current) => ({ ...current, match_count: data.profile.match_count || 0 }));
+          setProfile((current) => ({
+            ...current,
+            match_count: data.profile.match_count || 0,
+            streamer_like_count: data.profile.streamer_like_count || 0
+          }));
         }
       })
       .catch(() => undefined);
@@ -53,7 +58,7 @@ export function ViewerProfileForm() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(profile)
     });
-    setStatus(response.ok ? "保存しました。未入力でもそのままスワイプできます。" : "保存に失敗しました。時間をおいて再度お試しください。");
+    setStatus(response.ok ? "保存しました。マッチした配信者にプロフィールを見てもらえます。" : "保存に失敗しました。時間をおいて再度お試しください。");
   }
 
   async function onFile(event: React.ChangeEvent<HTMLInputElement>) {
@@ -74,6 +79,7 @@ export function ViewerProfileForm() {
   }
 
   const matchCount = profile.match_count || 0;
+  const streamerLikeCount = profile.streamer_like_count || 0;
 
   return (
     <form className="form compact-form" onSubmit={submit}>
@@ -83,6 +89,14 @@ export function ViewerProfileForm() {
           <span>マッチ数</span>
           <strong>{matchCount}</strong>
           <p>{fanAppeal(matchCount)}</p>
+        </div>
+      </div>
+      <div className="viewer-score-card">
+        <Heart size={26} />
+        <div>
+          <span>配信者からのいいね</span>
+          <strong>{streamerLikeCount}</strong>
+          <p>{streamerLikeCount ? "配信者からも反応が届いています。" : "配信者からのいいねが届くとここに表示されます。"}</p>
         </div>
       </div>
 
@@ -123,7 +137,7 @@ export function ViewerProfileForm() {
         いいねした配信者にプロフィールを共有する
       </label>
       <p className="help-text">
-        プロフィールは任意です。入力した場合、いいねでマッチした配信者があなたのプロフィール・画像・YouTube表示名・マッチ数を確認でき、積極的なファンであることをアピールできます。
+        プロフィールを共有すると、いいねした配信者があなたのプロフィールを確認でき、配信者側からもいいねが届くことがあります。
       </p>
       <button className="primary-button" type="submit">
         <Save size={18} />

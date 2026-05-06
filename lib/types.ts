@@ -73,11 +73,13 @@ export type ViewerProfile = {
   favorite_categories?: string[];
   visible_to_matched_streamers: boolean;
   match_count?: number;
+  streamer_like_count?: number;
   updated_at?: string;
 };
 
 export type ViewerProfileWithStats = ViewerProfile & {
   match_count: number;
+  streamer_like_count: number;
   fan_level: "starter" | "active" | "super";
 };
 

@@ -12,6 +12,7 @@ const paymentsPath = path.join(dataDir, "local-payments.json");
 const viewerProfilesPath = path.join(dataDir, "local-viewer-profiles.json");
 const profileEditsPath = path.join(dataDir, "local-profile-edits.json");
 const reportsPath = path.join(dataDir, "local-reports.json");
+const creatorLikesPath = path.join(dataDir, "local-creator-likes.json");
 
 export async function readLocalStreamers() {
   return rankStreamers(await readAllLocalStreamers());
@@ -226,9 +227,12 @@ export async function readLocalViewerProfilesWithStats(): Promise<ViewerProfileW
   await ensureFiles();
   const rawProfiles = await fs.readFile(viewerProfilesPath, "utf8");
   const rawLikes = await fs.readFile(likesPath, "utf8");
+  const rawCreatorLikes = await fs.readFile(creatorLikesPath, "utf8");
   const profiles = JSON.parse(rawProfiles) as ViewerProfile[];
   const likes = JSON.parse(rawLikes) as Array<Record<string, unknown>>;
+  const creatorLikes = JSON.parse(rawCreatorLikes) as Array<Record<string, unknown>>;
   const counts = new Map<string, number>();
+  const streamerLikeCounts = new Map<string, number>();
 
   for (const like of likes) {
     const profile = like.viewer_profile as Record<string, unknown> | undefined;
@@ -236,15 +240,63 @@ export async function readLocalViewerProfilesWithStats(): Promise<ViewerProfileW
     if (!id) continue;
     counts.set(id, (counts.get(id) || 0) + 1);
   }
+  for (const like of creatorLikes) {
+    const id = String(like.viewer_profile_id || "");
+    if (!id) continue;
+    streamerLikeCounts.set(id, (streamerLikeCounts.get(id) || 0) + 1);
+  }
 
   return profiles.map((profile) => {
     const matchCount = counts.get(profile.id) || profile.match_count || 0;
     return {
       ...profile,
       match_count: matchCount,
+      streamer_like_count: streamerLikeCounts.get(profile.id) || profile.streamer_like_count || 0,
       fan_level: fanLevel(matchCount)
     };
   });
+}
+
+export async function readLocalViewerProfilesForStreamer(streamerId: string) {
+  await ensureFiles();
+  const rawLikes = await fs.readFile(likesPath, "utf8");
+  const rawProfiles = await fs.readFile(viewerProfilesPath, "utf8");
+  const rawCreatorLikes = await fs.readFile(creatorLikesPath, "utf8");
+  const likes = JSON.parse(rawLikes) as Array<Record<string, unknown>>;
+  const profiles = JSON.parse(rawProfiles) as ViewerProfile[];
+  const creatorLikes = JSON.parse(rawCreatorLikes) as Array<Record<string, unknown>>;
+  const likedIds = new Set(creatorLikes.filter((like) => like.streamer_id === streamerId).map((like) => String(like.viewer_profile_id || "")));
+  const byId = new Map(profiles.map((profile) => [profile.id, profile]));
+
+  return likes
+    .filter((like) => like.streamer_id === streamerId)
+    .map((like) => {
+      const embedded = like.viewer_profile as Partial<ViewerProfile> | undefined;
+      const id = String(like.viewer_profile_id || embedded?.id || "");
+      const profile = byId.get(id) || embedded;
+      if (!profile || profile.visible_to_matched_streamers === false) return null;
+      return {
+        ...profile,
+        id,
+        liked_by_streamer: likedIds.has(id)
+      };
+    })
+    .filter(Boolean);
+}
+
+export async function addLocalCreatorLike(streamerId: string, viewerProfileId: string) {
+  await ensureFiles();
+  const raw = await fs.readFile(creatorLikesPath, "utf8");
+  const likes = JSON.parse(raw) as Array<Record<string, unknown>>;
+  const exists = likes.some((like) => like.streamer_id === streamerId && like.viewer_profile_id === viewerProfileId);
+  if (exists) return false;
+  likes.push({
+    streamer_id: streamerId,
+    viewer_profile_id: viewerProfileId,
+    timestamp: new Date().toISOString()
+  });
+  await fs.writeFile(creatorLikesPath, JSON.stringify(likes, null, 2));
+  return true;
 }
 
 function fanLevel(matchCount: number): ViewerProfileWithStats["fan_level"] {
@@ -323,5 +375,10 @@ async function ensureFiles() {
     await fs.access(reportsPath);
   } catch {
     await fs.writeFile(reportsPath, "[]");
+  }
+  try {
+    await fs.access(creatorLikesPath);
+  } catch {
+    await fs.writeFile(creatorLikesPath, "[]");
   }
 }

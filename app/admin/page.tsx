@@ -88,6 +88,7 @@ async function readFirestoreViewerProfiles(): Promise<ViewerProfileWithStats[]> 
       visible_to_matched_streamers: data.visible_to_matched_streamers !== false,
       updated_at: timestampToIso(data.updated_at),
       match_count: matchCount,
+      streamer_like_count: data.streamer_like_count || 0,
       fan_level: fanLevel(matchCount)
     };
   });

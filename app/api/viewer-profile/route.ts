@@ -15,8 +15,12 @@ export async function GET(request: Request) {
   }
 
   const profileDoc = await db.collection("viewer_profiles").doc(id).get();
-  const likes = await db.collection("likes").where("viewer_profile_id", "==", id).limit(1000).get();
+  const [likes, streamerLikes] = await Promise.all([
+    db.collection("likes").where("viewer_profile_id", "==", id).limit(1000).get(),
+    db.collection("creator_likes").where("viewer_profile_id", "==", id).limit(1000).get()
+  ]);
   const matchCount = likes.size;
+  const streamerLikeCount = streamerLikes.size;
   const profile = profileDoc.exists ? profileDoc.data() : {};
 
   return NextResponse.json({
@@ -24,6 +28,7 @@ export async function GET(request: Request) {
       id,
       ...profile,
       match_count: matchCount,
+      streamer_like_count: streamerLikeCount,
       fan_level: fanLevel(matchCount)
     }
   });

@@ -1,3 +1,5 @@
+import { CreatorViewerLikes } from "@/components/CreatorViewerLikes";
+
 export const dynamic = "force-dynamic";
 
 export default function CreatorPage() {
@@ -40,6 +42,8 @@ export default function CreatorPage() {
           <h2>無料掲載からアップグレード</h2>
           <p>無料掲載ではカテゴリ1件、タグ1件のみです。有料掲載にすると公式バッジが付き、無料掲載より目立つ位置で表示されやすくなります。さらに上位表示では、推しを探している視聴者の目に入りやすい掲載枠を強化できます。</p>
         </section>
+
+        <CreatorViewerLikes />
       </main>
     </div>
   );
