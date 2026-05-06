@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { CalendarClock, ExternalLink, Radio } from "lucide-react";
+import { ReportForm } from "@/components/ReportForm";
 import { getStreamerById } from "@/lib/streamers";
 import { youtubeEmbedUrl, youtubeSubscribeUrl, youtubeWatchUrl } from "@/lib/youtube";
 
@@ -14,6 +15,7 @@ export default async function DetailPage({ params }: { params: { id: string } })
       <header className="topbar">
         <a className="brand" href="/">Vtuberマッチ</a>
         <nav className="nav" aria-label="メイン">
+          <a href="/viewer">視聴者用</a>
           <a href="/creator">配信者用</a>
           <a href="/terms">ヘルプ</a>
         </nav>
@@ -72,6 +74,8 @@ export default async function DetailPage({ params }: { params: { id: string } })
             <Radio size={16} /> 最終更新: {streamer.last_video_date ? new Date(streamer.last_video_date).toLocaleDateString("ja-JP") : "未取得"}
           </p>
         </section>
+
+        <ReportForm streamerId={streamer.id} streamerName={streamer.name} />
       </main>
     </div>
   );

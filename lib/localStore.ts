@@ -2,7 +2,7 @@ import { promises as fs } from "fs";
 import path from "path";
 import { mockStreamers } from "./mockData";
 import { rankStreamers } from "./ranking";
-import type { PaymentRecord, PlanType, Streamer, StreamerApplication, StreamerProfileEdit, ViewerProfile } from "./types";
+import type { PaymentRecord, PlanType, Streamer, StreamerApplication, StreamerProfileEdit, ViewerProfile, ViewerProfileWithStats, StreamerReport } from "./types";
 
 const dataDir = path.join(process.cwd(), "data");
 const streamersPath = path.join(dataDir, "local-streamers.json");
@@ -11,6 +11,7 @@ const applicationsPath = path.join(dataDir, "local-applications.json");
 const paymentsPath = path.join(dataDir, "local-payments.json");
 const viewerProfilesPath = path.join(dataDir, "local-viewer-profiles.json");
 const profileEditsPath = path.join(dataDir, "local-profile-edits.json");
+const reportsPath = path.join(dataDir, "local-reports.json");
 
 export async function readLocalStreamers() {
   return rankStreamers(await readAllLocalStreamers());
@@ -44,6 +45,15 @@ export async function updateLocalStreamer(id: string, patch: Partial<Pick<Stream
   return updated.find((streamer) => streamer.id === id) || null;
 }
 
+export async function deleteLocalStreamer(id: string) {
+  const streamers = await readAllLocalStreamers();
+  const target = streamers.find((streamer) => streamer.id === id);
+  if (!target || target.is_visible) return null;
+  const updated = streamers.filter((streamer) => streamer.id !== id);
+  await fs.writeFile(streamersPath, JSON.stringify(updated, null, 2));
+  return target;
+}
+
 export async function readLocalApplications() {
   await ensureFiles();
   const raw = await fs.readFile(applicationsPath, "utf8");
@@ -67,6 +77,36 @@ export async function addLocalApplication(input: Omit<StreamerApplication, "id" 
 
   await fs.writeFile(applicationsPath, JSON.stringify([application, ...applications], null, 2));
   return application;
+}
+
+export async function autoApproveLocalApplication(applicationId: string) {
+  const applications = await readLocalApplications();
+  const application = applications.find((item) => item.id === applicationId);
+  if (!application) return null;
+  if (application.desired_plan !== "free" && application.payment_status !== "paid") return null;
+
+  const streamer = await addLocalStreamer({
+    name: application.name,
+    youtube_url: application.youtube_url,
+    youtube_channel_id: application.youtube_channel_id,
+    thumbnails: application.thumbnails,
+    categories: application.categories,
+    tags: application.tags,
+    description: application.description,
+    one_liner: application.one_liner,
+    stream_time: application.stream_time,
+    plan_type: application.desired_plan,
+    is_initial_scout: false,
+    is_visible: true
+  });
+
+  const updated = applications.map((item) => (
+    item.id === applicationId
+      ? { ...item, status: "approved" as const, reviewed_at: new Date().toISOString() }
+      : item
+  ));
+  await fs.writeFile(applicationsPath, JSON.stringify(updated, null, 2));
+  return streamer;
 }
 
 export async function markLocalApplicationPaid(applicationId: string) {
@@ -160,7 +200,13 @@ export async function addLocalLike(userId: string, streamerId: string, viewerPro
   await ensureFiles();
   const raw = await fs.readFile(likesPath, "utf8");
   const likes = JSON.parse(raw) as Array<Record<string, unknown>>;
-  likes.push({ user_id: userId, streamer_id: streamerId, viewer_profile: viewerProfile || null, timestamp: new Date().toISOString() });
+  likes.push({
+    user_id: userId,
+    streamer_id: streamerId,
+    viewer_profile_id: viewerProfile?.id || null,
+    viewer_profile: viewerProfile || null,
+    timestamp: new Date().toISOString()
+  });
   await fs.writeFile(likesPath, JSON.stringify(likes, null, 2));
 }
 
@@ -172,6 +218,37 @@ export async function upsertLocalViewerProfile(input: ViewerProfile) {
   const next = [profile, ...profiles.filter((item) => item.id !== input.id)];
   await fs.writeFile(viewerProfilesPath, JSON.stringify(next, null, 2));
   return profile;
+}
+
+export async function readLocalViewerProfilesWithStats(): Promise<ViewerProfileWithStats[]> {
+  await ensureFiles();
+  const rawProfiles = await fs.readFile(viewerProfilesPath, "utf8");
+  const rawLikes = await fs.readFile(likesPath, "utf8");
+  const profiles = JSON.parse(rawProfiles) as ViewerProfile[];
+  const likes = JSON.parse(rawLikes) as Array<Record<string, unknown>>;
+  const counts = new Map<string, number>();
+
+  for (const like of likes) {
+    const profile = like.viewer_profile as Record<string, unknown> | undefined;
+    const id = String(like.viewer_profile_id || profile?.id || "");
+    if (!id) continue;
+    counts.set(id, (counts.get(id) || 0) + 1);
+  }
+
+  return profiles.map((profile) => {
+    const matchCount = counts.get(profile.id) || profile.match_count || 0;
+    return {
+      ...profile,
+      match_count: matchCount,
+      fan_level: fanLevel(matchCount)
+    };
+  });
+}
+
+function fanLevel(matchCount: number): ViewerProfileWithStats["fan_level"] {
+  if (matchCount >= 20) return "super";
+  if (matchCount >= 5) return "active";
+  return "starter";
 }
 
 export async function addLocalProfileEdit(input: Omit<StreamerProfileEdit, "id" | "status" | "created_at">) {
@@ -186,6 +263,26 @@ export async function addLocalProfileEdit(input: Omit<StreamerProfileEdit, "id" 
   };
   await fs.writeFile(profileEditsPath, JSON.stringify([edit, ...edits], null, 2));
   return edit;
+}
+
+export async function addLocalReport(input: Omit<StreamerReport, "id" | "status" | "created_at">) {
+  await ensureFiles();
+  const raw = await fs.readFile(reportsPath, "utf8");
+  const reports = JSON.parse(raw) as StreamerReport[];
+  const report: StreamerReport = {
+    ...input,
+    id: `report-${Date.now()}`,
+    status: "open",
+    created_at: new Date().toISOString()
+  };
+  await fs.writeFile(reportsPath, JSON.stringify([report, ...reports], null, 2));
+  return report;
+}
+
+export async function readLocalReports() {
+  await ensureFiles();
+  const raw = await fs.readFile(reportsPath, "utf8");
+  return JSON.parse(raw) as StreamerReport[];
 }
 
 async function ensureFiles() {
@@ -219,5 +316,10 @@ async function ensureFiles() {
     await fs.access(profileEditsPath);
   } catch {
     await fs.writeFile(profileEditsPath, "[]");
+  }
+  try {
+    await fs.access(reportsPath);
+  } catch {
+    await fs.writeFile(reportsPath, "[]");
   }
 }

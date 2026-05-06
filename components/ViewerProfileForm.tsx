@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Save } from "lucide-react";
+import { HeartHandshake, Save } from "lucide-react";
 import { CATEGORIES } from "@/lib/constants";
 import type { ViewerProfile } from "@/lib/types";
 
@@ -15,7 +15,8 @@ const emptyProfile: ViewerProfile = {
   image: "",
   profile: "",
   favorite_categories: [],
-  visible_to_matched_streamers: true
+  visible_to_matched_streamers: true,
+  match_count: 0
 };
 
 export function ViewerProfileForm() {
@@ -26,7 +27,17 @@ export function ViewerProfileForm() {
     const id = localStorage.getItem(idKey) || crypto.randomUUID();
     localStorage.setItem(idKey, id);
     const saved = localStorage.getItem(storageKey);
-    setProfile(saved ? { ...emptyProfile, ...JSON.parse(saved), id } : { ...emptyProfile, id });
+    const nextProfile = saved ? { ...emptyProfile, ...JSON.parse(saved), id } : { ...emptyProfile, id };
+    setProfile(nextProfile);
+
+    fetch(`/api/viewer-profile?id=${encodeURIComponent(id)}`)
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.profile) {
+          setProfile((current) => ({ ...current, match_count: data.profile.match_count || 0 }));
+        }
+      })
+      .catch(() => undefined);
   }, []);
 
   function update(patch: Partial<ViewerProfile>) {
@@ -62,8 +73,19 @@ export function ViewerProfileForm() {
     });
   }
 
+  const matchCount = profile.match_count || 0;
+
   return (
     <form className="form compact-form" onSubmit={submit}>
+      <div className="viewer-score-card">
+        <HeartHandshake size={26} />
+        <div>
+          <span>マッチ数</span>
+          <strong>{matchCount}</strong>
+          <p>{fanAppeal(matchCount)}</p>
+        </div>
+      </div>
+
       <div className="field">
         <label htmlFor="display_name">表示名</label>
         <input id="display_name" value={profile.display_name || ""} onChange={(event) => update({ display_name: event.target.value })} placeholder="未入力でも利用できます" />
@@ -101,7 +123,7 @@ export function ViewerProfileForm() {
         いいねした配信者にプロフィールを共有する
       </label>
       <p className="help-text">
-        プロフィールは任意です。入力した場合、いいねでマッチした配信者が、あなたのプロフィール・画像・YouTube表示名を確認できるようになります。
+        プロフィールは任意です。入力した場合、いいねでマッチした配信者があなたのプロフィール・画像・YouTube表示名・マッチ数を確認でき、積極的なファンであることをアピールできます。
       </p>
       <button className="primary-button" type="submit">
         <Save size={18} />
@@ -110,6 +132,12 @@ export function ViewerProfileForm() {
       {status && <p className="help-text">{status}</p>}
     </form>
   );
+}
+
+function fanAppeal(matchCount: number) {
+  if (matchCount >= 20) return "たくさんの配信者と出会っている、かなり積極的なファンです。";
+  if (matchCount >= 5) return "気になる配信者をしっかり見つけているアクティブなファンです。";
+  return "これから推しを見つけていくファンです。";
 }
 
 async function fileToDataUrl(file: File) {

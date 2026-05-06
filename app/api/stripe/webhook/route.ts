@@ -37,12 +37,44 @@ export async function POST(request: Request) {
   if (!db) return NextResponse.json({ received: true, skipped: "firestore not configured" });
 
   if (applicationId) {
-    await db.collection("applications").doc(applicationId).set({
+    const applicationRef = db.collection("applications").doc(applicationId);
+    await applicationRef.set({
       payment_status: "paid",
       subscription_status: "active",
       stripe_subscription_id: subscriptionId,
       paid_at: FieldValue.serverTimestamp()
     }, { merge: true });
+
+    const applicationDoc = await applicationRef.get();
+    const application = applicationDoc.data() || {};
+    if (applicationDoc.exists && application.status !== "approved") {
+      const streamerRef = db.collection("streamers").doc();
+      await streamerRef.set({
+        name: application.name || "",
+        youtube_url: application.youtube_url || "",
+        youtube_channel_id: application.youtube_channel_id || "",
+        thumbnails: Array.isArray(application.thumbnails) ? application.thumbnails : [],
+        categories: Array.isArray(application.categories) ? application.categories : [],
+        tags: Array.isArray(application.tags) ? application.tags : [],
+        description: application.description || "",
+        one_liner: application.one_liner || application.description || "",
+        stream_time: application.stream_time || "",
+        plan_type: planType,
+        is_initial_scout: false,
+        is_visible: true,
+        impressions: 0,
+        likes: 0,
+        source_application_id: applicationId,
+        subscription_status: "active",
+        stripe_subscription_id: subscriptionId,
+        created_at: FieldValue.serverTimestamp()
+      });
+      await applicationRef.set({
+        status: "approved",
+        reviewed_at: FieldValue.serverTimestamp(),
+        streamer_id: streamerRef.id
+      }, { merge: true });
+    }
   }
   if (streamerId) {
     await db.collection("streamers").doc(streamerId).set({

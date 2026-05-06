@@ -1,0 +1,25 @@
+import { CreatorProfileEditForm } from "@/components/CreatorProfileEditForm";
+
+export const dynamic = "force-dynamic";
+
+export default function CreatorEditPage() {
+  return (
+    <div className="app-shell">
+      <header className="topbar">
+        <a className="brand" href="/">Vtuberマッチ</a>
+        <nav className="nav" aria-label="メイン">
+          <a href="/viewer">視聴者用</a>
+          <a href="/creator">配信者用</a>
+          <a href="/terms">ヘルプ</a>
+        </nav>
+      </header>
+      <main className="main grid-page">
+        <section className="status-band">
+          <h2>プロフィール修正申請</h2>
+          <p>掲載中の名前、画像、自己アピール、カテゴリ、タグなどを変更したい場合はこちらから申請してください。</p>
+        </section>
+        <CreatorProfileEditForm />
+      </main>
+    </div>
+  );
+}

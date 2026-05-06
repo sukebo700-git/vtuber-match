@@ -7,7 +7,8 @@ export async function POST(request: Request) {
   const body = await request.json();
   const userId = String(body.user_id || "");
   const streamerId = String(body.streamer_id || "");
-  const viewerProfile = normalizeViewerProfile(body.viewer_profile);
+  const viewerProfileId = String(body.viewer_profile_id || "");
+  const viewerProfile = normalizeViewerProfile(body.viewer_profile, viewerProfileId);
   if (!userId || !streamerId) return NextResponse.json({ error: "user_id and streamer_id are required" }, { status: 400 });
 
   const db = getAdminDb();
@@ -26,6 +27,7 @@ export async function POST(request: Request) {
     tx.set(likeRef, {
       user_id: userId,
       streamer_id: streamerId,
+      viewer_profile_id: viewerProfile?.id || viewerProfileId || null,
       viewer_profile: viewerProfile || null,
       timestamp: FieldValue.serverTimestamp()
     });
@@ -42,12 +44,14 @@ export async function POST(request: Request) {
   });
 }
 
-function normalizeViewerProfile(value: unknown) {
-  if (!value || typeof value !== "object") return null;
+function normalizeViewerProfile(value: unknown, fallbackId = "") {
+  if (!value || typeof value !== "object") {
+    return fallbackId ? { id: fallbackId } : null;
+  }
   const input = value as Record<string, unknown>;
   if (input.visible_to_matched_streamers === false) return null;
   return {
-    id: typeof input.id === "string" ? input.id : "",
+    id: typeof input.id === "string" ? input.id : fallbackId,
     display_name: typeof input.display_name === "string" ? input.display_name : "",
     youtube_display_name: typeof input.youtube_display_name === "string" ? input.youtube_display_name : "",
     image: typeof input.image === "string" ? input.image : "",

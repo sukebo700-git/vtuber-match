@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Eye, EyeOff, Plus, RefreshCw } from "lucide-react";
+import { Check, Eye, EyeOff, Plus, RefreshCw, Trash2, Wand2 } from "lucide-react";
 import { CATEGORIES, PLAN_LABELS, TAGS } from "@/lib/constants";
 import type { PlanType, Streamer, StreamerApplication } from "@/lib/types";
 
@@ -21,9 +21,12 @@ export function AdminDashboard({ initialApplications, initialStreamers, adminKey
   const [directPlan, setDirectPlan] = useState<PlanType>("free");
   const [directCategories, setDirectCategories] = useState<string[]>([]);
   const [directTags, setDirectTags] = useState<string[]>([]);
+  const [applicationFilter, setApplicationFilter] = useState<"all" | "pending" | "approved">("all");
 
   const directCategoryLimit = directPlan === "free" ? 1 : 3;
   const directTagLimit = directPlan === "free" ? 1 : 5;
+  const pending = applications.filter((item) => item.status === "pending");
+  const filteredApplications = applications.filter((item) => applicationFilter === "all" || item.status === applicationFilter);
 
   async function approve(id: string) {
     setBusyId(id);
@@ -38,10 +41,10 @@ export function AdminDashboard({ initialApplications, initialStreamers, adminKey
         item.id === id ? { ...item, status: "approved", reviewed_at: new Date().toISOString() } : item
       )));
       if (data.streamer) setStreamers((current) => [data.streamer, ...current]);
-      setActionMessage("掲載を承認しました。トップページに反映されます。");
+      setActionMessage("承認して掲載しました。");
     } else {
       const data = await response.json().catch(() => ({}));
-      setActionMessage(data.error === "payment required" ? "決済反映がまだ確認できません。少し待ってページを更新してください。" : "承認に失敗しました。");
+      setActionMessage(data.error === "payment required" ? "決済がまだ確認できません。少し待ってから再読み込みしてください。" : "承認に失敗しました。");
     }
     setBusyId("");
   }
@@ -57,8 +60,46 @@ export function AdminDashboard({ initialApplications, initialStreamers, adminKey
       setStreamers((current) => current.map((streamer) => (
         streamer.id === id ? { ...streamer, ...patch } : streamer
       )));
+      setActionMessage("配信者情報を更新しました。");
+    } else {
+      setActionMessage("配信者情報の更新に失敗しました。");
     }
     setBusyId("");
+  }
+
+  async function deleteStreamer(id: string) {
+    const target = streamers.find((streamer) => streamer.id === id);
+    if (!target || target.is_visible) return;
+    if (!window.confirm(`${target.name} を削除します。非表示データのみ削除できます。`)) return;
+    setBusyId(id);
+    const response = await fetch(`/api/admin/streamers/${id}`, {
+      method: "DELETE",
+      headers: { "x-admin-key": adminKey }
+    });
+    if (response.ok) {
+      setStreamers((current) => current.filter((streamer) => streamer.id !== id));
+      setActionMessage("非表示の配信者データを削除しました。");
+    } else {
+      setActionMessage("削除に失敗しました。先に非表示にしてください。");
+    }
+    setBusyId("");
+  }
+
+  async function seedDemoStreamers() {
+    setDirectStatus("架空Vtuberデータを追加中...");
+    const response = await fetch("/api/admin/seed-demo", {
+      method: "POST",
+      headers: { "x-admin-key": adminKey }
+    });
+    if (response.ok) {
+      const data = await response.json();
+      if (Array.isArray(data.streamers) && data.streamers.length) {
+        setStreamers((current) => [...data.streamers, ...current]);
+      }
+      setDirectStatus(`架空Vtuberデータを${data.created}件追加しました。`);
+    } else {
+      setDirectStatus("架空Vtuberデータの追加に失敗しました。");
+    }
   }
 
   async function createStreamer(event: React.FormEvent<HTMLFormElement>) {
@@ -127,13 +168,19 @@ export function AdminDashboard({ initialApplications, initialStreamers, adminKey
     });
   }
 
-  const pending = applications.filter((item) => item.status === "pending");
-
   return (
     <div className="admin-layout">
       <section className="status-band">
         <h2>管理画面</h2>
-        <p>申込内容、決済状態、掲載状態、プラン、表示非表示を確認・管理できます。</p>
+        <p>申込内容、決済状態、掲載状態、表示非表示を確認できます。</p>
+        {actionMessage && <p className="notice-text">{actionMessage}</p>}
+        <p style={{ marginTop: 12 }}>
+          <button className="secondary-button" type="button" onClick={seedDemoStreamers}>
+            <Wand2 size={18} />
+            架空Vtuberを10件追加
+          </button>
+        </p>
+        {directStatus && <p className="help-text">{directStatus}</p>}
       </section>
 
       <section className="status-band">
@@ -169,7 +216,7 @@ export function AdminDashboard({ initialApplications, initialStreamers, adminKey
             表示する
           </label>
           <div className="field">
-            <label htmlFor="admin_description">プロフィール画面に表示する自己アピール</label>
+            <label htmlFor="admin_description">自己アピール</label>
             <textarea id="admin_description" name="description" required />
           </div>
           <div className="field">
@@ -185,7 +232,7 @@ export function AdminDashboard({ initialApplications, initialStreamers, adminKey
             <input id="admin_images" type="file" accept="image/*" multiple onChange={onFilesChange} />
             {!!images.length && (
               <div className="image-preview-row">
-                {images.map((image, index) => <img src={image} alt={`掲載画像 ${index + 1}`} key={image.slice(0, 40)} />)}
+                {images.map((image, index) => <img src={image} alt={`掲載画像${index + 1}`} key={image.slice(0, 40)} />)}
               </div>
             )}
           </div>
@@ -215,17 +262,21 @@ export function AdminDashboard({ initialApplications, initialStreamers, adminKey
             <Plus size={18} />
             掲載する
           </button>
-          {directStatus && <p>{directStatus}</p>}
         </form>
       </section>
 
       <section className="status-band">
         <h2>申込確認</h2>
         <p>未承認 {pending.length}件。申込時の全データ、申込日、決済日時、審査日時を確認できます。</p>
+        <div className="admin-filter-row" aria-label="申込の表示切替">
+          <button type="button" className={applicationFilter === "all" ? "selected" : ""} onClick={() => setApplicationFilter("all")}>すべて</button>
+          <button type="button" className={applicationFilter === "pending" ? "selected" : ""} onClick={() => setApplicationFilter("pending")}>未承認</button>
+          <button type="button" className={applicationFilter === "approved" ? "selected" : ""} onClick={() => setApplicationFilter("approved")}>承認済み</button>
+        </div>
       </section>
 
       <section className="admin-list wide-list">
-        {applications.map((application) => (
+        {filteredApplications.map((application) => (
           <article className="admin-card" key={application.id}>
             <div className="admin-card-head">
               <h3>{application.name}</h3>
@@ -249,7 +300,7 @@ export function AdminDashboard({ initialApplications, initialStreamers, adminKey
             </dl>
             {!!application.thumbnails.length && (
               <div className="image-preview-row">
-                {application.thumbnails.map((image, index) => <img src={image} alt={`申込画像 ${index + 1}`} key={image.slice(0, 40)} />)}
+                {application.thumbnails.map((image, index) => <img src={image} alt={`申込画像${index + 1}`} key={image.slice(0, 40)} />)}
               </div>
             )}
             <button
@@ -267,7 +318,7 @@ export function AdminDashboard({ initialApplications, initialStreamers, adminKey
 
       <section className="status-band">
         <h2>掲載中の配信者</h2>
-        <p>プラン変更と表示・非表示を切り替えます。非表示にするとスワイプ一覧から外れます。</p>
+        <p>プラン変更、表示・非表示、非表示データの削除ができます。表示中の配信者は削除できません。</p>
       </section>
 
       <section className="admin-list">
@@ -295,6 +346,12 @@ export function AdminDashboard({ initialApplications, initialStreamers, adminKey
               {streamer.is_visible ? <EyeOff size={16} /> : <Eye size={16} />}
               {streamer.is_visible ? "非表示にする" : "表示する"}
             </button>
+            {!streamer.is_visible && (
+              <button className="danger-button" type="button" disabled={busyId === streamer.id} onClick={() => deleteStreamer(streamer.id)}>
+                <Trash2 size={16} />
+                非表示データを削除
+              </button>
+            )}
             <label className="choice">
               <input type="checkbox" checked={Boolean(streamer.is_initial_scout)} onChange={(event) => updateStreamer(streamer.id, { is_initial_scout: event.target.checked })} />
               初期スカウト

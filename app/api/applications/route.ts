@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/adminAuth";
+import { notifyAdminApplication } from "@/lib/email";
 import { FieldValue, getAdminDb } from "@/lib/firebaseAdmin";
-import { addLocalApplication, readLocalApplications } from "@/lib/localStore";
+import { addLocalApplication, autoApproveLocalApplication, readLocalApplications } from "@/lib/localStore";
 import type { PlanType } from "@/lib/types";
 
 export async function GET(request: Request) {
@@ -41,17 +42,61 @@ export async function POST(request: Request) {
   const db = getAdminDb();
   if (!db) {
     const application = await addLocalApplication(payload);
-    return NextResponse.json({ application, source: "local" }, { status: 201 });
+    const streamer = payload.desired_plan === "free" ? await autoApproveLocalApplication(application.id) : null;
+    await notifyAdminApplication({
+      id: application.id,
+      name: application.name,
+      email: application.email,
+      youtube_url: application.youtube_url,
+      desired_plan: application.desired_plan
+    }).catch((error) => console.error(error));
+    return NextResponse.json({ application: { ...application, status: streamer ? "approved" : application.status }, streamer, source: "local" }, { status: 201 });
   }
 
-  const doc = await db.collection("applications").add({
+  const applicationData = {
     ...payload,
     payment_status: payload.desired_plan === "free" ? "not_required" : "pending",
-    status: "pending",
+    status: payload.desired_plan === "free" ? "approved" : "pending",
     created_at: FieldValue.serverTimestamp()
-  });
+  };
+  const doc = await db.collection("applications").add(applicationData);
 
-  return NextResponse.json({ id: doc.id, source: "firestore" }, { status: 201 });
+  let streamerId = "";
+  if (payload.desired_plan === "free") {
+    const streamerRef = await db.collection("streamers").add({
+      name: payload.name,
+      youtube_url: payload.youtube_url,
+      youtube_channel_id: payload.youtube_channel_id,
+      thumbnails: payload.thumbnails,
+      categories: payload.categories,
+      tags: payload.tags,
+      description: payload.description,
+      one_liner: payload.one_liner,
+      stream_time: payload.stream_time,
+      plan_type: payload.desired_plan,
+      is_initial_scout: false,
+      is_visible: true,
+      impressions: 0,
+      likes: 0,
+      source_application_id: doc.id,
+      created_at: FieldValue.serverTimestamp()
+    });
+    streamerId = streamerRef.id;
+    await db.collection("applications").doc(doc.id).set({
+      reviewed_at: FieldValue.serverTimestamp(),
+      streamer_id: streamerId
+    }, { merge: true });
+  }
+
+  await notifyAdminApplication({
+    id: doc.id,
+    name: payload.name,
+    email: payload.email,
+    youtube_url: payload.youtube_url,
+    desired_plan: payload.desired_plan
+  }).catch((error) => console.error(error));
+
+  return NextResponse.json({ id: doc.id, streamer_id: streamerId, auto_approved: payload.desired_plan === "free", source: "firestore" }, { status: 201 });
 }
 
 function validate(body: Record<string, unknown>) {

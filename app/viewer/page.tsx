@@ -16,14 +16,14 @@ export default function ViewerPage() {
       <main className="main grid-page">
         <section className="status-band">
           <h2>視聴者用ページ</h2>
-          <p>プロフィールは未入力でも利用できます。入力すると、いいねした配信者があなたの好きなジャンルやYouTube表示名を確認できます。</p>
+          <p>プロフィールは未入力でも利用できます。入力すると、いいねした配信者があなたの好きなジャンルやYouTube表示名、マッチ数を確認できます。</p>
           <p style={{ marginTop: 12 }}>
             <a className="primary-button" href="/">スワイプ画面へ戻る</a>
           </p>
         </section>
         <section className="status-band">
-          <h2>マッチ後に見える情報</h2>
-          <p>共有をオンにしている場合だけ、マッチした配信者へプロフィール・画像・YouTube表示名・好きなカテゴリを渡します。未入力のままでもスワイプといいねはできます。</p>
+          <h2>積極的なファンとしてアピール</h2>
+          <p>マッチ数が増えるほど、配信者から「よく推しを探している視聴者」として見えやすくなります。プロフィール共有をオンにした場合だけ、マッチした配信者に表示されます。</p>
         </section>
         <ViewerProfileForm />
       </main>

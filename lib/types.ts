@@ -68,7 +68,13 @@ export type ViewerProfile = {
   profile?: string;
   favorite_categories?: string[];
   visible_to_matched_streamers: boolean;
+  match_count?: number;
   updated_at?: string;
+};
+
+export type ViewerProfileWithStats = ViewerProfile & {
+  match_count: number;
+  fan_level: "starter" | "active" | "super";
 };
 
 export type StreamerProfileEdit = {
@@ -89,5 +95,17 @@ export type StreamerProfileEdit = {
 export type LikePayload = {
   user_id: string;
   streamer_id: string;
+  viewer_profile_id?: string;
   viewer_profile?: Partial<ViewerProfile>;
+};
+
+export type StreamerReport = {
+  id: string;
+  streamer_id: string;
+  streamer_name?: string;
+  reason: string;
+  detail?: string;
+  reporter_contact?: string;
+  status: "open" | "reviewed";
+  created_at?: string;
 };

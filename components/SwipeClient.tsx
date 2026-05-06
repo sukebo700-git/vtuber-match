@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { motion, useMotionValue, useTransform } from "framer-motion";
-import { BadgeCheck, ExternalLink, Heart, Info, Search, Sparkles, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { BadgeCheck, Heart, Info, Search, Sparkles, X } from "lucide-react";
 import { CATEGORIES } from "@/lib/constants";
 import type { Streamer, ViewerProfile } from "@/lib/types";
 import { ensureAnonymousUser } from "@/lib/firebase";
@@ -18,6 +17,7 @@ export function SwipeClient({ initialStreamers }: SwipeClientProps) {
   const [loopCount, setLoopCount] = useState(0);
   const [categoryFilter, setCategoryFilter] = useState("");
   const [filterOpen, setFilterOpen] = useState(false);
+
   const streamers = useMemo(
     () => (categoryFilter ? initialStreamers.filter((streamer) => streamer.categories.includes(categoryFilter)) : initialStreamers),
     [categoryFilter, initialStreamers]
@@ -51,19 +51,19 @@ export function SwipeClient({ initialStreamers }: SwipeClientProps) {
     if (!current || !streamers.length) return;
 
     if (direction === "right") {
-      const userId = await ensureAnonymousUser();
+      const userId = await getSwipeUserId();
       const viewerProfile = readViewerProfile();
       await fetch("/api/likes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        keepalive: true,
         body: JSON.stringify({
           user_id: userId,
           streamer_id: current.id,
-          viewer_profile: viewerProfile?.visible_to_matched_streamers ? viewerProfile : undefined
+          viewer_profile_id: viewerProfile?.id,
+          viewer_profile: viewerProfile?.visible_to_matched_streamers ? viewerProfile : { id: viewerProfile?.id }
         })
       });
-      window.location.assign(current.youtube_url);
+      window.location.href = current.youtube_url;
     }
 
     setIndex((value) => {
@@ -79,14 +79,14 @@ export function SwipeClient({ initialStreamers }: SwipeClientProps) {
     return (
       <div className="status-band">
         <h2>掲載中の配信者がまだいません</h2>
-        <p>配信者用ページから掲載を申し込むか、管理画面で申込を承認してください。</p>
+        <p>管理画面で配信者を掲載するか、申込を承認してください。</p>
       </div>
     );
   }
 
   return (
     <section className="swipe-stage">
-      <div>
+      <div className="swipe-main">
         <div className="swipe-search">
           <button className="mini-button" type="button" onClick={() => setFilterOpen((value) => !value)}>
             <Search size={16} />
@@ -149,47 +149,95 @@ export function SwipeClient({ initialStreamers }: SwipeClientProps) {
       </div>
 
       <aside className="side-panel">
-        <div className="status-band">
-          <h2>{isLooping ? "再表示中" : "次の推しを見つける"}</h2>
-          <p>気になる配信者を右へ。スキップは左へ。カードをタップするとプロフィールを確認できます。</p>
-        </div>
-        <a className="secondary-button" href="/viewer">視聴者プロフィールを設定</a>
         {current && (
-          <>
-            <a className="primary-button" href={`/detail/${current.id}`}>
-              <ExternalLink size={18} />
-              プロフィールを見る
-            </a>
-            <div className="status-band">
-              <h2>
-                <Sparkles size={19} /> 今日の一言
-              </h2>
-              <p>{current.one_liner}</p>
-            </div>
-          </>
+          <div className="status-band today-note">
+            <h2>
+              <Sparkles size={19} /> 今日のひとこと
+            </h2>
+            <p>{current.one_liner}</p>
+          </div>
         )}
+        <a className="secondary-button viewer-profile-link" href="/viewer">視聴者プロフィール</a>
+        <div className="status-band next-find-panel">
+          <h2>{isLooping ? "再表示中" : "次の推しを見つける"}</h2>
+          <p>気になる配信者を右へ。スキップは左へ。中央のプロフィールボタンで詳細を確認できます。</p>
+        </div>
       </aside>
     </section>
   );
 }
 
 function SwipeCard({ streamer, thumbnail, onSwipe }: { streamer: Streamer; thumbnail: string; onSwipe: (direction: "left" | "right") => void }) {
-  const x = useMotionValue(0);
-  const rotate = useTransform(x, [-180, 180], [-12, 12]);
+  const cardRef = useRef<HTMLElement | null>(null);
+  const dragStartRef = useRef<number | null>(null);
+  const dragXRef = useRef(0);
+  const didDragRef = useRef(false);
+  const frameRef = useRef<number | null>(null);
   const hasOfficialBadge = streamer.plan_type === "paid" || streamer.plan_type === "boost";
 
+  useEffect(() => {
+    return () => {
+      if (frameRef.current) window.cancelAnimationFrame(frameRef.current);
+    };
+  }, []);
+
+  function paint(x: number) {
+    dragXRef.current = x;
+    if (frameRef.current) return;
+    frameRef.current = window.requestAnimationFrame(() => {
+      frameRef.current = null;
+      const card = cardRef.current;
+      if (!card) return;
+      const rotate = Math.max(-10, Math.min(10, dragXRef.current / 18));
+      card.style.transform = `translate3d(${dragXRef.current}px, 0, 0) rotate(${rotate}deg)`;
+    });
+  }
+
+  function resetCard() {
+    paint(0);
+    dragStartRef.current = null;
+    window.setTimeout(() => {
+      didDragRef.current = false;
+    }, 90);
+  }
+
+  function release() {
+    const dragX = dragXRef.current;
+    if (dragX > 88) {
+      onSwipe("right");
+      return;
+    }
+    if (dragX < -88) {
+      onSwipe("left");
+      return;
+    }
+    resetCard();
+  }
+
   return (
-    <motion.article
+    <article
+      ref={cardRef}
       className="card"
-      style={{ x, rotate }}
-      drag="x"
-      dragConstraints={{ left: 0, right: 0 }}
-      onDragEnd={(_, info) => {
-        if (info.offset.x > 110) onSwipe("right");
-        if (info.offset.x < -110) onSwipe("left");
+      onPointerDown={(event) => {
+        dragStartRef.current = event.clientX;
+        didDragRef.current = false;
+        event.currentTarget.setPointerCapture(event.pointerId);
       }}
-      onTap={() => window.location.assign(`/detail/${streamer.id}`)}
-      whileTap={{ scale: 0.98 }}
+      onPointerMove={(event) => {
+        if (dragStartRef.current === null) return;
+        const nextDragX = Math.max(-170, Math.min(170, event.clientX - dragStartRef.current));
+        if (Math.abs(nextDragX) > 8) didDragRef.current = true;
+        paint(nextDragX);
+      }}
+      onPointerUp={release}
+      onPointerCancel={resetCard}
+      onClick={(event) => {
+        if (didDragRef.current) {
+          event.preventDefault();
+          return;
+        }
+        window.location.assign(`/detail/${streamer.id}`);
+      }}
     >
       {hasOfficialBadge && (
         <div className="floating-badge">
@@ -203,7 +251,7 @@ function SwipeCard({ streamer, thumbnail, onSwipe }: { streamer: Streamer; thumb
         <br />
         いいね!
       </div>
-      <img src={thumbnail} alt={`${streamer.name} 掲載画像`} loading="eager" />
+      <img src={thumbnail} alt={`${streamer.name} 掲載画像`} loading="eager" decoding="async" />
       <div className="card-overlay">
         <div className="pill-row">
           {hasOfficialBadge && (
@@ -222,14 +270,14 @@ function SwipeCard({ streamer, thumbnail, onSwipe }: { streamer: Streamer; thumb
         <h1>{streamer.name}</h1>
         <p>{streamer.one_liner}</p>
       </div>
-    </motion.article>
+    </article>
   );
 }
 
 function PreviewCard({ streamer }: { streamer: Streamer }) {
   return (
-    <article className="card" style={{ transform: "scale(0.96) translateY(16px)", opacity: 0.42 }}>
-      <img src={streamer.thumbnails[0]} alt="" loading="eager" />
+    <article className="card preview-card" style={{ transform: "scale(0.96) translateY(16px)", opacity: 0.42 }}>
+      <img src={streamer.thumbnails[0]} alt="" loading="lazy" decoding="async" />
     </article>
   );
 }
@@ -240,6 +288,19 @@ function readViewerProfile() {
     return raw ? (JSON.parse(raw) as Partial<ViewerProfile>) : undefined;
   } catch {
     return undefined;
+  }
+}
+
+async function getSwipeUserId() {
+  try {
+    return await ensureAnonymousUser();
+  } catch {
+    const key = "vtuber-match-fallback-user-id";
+    const existing = localStorage.getItem(key);
+    if (existing) return existing;
+    const id = `viewer_${crypto.randomUUID()}`;
+    localStorage.setItem(key, id);
+    return id;
   }
 }
 

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/adminAuth";
 import { getAdminDb } from "@/lib/firebaseAdmin";
-import { updateLocalStreamer } from "@/lib/localStore";
+import { deleteLocalStreamer, updateLocalStreamer } from "@/lib/localStore";
 import type { PlanType } from "@/lib/types";
 
 export async function PATCH(request: Request, { params }: { params: { id: string } }) {
@@ -26,4 +26,26 @@ export async function PATCH(request: Request, { params }: { params: { id: string
 
   await db.collection("streamers").doc(params.id).update(patch);
   return NextResponse.json({ ok: true, source: "firestore" });
+}
+
+export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+  const unauthorized = requireAdmin(request);
+  if (unauthorized) return unauthorized;
+
+  const db = getAdminDb();
+  if (!db) {
+    const streamer = await deleteLocalStreamer(params.id);
+    if (!streamer) return NextResponse.json({ error: "visible streamer cannot be deleted" }, { status: 400 });
+    return NextResponse.json({ deleted: true, source: "local" });
+  }
+
+  const ref = db.collection("streamers").doc(params.id);
+  const snapshot = await ref.get();
+  if (!snapshot.exists) return NextResponse.json({ error: "streamer not found" }, { status: 404 });
+  if (snapshot.data()?.is_visible !== false) {
+    return NextResponse.json({ error: "visible streamer cannot be deleted" }, { status: 400 });
+  }
+
+  await ref.delete();
+  return NextResponse.json({ deleted: true, source: "firestore" });
 }

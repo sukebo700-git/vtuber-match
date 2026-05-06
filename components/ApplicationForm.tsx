@@ -55,7 +55,7 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
       return;
     }
 
-    setStatus("無料掲載の申込を受け付けました。運営確認後に掲載されます。");
+    setStatus("無料掲載の申し込みを受け付け、掲載しました。トップページで確認できます。");
     event.currentTarget.reset();
     setSelectedCategories([]);
     setSelectedTags([]);
@@ -117,13 +117,10 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
           <option value="paid">有料掲載 500円</option>
           <option value="boost">さらに上位表示 980円</option>
         </select>
-        {selectedPlan === "free" && (
-          <p className="notice-text">
-            無料掲載ではカテゴリ1件、タグ1件のみ選択できます。有料掲載にアップグレードすると、公式バッジが付き、カテゴリは最大3件、タグは最大5件まで選択できます。
-          </p>
-        )}
-        {(selectedPlan === "paid" || selectedPlan === "boost") && (
-          <p className="notice-text">申込送信後、決済画面へ進みます。決済完了後に運営確認へ進みます。</p>
+        {selectedPlan === "free" ? (
+          <p className="notice-text">無料掲載は申し込み後すぐに掲載されます。カテゴリ1件、タグ1件のみ選択できます。</p>
+        ) : (
+          <p className="notice-text">申し込み送信後、決済画面へ進みます。決済完了後に掲載されます。</p>
         )}
       </div>
       <div className="field">
@@ -141,11 +138,10 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
       <div className="field">
         <label htmlFor="images">スワイプ画面に表示する画像 最大3枚</label>
         <input id="images" name="images" type="file" accept="image/*" multiple onChange={onFilesChange} />
-        <p className="help-text">本人が掲載してよい画像を選んでください。選択した画像はカード表示用に自動圧縮されます。</p>
         {!!images.length && (
           <div className="image-preview-row">
             {images.map((image, index) => (
-              <img src={image} alt={`アップロード画像 ${index + 1}`} key={image.slice(0, 40)} />
+              <img src={image} alt={`アップロード画像${index + 1}`} key={image.slice(0, 40)} />
             ))}
           </div>
         )}

@@ -1,7 +1,33 @@
 import { NextResponse } from "next/server";
 import { FieldValue, getAdminDb } from "@/lib/firebaseAdmin";
-import { upsertLocalViewerProfile } from "@/lib/localStore";
+import { readLocalViewerProfilesWithStats, upsertLocalViewerProfile } from "@/lib/localStore";
 import type { ViewerProfile } from "@/lib/types";
+
+export async function GET(request: Request) {
+  const id = new URL(request.url).searchParams.get("id") || "";
+  if (!id) return NextResponse.json({ error: "id is required" }, { status: 400 });
+
+  const db = getAdminDb();
+  if (!db) {
+    const profiles = await readLocalViewerProfilesWithStats();
+    const profile = profiles.find((item) => item.id === id);
+    return NextResponse.json({ profile: profile || { id, match_count: 0, fan_level: "starter" } });
+  }
+
+  const profileDoc = await db.collection("viewer_profiles").doc(id).get();
+  const likes = await db.collection("likes").where("viewer_profile_id", "==", id).limit(1000).get();
+  const matchCount = likes.size;
+  const profile = profileDoc.exists ? profileDoc.data() : {};
+
+  return NextResponse.json({
+    profile: {
+      id,
+      ...profile,
+      match_count: matchCount,
+      fan_level: fanLevel(matchCount)
+    }
+  });
+}
 
 export async function POST(request: Request) {
   const body = await request.json();
@@ -38,4 +64,10 @@ function clean(value: unknown, max: number) {
 
 function sanitizeArray(value: unknown) {
   return Array.isArray(value) ? value.map(String).map((item) => item.trim()).filter(Boolean) : [];
+}
+
+function fanLevel(matchCount: number) {
+  if (matchCount >= 20) return "super";
+  if (matchCount >= 5) return "active";
+  return "starter";
 }
