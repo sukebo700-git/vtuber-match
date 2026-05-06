@@ -97,12 +97,13 @@ export async function autoApproveLocalApplication(applicationId: string) {
     stream_time: application.stream_time,
     plan_type: application.desired_plan,
     is_initial_scout: false,
-    is_visible: true
+    is_visible: true,
+    source_application_id: application.id
   });
 
   const updated = applications.map((item) => (
     item.id === applicationId
-      ? { ...item, status: "approved" as const, reviewed_at: new Date().toISOString() }
+      ? { ...item, status: "approved" as const, reviewed_at: new Date().toISOString(), streamer_id: streamer.id }
       : item
   ));
   await fs.writeFile(applicationsPath, JSON.stringify(updated, null, 2));
@@ -152,12 +153,13 @@ export async function approveLocalApplication(applicationId: string) {
     stream_time: application.stream_time,
     plan_type: application.desired_plan,
     is_initial_scout: false,
-    is_visible: true
+    is_visible: true,
+    source_application_id: application.id
   });
 
   const updated = applications.map((item) => (
     item.id === applicationId
-      ? { ...item, status: "approved" as const, reviewed_at: new Date().toISOString() }
+      ? { ...item, status: "approved" as const, reviewed_at: new Date().toISOString(), streamer_id: streamer.id }
       : item
   ));
   await fs.writeFile(applicationsPath, JSON.stringify(updated, null, 2));

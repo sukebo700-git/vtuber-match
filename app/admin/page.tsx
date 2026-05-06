@@ -18,7 +18,6 @@ export default async function AdminPage() {
   const db = getAdminDb();
   const applications = db ? await readFirestoreApplications() : await readLocalApplications();
   const streamers = db ? await readAllFirestoreStreamers() : await readAllLocalStreamers();
-  const profileEdits = db ? await readFirestoreProfileEdits() : [];
   const viewers = db ? await readFirestoreViewerProfiles() : await readLocalViewerProfilesWithStats();
   const reports = db ? await readFirestoreReports() : await readLocalReports();
 
@@ -33,44 +32,6 @@ export default async function AdminPage() {
         </nav>
       </header>
       <main className="main grid-page">
-        <section className="status-band">
-          <h2>プロフィール修正申請</h2>
-          <p>配信者用画面から届いた修正申請です。メール、YouTube URL、画像、自己アピール、カテゴリ、タグを確認できます。</p>
-        </section>
-        <section className="admin-list wide-list">
-          {profileEdits.length ? profileEdits.map((edit) => (
-            <article className="admin-card" key={edit.id}>
-              <div className="admin-card-head">
-                <h3>{edit.name || "名前未入力"}</h3>
-                <span className={`state ${edit.status === "reviewed" ? "approved" : "pending"}`}>{edit.status === "reviewed" ? "確認済み" : "未確認"}</span>
-              </div>
-              <dl className="data-list">
-                <div><dt>申請ID</dt><dd>{edit.id}</dd></div>
-                <div><dt>申込ID</dt><dd>{edit.application_id || "未入力"}</dd></div>
-                <div><dt>掲載ID</dt><dd>{edit.streamer_id || "未入力"}</dd></div>
-                <div><dt>登録メール</dt><dd>{edit.email}</dd></div>
-                <div><dt>YouTube URL</dt><dd>{edit.youtube_url}</dd></div>
-                <div><dt>一言</dt><dd>{edit.one_liner || "未入力"}</dd></div>
-                <div><dt>自己アピール</dt><dd>{edit.description || "未入力"}</dd></div>
-                <div><dt>配信時間帯</dt><dd>{edit.stream_time || "未入力"}</dd></div>
-                <div><dt>カテゴリ</dt><dd>{edit.categories?.join(" / ") || "未選択"}</dd></div>
-                <div><dt>タグ</dt><dd>{edit.tags?.map((tag) => `#${tag}`).join(" ") || "未選択"}</dd></div>
-                <div><dt>申請日</dt><dd>{formatDate(edit.created_at)}</dd></div>
-              </dl>
-              {edit.image && (
-                <div className="image-preview-row">
-                  <img src={edit.image} alt="修正申請画像" />
-                </div>
-              )}
-            </article>
-          )) : (
-            <article className="admin-card">
-              <h3>現在の修正申請はありません</h3>
-              <p>配信者から申請が届くとここに表示されます。</p>
-            </article>
-          )}
-        </section>
-
         <AdminDashboard initialApplications={applications} initialStreamers={streamers} adminKey="" />
         <ViewerAdminPanel viewers={viewers} />
         <ReportAdminPanel reports={reports} />

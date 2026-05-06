@@ -41,7 +41,8 @@ export function normalizeStreamer(id: string, data: Record<string, any>): Stream
     is_visible: data.is_visible !== false,
     impressions: Number(data.impressions || 0),
     likes: Number(data.likes || 0),
-    created_at: toIso(data.created_at)
+    created_at: toIso(data.created_at),
+    source_application_id: data.source_application_id
   };
 }
 

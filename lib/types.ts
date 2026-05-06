@@ -20,6 +20,7 @@ export type Streamer = {
   impressions: number;
   likes: number;
   created_at?: string;
+  source_application_id?: string;
 };
 
 export type ApplicationStatus = "pending" | "approved" | "rejected";
