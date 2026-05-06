@@ -29,11 +29,29 @@ export async function POST(request: Request) {
   const planType = String(metadata.plan_type || "");
   const applicationId = String(metadata.application_id || "");
   const streamerId = String(metadata.streamer_id || "");
+  const subscriptionId = String(session.subscription || "");
 
   if (!isPaidPlan(planType)) return NextResponse.json({ error: "invalid plan" }, { status: 400 });
 
   const db = getAdminDb();
   if (!db) return NextResponse.json({ received: true, skipped: "firestore not configured" });
+
+  if (applicationId) {
+    await db.collection("applications").doc(applicationId).set({
+      payment_status: "paid",
+      subscription_status: "active",
+      stripe_subscription_id: subscriptionId,
+      paid_at: FieldValue.serverTimestamp()
+    }, { merge: true });
+  }
+  if (streamerId) {
+    await db.collection("streamers").doc(streamerId).set({
+      plan_type: planType,
+      subscription_status: "active",
+      stripe_subscription_id: subscriptionId,
+      upgraded_at: FieldValue.serverTimestamp()
+    }, { merge: true });
+  }
 
   const paymentRef = db.collection("payments").doc(String(session.id));
   await db.runTransaction(async (tx) => {
@@ -46,7 +64,7 @@ export async function POST(request: Request) {
       status: "paid",
       provider: "stripe",
       provider_session_id: session.id,
-      provider_subscription_id: session.subscription || "",
+      provider_subscription_id: subscriptionId,
       billing_mode: "subscription",
       created_at: FieldValue.serverTimestamp()
     }, { merge: true });
@@ -55,7 +73,7 @@ export async function POST(request: Request) {
       tx.update(db.collection("applications").doc(applicationId), {
         payment_status: "paid",
         subscription_status: "active",
-        stripe_subscription_id: session.subscription || "",
+        stripe_subscription_id: subscriptionId,
         paid_at: FieldValue.serverTimestamp()
       });
     }
@@ -63,7 +81,7 @@ export async function POST(request: Request) {
       tx.update(db.collection("streamers").doc(streamerId), {
         plan_type: planType,
         subscription_status: "active",
-        stripe_subscription_id: session.subscription || "",
+        stripe_subscription_id: subscriptionId,
         upgraded_at: FieldValue.serverTimestamp()
       });
     }
