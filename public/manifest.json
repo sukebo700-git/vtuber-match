@@ -1,0 +1,16 @@
+{
+  "name": "Vtuberマッチ",
+  "short_name": "Vマッチ",
+  "description": "YouTube配信者をスワイプで見つけるPWA",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f7f4ee",
+  "theme_color": "#101820",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

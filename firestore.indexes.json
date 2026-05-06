@@ -1,0 +1,13 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "streamers",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "plan_type", "order": "ASCENDING" },
+        { "fieldPath": "last_video_date", "order": "DESCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

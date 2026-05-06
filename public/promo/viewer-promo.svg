@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1350" viewBox="0 0 1080 1350" role="img" aria-labelledby="title desc">
+  <title id="title">Vtuberマッチ 視聴者向け販促画像</title>
+  <desc id="desc">新たに配信者に出会いたい視聴者向けに、Vtuberマッチのメリットをまとめた販促画像。</desc>
+  <defs>
+    <style>
+      .bg { fill: #f7f4ee; }
+      .ink { fill: #13201c; }
+      .muted { fill: #617069; }
+      .panel { fill: #fffdf8; stroke: #ded8cb; stroke-width: 2; }
+      .pink { fill: #ef476f; }
+      .blue { fill: #118ab2; }
+      .green { fill: #06a77d; }
+      .gold { fill: #ffd166; }
+      .white { fill: #fffdf8; }
+      .headline { font: 900 78px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; letter-spacing: 0; }
+      .subhead { font: 800 34px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; letter-spacing: 0; }
+      .body { font: 700 28px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; letter-spacing: 0; }
+      .small { font: 700 22px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; letter-spacing: 0; }
+      .tiny { font: 800 18px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; letter-spacing: 0; }
+    </style>
+  </defs>
+
+  <rect class="bg" width="1080" height="1350"/>
+  <rect x="54" y="52" width="972" height="1246" rx="28" fill="#fffaf0" stroke="#ded8cb" stroke-width="3"/>
+
+  <g transform="translate(86 86)">
+    <rect x="0" y="0" width="288" height="54" rx="12" class="ink"/>
+    <text x="24" y="36" class="tiny white">Vtuberマッチ</text>
+    <rect x="312" y="0" width="160" height="54" rx="27" class="blue"/>
+    <text x="344" y="36" class="tiny white">視聴者向け</text>
+  </g>
+
+  <text x="86" y="226" class="headline ink">まだ知らない</text>
+  <text x="86" y="316" class="headline blue">推しに出会う</text>
+  <text x="86" y="406" class="headline ink">スワイプ体験</text>
+
+  <text x="86" y="480" class="subhead muted">カテゴリとタグで、気分に合う配信者を直感発見。</text>
+
+  <g transform="translate(636 176)">
+    <rect x="0" y="34" width="270" height="420" rx="26" fill="#13201c" opacity="0.22"/>
+    <rect x="44" y="0" width="300" height="470" rx="26" fill="#13201c"/>
+    <rect x="70" y="28" width="248" height="312" rx="18" fill="#ef476f"/>
+    <circle cx="194" cy="160" r="86" fill="#fffdf8" opacity="0.94"/>
+    <path d="M156 142c18-24 57-24 76 0" fill="none" stroke="#118ab2" stroke-width="18" stroke-linecap="round"/>
+    <rect x="92" y="368" width="94" height="28" rx="14" class="gold"/>
+    <rect x="198" y="368" width="88" height="28" rx="14" fill="#fffdf8" opacity="0.9"/>
+    <rect x="92" y="410" width="204" height="24" rx="12" fill="#fffdf8" opacity="0.9"/>
+  </g>
+
+  <g transform="translate(86 720)">
+    <rect x="0" y="0" width="908" height="110" rx="18" class="panel"/>
+    <circle cx="55" cy="55" r="30" class="pink"/>
+    <text x="45" y="66" class="subhead white">1</text>
+    <text x="110" y="46" class="body ink">スワイプで気軽に探せる</text>
+    <text x="110" y="82" class="small muted">右でいいね、左でスキップ。短い時間でも推し探し。</text>
+  </g>
+
+  <g transform="translate(86 858)">
+    <rect x="0" y="0" width="908" height="110" rx="18" class="panel"/>
+    <circle cx="55" cy="55" r="30" class="blue"/>
+    <text x="45" y="66" class="subhead white">2</text>
+    <text x="110" y="46" class="body ink">カテゴリ・タグで好みに近づく</text>
+    <text x="110" y="82" class="small muted">歌枠、雑談、ゲーム、ASMRなど気分で選びやすい。</text>
+  </g>
+
+  <g transform="translate(86 996)">
+    <rect x="0" y="0" width="908" height="110" rx="18" class="panel"/>
+    <circle cx="55" cy="55" r="30" class="green"/>
+    <text x="45" y="66" class="subhead white">3</text>
+    <text x="110" y="46" class="body ink">気になったらすぐYouTubeへ</text>
+    <text x="110" y="82" class="small muted">プロフィール確認から、チャンネル登録まで迷わない。</text>
+  </g>
+
+  <g transform="translate(86 1142)">
+    <rect x="0" y="0" width="908" height="92" rx="18" class="ink"/>
+    <text x="36" y="58" class="body white">次の推しは、検索より先にスワイプで見つかる。</text>
+  </g>
+
+  <text x="86" y="1270" class="small muted">新しい配信者との出会いを、もっとかんたんに。</text>
+</svg>

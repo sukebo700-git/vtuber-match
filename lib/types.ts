@@ -1,0 +1,66 @@
+export type PlanType = "free" | "paid" | "boost";
+
+export type Streamer = {
+  id: string;
+  name: string;
+  youtube_url: string;
+  youtube_channel_id?: string;
+  thumbnails: string[];
+  categories: string[];
+  tags: string[];
+  description: string;
+  one_liner: string;
+  stream_time?: string;
+  latest_video_id?: string;
+  last_video_date?: string;
+  last_youtube_checked_at?: string;
+  plan_type: PlanType;
+  is_initial_scout?: boolean;
+  is_visible: boolean;
+  impressions: number;
+  likes: number;
+  created_at?: string;
+};
+
+export type ApplicationStatus = "pending" | "approved" | "rejected";
+
+export type StreamerApplication = {
+  id: string;
+  name: string;
+  email: string;
+  youtube_url: string;
+  youtube_channel_id?: string;
+  thumbnails: string[];
+  categories: string[];
+  tags: string[];
+  description: string;
+  one_liner: string;
+  stream_time?: string;
+  desired_plan: PlanType;
+  payment_status?: "not_required" | "pending" | "paid";
+  status: ApplicationStatus;
+  admin_note?: string;
+  created_at?: string;
+  reviewed_at?: string;
+  paid_at?: string;
+  subscription_status?: "active" | "canceled";
+  stripe_subscription_id?: string;
+};
+
+export type PaymentRecord = {
+  id: string;
+  application_id?: string;
+  streamer_id?: string;
+  plan_type: Exclude<PlanType, "free">;
+  amount: number;
+  status: "paid";
+  payer_email: string;
+  billing_mode?: "test" | "subscription";
+  provider_subscription_id?: string;
+  created_at: string;
+};
+
+export type LikePayload = {
+  user_id: string;
+  streamer_id: string;
+};

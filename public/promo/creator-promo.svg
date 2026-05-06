@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1350" viewBox="0 0 1080 1350" role="img" aria-labelledby="title desc">
+  <title id="title">Vtuberマッチ 配信者向け販促画像</title>
+  <desc id="desc">登録者数を増やしたい配信者向けに、Vtuberマッチのメリットをまとめた販促画像。</desc>
+  <defs>
+    <style>
+      .bg { fill: #f7f4ee; }
+      .ink { fill: #13201c; }
+      .muted { fill: #617069; }
+      .panel { fill: #fffdf8; stroke: #ded8cb; stroke-width: 2; }
+      .pink { fill: #ef476f; }
+      .blue { fill: #118ab2; }
+      .green { fill: #06a77d; }
+      .gold { fill: #ffd166; }
+      .white { fill: #fffdf8; }
+      .headline { font: 900 82px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; letter-spacing: 0; }
+      .subhead { font: 800 34px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; letter-spacing: 0; }
+      .body { font: 700 28px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; letter-spacing: 0; }
+      .small { font: 700 22px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; letter-spacing: 0; }
+      .tiny { font: 800 18px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; letter-spacing: 0; }
+    </style>
+  </defs>
+
+  <rect class="bg" width="1080" height="1350"/>
+  <rect x="54" y="52" width="972" height="1246" rx="28" fill="#fffaf0" stroke="#ded8cb" stroke-width="3"/>
+
+  <g transform="translate(86 86)">
+    <rect x="0" y="0" width="288" height="54" rx="12" class="ink"/>
+    <text x="24" y="36" class="tiny white">Vtuberマッチ</text>
+    <rect x="312" y="0" width="160" height="54" rx="27" class="gold"/>
+    <text x="348" y="36" class="tiny ink">配信者向け</text>
+  </g>
+
+  <text x="86" y="232" class="headline ink">登録者数を</text>
+  <text x="86" y="326" class="headline pink">増やしたい</text>
+  <text x="86" y="420" class="headline ink">Vtuberへ</text>
+
+  <text x="86" y="492" class="subhead muted">スワイプで、あなたをまだ知らない視聴者に届く。</text>
+
+  <g transform="translate(642 188)">
+    <rect x="0" y="0" width="300" height="470" rx="26" fill="#13201c"/>
+    <rect x="26" y="28" width="248" height="312" rx="18" fill="#118ab2"/>
+    <circle cx="150" cy="168" r="88" fill="#fffdf8" opacity="0.94"/>
+    <path d="M116 178c35 44 77 44 112 0" fill="none" stroke="#ef476f" stroke-width="18" stroke-linecap="round"/>
+    <rect x="48" y="368" width="164" height="28" rx="14" class="gold"/>
+    <text x="72" y="389" class="tiny ink">公式バッジ</text>
+    <rect x="48" y="410" width="204" height="24" rx="12" fill="#fffdf8" opacity="0.9"/>
+  </g>
+
+  <g transform="translate(86 720)">
+    <rect x="0" y="0" width="908" height="110" rx="18" class="panel"/>
+    <circle cx="55" cy="55" r="30" class="pink"/>
+    <text x="45" y="66" class="subhead white">1</text>
+    <text x="110" y="46" class="body ink">新しい視聴者に見つけてもらえる</text>
+    <text x="110" y="82" class="small muted">検索では届かない層にも、カード形式で直感的に訴求。</text>
+  </g>
+
+  <g transform="translate(86 858)">
+    <rect x="0" y="0" width="908" height="110" rx="18" class="panel"/>
+    <circle cx="55" cy="55" r="30" class="blue"/>
+    <text x="45" y="66" class="subhead white">2</text>
+    <text x="110" y="46" class="body ink">いいね後、すぐYouTubeへ誘導</text>
+    <text x="110" y="82" class="small muted">気になった瞬間を逃さず、チャンネル登録につなげる。</text>
+  </g>
+
+  <g transform="translate(86 996)">
+    <rect x="0" y="0" width="908" height="110" rx="18" class="panel"/>
+    <circle cx="55" cy="55" r="30" class="green"/>
+    <text x="45" y="66" class="subhead white">3</text>
+    <text x="110" y="46" class="body ink">表示回数・いいね数を確認</text>
+    <text x="110" y="82" class="small muted">掲載後の反応を見ながら、プロフィール改善に活用。</text>
+  </g>
+
+  <g transform="translate(86 1142)">
+    <rect x="0" y="0" width="908" height="92" rx="18" class="ink"/>
+    <text x="36" y="58" class="body white">無料掲載から開始。必要な時に有料掲載へアップグレード。</text>
+  </g>
+
+  <text x="86" y="1270" class="small muted">掲載申込は「配信者用」ページから</text>
+</svg>

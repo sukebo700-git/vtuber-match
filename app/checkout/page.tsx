@@ -1,0 +1,87 @@
+import { notFound } from "next/navigation";
+import { CheckoutForm } from "@/components/CheckoutForm";
+import { PLAN_AMOUNTS } from "@/lib/billing";
+import { getAdminDb } from "@/lib/firebaseAdmin";
+import { findLocalApplication } from "@/lib/localStore";
+import type { ApplicationStatus, PlanType, StreamerApplication } from "@/lib/types";
+
+export const dynamic = "force-dynamic";
+
+export default async function CheckoutPage({ searchParams }: { searchParams: { application_id?: string; streamer_id?: string; plan?: string } }) {
+  const applicationId = searchParams.application_id;
+  const streamerId = searchParams.streamer_id;
+  const upgradePlan = searchParams.plan;
+
+  const application = applicationId ? await getApplication(applicationId) : null;
+  if (applicationId && (!application || application.desired_plan === "free")) notFound();
+  if (!applicationId && (!streamerId || (upgradePlan !== "paid" && upgradePlan !== "boost"))) notFound();
+
+  const planType = application ? application.desired_plan as Exclude<PlanType, "free"> : upgradePlan as Exclude<PlanType, "free">;
+
+  return (
+    <div className="app-shell">
+      <header className="topbar">
+        <a className="brand" href="/">Vtuberマッチ</a>
+        <nav className="nav" aria-label="メイン">
+          <a href="/creator">配信者用</a>
+          <a href="/terms">ヘルプ</a>
+        </nav>
+      </header>
+      <main className="main grid-page">
+        <section className="status-band">
+          <h2>掲載プランの決済</h2>
+          <p>決済完了後、運営確認へ進みます。</p>
+        </section>
+        <CheckoutForm
+          applicationId={application?.id}
+          streamerId={streamerId}
+          planType={planType}
+          amount={PLAN_AMOUNTS[planType]}
+          email={application?.email || ""}
+          name={application?.name || "掲載プランのアップグレード"}
+        />
+      </main>
+    </div>
+  );
+}
+
+async function getApplication(id: string): Promise<StreamerApplication | null> {
+  const db = getAdminDb();
+  if (!db) return findLocalApplication(id);
+
+  const doc = await db.collection("applications").doc(id).get();
+  if (!doc.exists) return null;
+  const data = doc.data() || {};
+  return {
+    id: doc.id,
+    name: data.name || "",
+    email: data.email || "",
+    youtube_url: data.youtube_url || "",
+    youtube_channel_id: data.youtube_channel_id,
+    thumbnails: Array.isArray(data.thumbnails) ? data.thumbnails : [],
+    categories: Array.isArray(data.categories) ? data.categories : [],
+    tags: Array.isArray(data.tags) ? data.tags : [],
+    description: data.description || "",
+    one_liner: data.one_liner || "",
+    stream_time: data.stream_time,
+    desired_plan: normalizePlan(data.desired_plan),
+    payment_status: normalizePaymentStatus(data.payment_status),
+    status: normalizeStatus(data.status),
+    admin_note: data.admin_note
+  };
+}
+
+function normalizePlan(plan: string): PlanType {
+  if (plan === "paid" || plan === "boost") return plan;
+  return "free";
+}
+
+function normalizePaymentStatus(status: string): StreamerApplication["payment_status"] {
+  if (status === "paid" || status === "pending") return status;
+  return "not_required";
+}
+
+function normalizeStatus(status: string): ApplicationStatus {
+  if (status === "approved" || status === "rejected") return status;
+  return "pending";
+}
