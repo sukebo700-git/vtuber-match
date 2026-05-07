@@ -1,3 +1,4 @@
+import { HeaderAuthStatus } from "@/components/HeaderAuthStatus";
 import { CreatorProfileEditForm } from "@/components/CreatorProfileEditForm";
 
 export const dynamic = "force-dynamic";
@@ -12,6 +13,7 @@ export default function CreatorEditPage() {
           <a href="/creator">配信者用</a>
           <a href="/terms">ヘルプ</a>
         </nav>
+        <HeaderAuthStatus />
       </header>
       <main className="main grid-page">
         <section className="status-band">

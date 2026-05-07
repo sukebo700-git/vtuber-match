@@ -31,7 +31,7 @@ export function CheckoutForm({ applicationId, streamerId, planType, amount, emai
         payer_email: email
       })
     });
-    const data = await response.json();
+    const data = await response.json().catch(() => ({}));
     if (response.ok && data.url) {
       window.location.href = data.url;
       return;
@@ -41,7 +41,7 @@ export function CheckoutForm({ applicationId, streamerId, planType, amount, emai
 
   async function submitTestPayment(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setStatus("テスト決済処理中...");
+    setStatus("テスト決済を処理中...");
     const response = await fetch("/api/payments", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -75,12 +75,12 @@ export function CheckoutForm({ applicationId, streamerId, planType, amount, emai
         </div>
         <div>
           <span>お支払い金額</span>
-          <strong>{amount.toLocaleString("ja-JP")}円/月</strong>
+          <strong>{amount.toLocaleString("ja-JP")}円 / 月</strong>
         </div>
       </div>
 
       <p className="help-text">
-        決済前に<a href="/terms">ヘルプ・利用上の注意</a>を確認してください。
+        決済前に<a href="/terms">ヘルプ・利用上の注意</a>をご確認ください。
       </p>
 
       {testPaymentEnabled ? (
@@ -111,7 +111,7 @@ export function CheckoutForm({ applicationId, streamerId, planType, amount, emai
         </form>
       ) : (
         <div className="checkout-fields">
-          <p className="help-text">安全な外部決済ページで支払いを行います。カード情報はVtuberマッチでは保存しません。</p>
+          <p className="help-text">安全なStripe決済ページで支払いを行います。カード情報はVtuberマッチでは保存しません。</p>
           <button className="primary-button" type="button" onClick={startCheckout}>
             <ExternalLink size={18} />
             決済ページへ進む

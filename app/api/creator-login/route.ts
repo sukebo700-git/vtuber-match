@@ -27,6 +27,7 @@ export async function POST(request: Request) {
       application_id: application.id,
       streamer_id: application.streamer_id || "",
       creator_login_id: application.creator_login_id || "",
+      name: application.name || "",
       plan_type: streamer?.plan_type || application.desired_plan || "free"
     });
   }
@@ -48,6 +49,7 @@ export async function POST(request: Request) {
     application_id: doc.id,
     streamer_id: data.streamer_id || "",
     creator_login_id: data.creator_login_id || "",
+    name: data.name || "",
     plan_type: planType
   });
 }

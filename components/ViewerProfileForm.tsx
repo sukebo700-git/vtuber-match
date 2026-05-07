@@ -67,6 +67,15 @@ export function ViewerProfileForm() {
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     localStorage.setItem(storageKey, JSON.stringify(profile));
+    const auth = safeParse(localStorage.getItem(authKey)) || {};
+    localStorage.setItem(authKey, JSON.stringify({
+      ...auth,
+      id: profile.id,
+      email: profile.email,
+      viewer_login_id: profile.viewer_login_id,
+      name: profile.display_name || profile.youtube_display_name || profile.email || "視聴者"
+    }));
+    window.dispatchEvent(new Event("vtuber-match-auth-changed"));
     setStatus("保存中...");
     const response = await fetch("/api/viewer-profile", {
       method: "POST",

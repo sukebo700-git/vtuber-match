@@ -1,3 +1,4 @@
+import { HeaderAuthStatus } from "@/components/HeaderAuthStatus";
 import { CreatorUpgradeForm } from "@/components/CreatorUpgradeForm";
 
 export const dynamic = "force-dynamic";
@@ -12,11 +13,12 @@ export default function CreatorUpgradePage() {
           <a href="/creator">配信者用</a>
           <a href="/terms">ヘルプ</a>
         </nav>
+        <HeaderAuthStatus />
       </header>
       <main className="main grid-page">
         <section className="status-band">
           <h2>アップグレード</h2>
-          <p>申し込み時のメールアドレスとパスワードで本人確認し、有料掲載またはさらに上位表示へ変更できます。</p>
+          <p>申し込み時のメールアドレスとパスワードで本人確認し、有料掲載またはプレミアムプランへ変更できます。</p>
         </section>
         <CreatorUpgradeForm />
       </main>

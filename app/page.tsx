@@ -1,3 +1,4 @@
+﻿import { HeaderAuthStatus } from "@/components/HeaderAuthStatus";
 import { SwipeClient } from "@/components/SwipeClient";
 import { getStreamersForSwipe } from "@/lib/streamers";
 
@@ -15,6 +16,7 @@ export default async function HomePage() {
           <a href="/creator">配信者用</a>
           <a href="/terms">ヘルプ</a>
         </nav>
+        <HeaderAuthStatus />
       </header>
       <main className="main">
         <SwipeClient initialStreamers={streamers} />

@@ -1,3 +1,4 @@
+import { HeaderAuthStatus } from "@/components/HeaderAuthStatus";
 import { ViewerProfileGate } from "@/components/ViewerProfileGate";
 
 export const dynamic = "force-dynamic";
@@ -13,6 +14,7 @@ export default function ViewerPage() {
           <a href="/creator">配信者用</a>
           <a href="/terms">ヘルプ</a>
         </nav>
+        <HeaderAuthStatus />
       </header>
       <main className="main grid-page">
         <section className="status-band">

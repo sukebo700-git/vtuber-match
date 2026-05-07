@@ -1,3 +1,4 @@
+import { HeaderAuthStatus } from "@/components/HeaderAuthStatus";
 import { CreatorViewerLikes } from "@/components/CreatorViewerLikes";
 
 export const dynamic = "force-dynamic";
@@ -12,6 +13,7 @@ export default function CreatorPage() {
           <a href="/creator/login">ログイン</a>
           <a href="/terms">ヘルプ</a>
         </nav>
+        <HeaderAuthStatus />
       </header>
       <main className="main grid-page">
         <section className="status-band">
@@ -22,7 +24,7 @@ export default function CreatorPage() {
         <section className="creator-action-grid">
           <a className="creator-action-card featured" href="/apply">
             <strong>申し込み</strong>
-            <span>無料掲載は申し込み後すぐ掲載されます。有料掲載とプレミアムは決済完了後に掲載されます。</span>
+            <span>無料掲載は申し込み後すぐ掲載されます。有料掲載とプレミアムは決済完了後に反映されます。</span>
           </a>
           <a className="creator-action-card" href="/creator/login">
             <strong>ログイン</strong>
@@ -40,7 +42,7 @@ export default function CreatorPage() {
 
         <section className="status-band">
           <h2>無料掲載からアップグレード</h2>
-          <p>無料掲載は写真、名前、YouTubeチャンネルURLのみのシンプル掲載です。有料掲載にすると、公式バッジ、カテゴリ、タグ、メッセージ、マッチ数表示、今日のひとこと、上位表示が使えるようになり、推しを探している視聴者の目に留まりやすくなります。プレミアムでは、さらにおすすめアーカイブ表示と視聴者へのいいね機能が使えます。</p>
+          <p>無料掲載は写真、名前、YouTubeチャンネルURLのみです。有料掲載にすると公式バッジが付き、カテゴリ・タグ・メッセージ・マッチ数表示・今日のひとこと・上位表示が使え、視聴者の目に留まりやすくなります。プレミアムではさらにおすすめアーカイブ表示と視聴者へのいいね機能が使えます。</p>
         </section>
 
         <CreatorViewerLikes />

@@ -23,9 +23,11 @@ export function CreatorLoginForm() {
 
     localStorage.setItem("vtuber-match-creator-login-id", data.creator_login_id || "");
     localStorage.setItem("vtuber-match-creator-email", email);
+    localStorage.setItem("vtuber-match-creator-name", data.name || email);
     localStorage.setItem("vtuber-match-creator-application-id", data.application_id || "");
     localStorage.setItem("vtuber-match-creator-plan", data.plan_type || "free");
     if (data.streamer_id) localStorage.setItem("vtuber-match-creator-streamer-id", data.streamer_id);
+    window.dispatchEvent(new Event("vtuber-match-auth-changed"));
     setStatus("ログインしました。配信者用ページへ移動します。");
     window.location.assign("/creator");
   }

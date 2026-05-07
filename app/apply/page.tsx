@@ -1,3 +1,4 @@
+import { HeaderAuthStatus } from "@/components/HeaderAuthStatus";
 import { ApplicationForm } from "@/components/ApplicationForm";
 import { CATEGORIES, TAGS } from "@/lib/constants";
 
@@ -11,11 +12,12 @@ export default function ApplyPage() {
           <a href="/creator">配信者用</a>
           <a href="/terms">ヘルプ</a>
         </nav>
+        <HeaderAuthStatus />
       </header>
       <main className="main grid-page">
         <section className="status-band">
           <h2>掲載を申し込む</h2>
-          <p>プロフィール画像、自己アピール、カテゴリ、タグを登録できます。申込後、運営確認を経て掲載されます。</p>
+          <p>プロフィール画像、自己アピール、カテゴリ、タグを登録できます。無料掲載は申し込み後すぐ掲載され、有料掲載とプレミアムは決済完了後に反映されます。</p>
         </section>
         <ApplicationForm categories={CATEGORIES} tags={TAGS} />
       </main>

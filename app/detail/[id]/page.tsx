@@ -1,3 +1,4 @@
+import { HeaderAuthStatus } from "@/components/HeaderAuthStatus";
 import { notFound } from "next/navigation";
 import { BadgeCheck, CalendarClock, ExternalLink, Radio } from "lucide-react";
 import { getStreamerById } from "@/lib/streamers";
@@ -22,6 +23,7 @@ export default async function DetailPage({ params }: { params: { id: string } })
           <a href="/creator">配信者用</a>
           <a href="/terms">ヘルプ</a>
         </nav>
+        <HeaderAuthStatus />
       </header>
       <main className="main grid-page">
         <section className="detail-hero">

@@ -1,3 +1,4 @@
+import { HeaderAuthStatus } from "@/components/HeaderAuthStatus";
 import { PasswordResetRequestForm } from "@/components/PasswordResetRequestForm";
 
 export default function PasswordResetPage({ searchParams }: { searchParams?: { type?: string } }) {
@@ -10,8 +11,9 @@ export default function PasswordResetPage({ searchParams }: { searchParams?: { t
         <nav className="nav" aria-label="メイン">
           <a href="/creator">配信者用</a>
           <a href="/viewer">視聴者用</a>
-          <a href="/terms">ヘルプ・利用規約</a>
+          <a href="/terms">ヘルプ</a>
         </nav>
+        <HeaderAuthStatus />
       </header>
       <main className="main grid-page">
         <section className="status-band">

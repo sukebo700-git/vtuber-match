@@ -36,7 +36,7 @@ export function CreatorUpgradeForm() {
     const verified = await verifyResponse.json().catch(() => ({}));
     if (!verifyResponse.ok) {
       setBusy(false);
-      setStatus(verified.error || "本人確認に失敗しました。");
+      setStatus(verified.error || "本人確認に失敗しました。メールアドレスとパスワードを確認してください。");
       return;
     }
 
@@ -85,7 +85,7 @@ export function CreatorUpgradeForm() {
           <article className={`plan-card ${form.plan_type === "boost" ? "selected" : ""}`} onClick={() => update("plan_type", "boost")}>
             <strong>プレミアムプラン</strong>
             <span className="plan-price">月額980円 / 有料掲載中は追加480円</span>
-            <p>有料掲載の内容に加え、プロフィールでおすすめアーカイブを見せられます。</p>
+            <p>有料掲載よりさらに優先表示され、プロフィールの見せ方も強化されます。</p>
             <ul>
               {PLAN_FEATURES.boost.map((feature) => <li key={feature}>{feature}</li>)}
             </ul>
@@ -109,7 +109,7 @@ export function CreatorUpgradeForm() {
           <option value="paid">有料掲載 500円</option>
           <option value="boost">プレミアムプラン 980円</option>
         </select>
-        <p className="help-text">すでに有料掲載500円に加入中の方がプレミアムへ変更する場合は、追加480円の価格IDを設定していれば差額プランで決済できます。</p>
+        <p className="help-text">すでに有料掲載500円に加入中の方がプレミアムへ変更する場合は、追加480円の差額プランで決済できます。</p>
       </div>
 
       <button className="primary-button" type="submit" disabled={busy}>{busy ? "確認中..." : "決済へ進む"}</button>

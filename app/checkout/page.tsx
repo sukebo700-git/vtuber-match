@@ -1,3 +1,4 @@
+import { HeaderAuthStatus } from "@/components/HeaderAuthStatus";
 import { notFound } from "next/navigation";
 import { CheckoutForm } from "@/components/CheckoutForm";
 import { getPlanAmount } from "@/lib/billing";
@@ -26,11 +27,12 @@ export default async function CheckoutPage({ searchParams }: { searchParams: { a
           <a href="/creator">配信者用</a>
           <a href="/terms">ヘルプ</a>
         </nav>
+        <HeaderAuthStatus />
       </header>
       <main className="main grid-page">
         <section className="status-band">
           <h2>掲載プランの決済</h2>
-          <p>決済完了後、運営確認へ進みます。カード情報はVtuberマッチには保存されません。</p>
+          <p>決済完了後、運営確認へ進みます。カード情報はVtuberマッチでは保存されません。</p>
         </section>
         <CheckoutForm
           applicationId={application?.id}

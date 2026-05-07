@@ -193,6 +193,34 @@ button {
   gap: 8px;
 }
 
+.header-auth-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 10px;
+}
+
+.header-auth-status span,
+.header-auth-status button {
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid rgba(100, 114, 138, 0.18);
+  border-radius: 999px;
+  padding: 7px 12px;
+  background: rgba(255, 255, 255, 0.72);
+  color: #526078;
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.header-auth-status button {
+  color: #e64f86;
+  background: rgba(255, 246, 251, 0.86);
+}
+
 .nav a,
 .mini-button {
   min-height: 38px;
@@ -1111,6 +1139,9 @@ button {
   .topbar {
     min-height: 62px;
     padding: 0 12px;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding-block: 8px;
   }
 
   .brand {
@@ -1121,6 +1152,20 @@ button {
     min-height: 34px;
     padding: 7px 10px;
     font-size: 13px;
+  }
+
+  .header-auth-status {
+    order: 3;
+    width: 100%;
+    justify-content: flex-end;
+    margin-left: 0;
+  }
+
+  .header-auth-status span,
+  .header-auth-status button {
+    min-height: 32px;
+    padding: 6px 10px;
+    font-size: 12px;
   }
 
   .main {

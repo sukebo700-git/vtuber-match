@@ -1,3 +1,4 @@
+import { HeaderAuthStatus } from "@/components/HeaderAuthStatus";
 import { AdminEntryForm } from "@/components/AdminEntryForm";
 
 export default function TermsPage() {
@@ -9,6 +10,7 @@ export default function TermsPage() {
           <a href="/creator">配信者用</a>
           <a href="/viewer">視聴者用</a>
         </nav>
+        <HeaderAuthStatus />
       </header>
       <main className="main grid-page">
         <section className="status-band">
@@ -23,11 +25,11 @@ export default function TermsPage() {
           </article>
           <article className="status-band">
             <h2>掲載プラン</h2>
-            <p>無料掲載ではカテゴリ1件、タグ1件のみ選択できます。有料掲載では公式バッジが付き、無料掲載より目立つ位置で表示されやすくなります。さらに上位表示では、視聴者に見つけてもらいやすい掲載枠を強化できます。</p>
+            <p>無料掲載では写真、名前、YouTubeチャンネルURLのみ掲載できます。有料掲載では公式バッジ、カテゴリ、タグ、メッセージ、マッチ数表示、上位表示が使えます。プレミアムではさらにおすすめアーカイブ表示と視聴者へのいいね機能が使えます。</p>
           </article>
           <article className="status-band">
             <h2>ログインについて</h2>
-            <p>視聴者はログインなしでもスワイプを利用できます。プロフィール登録には視聴者ログインが必要です。配信者は申し込み時のメールアドレスとパスワードでログインできます。管理IDは運営確認用として保存されます。</p>
+            <p>視聴者はログインなしでもスワイプを利用できます。プロフィール登録には視聴者ログインが必要です。配信者は申し込み時のメールアドレスとパスワードでログインできます。</p>
           </article>
           <article className="status-band">
             <h2>連絡先メール</h2>
@@ -43,9 +45,8 @@ export default function TermsPage() {
           </article>
         </section>
 
-        <section className="status-band">
-          <h2>特定商取引法に基づく表記</h2>
-          <p><a href="/commercial-disclosure">特定商取引法に基づく表記はこちら</a></p>
+        <section className="status-band legal-footnote">
+          <p><a href="/commercial-disclosure">特定商取引法に基づく表記</a></p>
         </section>
 
         <AdminEntryForm />

@@ -35,7 +35,7 @@ export function PasswordResetRequestForm({ defaultType = "creator" }: PasswordRe
       return;
     }
 
-    setStatus("パスワード再設定申請を受け付けました。通常3日以内に、運営が本人確認後に新しいパスワードを案内します。");
+    setStatus("パスワード再設定申請を受け付けました。通常3日以内に、運営が本人確認後、新しいパスワードを案内します。");
     setForm((current) => ({ ...current, name: "", note: "" }));
   }
 

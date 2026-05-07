@@ -1,3 +1,4 @@
+import { HeaderAuthStatus } from "@/components/HeaderAuthStatus";
 import { CreatorLoginForm } from "@/components/CreatorLoginForm";
 
 export default function CreatorLoginPage() {
@@ -9,6 +10,7 @@ export default function CreatorLoginPage() {
           <a href="/creator">配信者用</a>
           <a href="/terms">ヘルプ</a>
         </nav>
+        <HeaderAuthStatus />
       </header>
       <main className="main grid-page">
         <section className="status-band">

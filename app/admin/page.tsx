@@ -1,4 +1,5 @@
-﻿import { AdminDashboard } from "@/components/AdminDashboard";
+﻿import { HeaderAuthStatus } from "@/components/HeaderAuthStatus";
+import { AdminDashboard } from "@/components/AdminDashboard";
 import { ReportAdminPanel } from "@/components/ReportAdminPanel";
 import { ViewerAdminPanel } from "@/components/ViewerAdminPanel";
 import { PasswordResetAdminPanel } from "@/components/PasswordResetAdminPanel";
@@ -32,6 +33,7 @@ export default async function AdminPage() {
           <a href="/creator">配信者用</a>
           <a href="/terms">ヘルプ</a>
         </nav>
+        <HeaderAuthStatus />
       </header>
       <main className="main grid-page">
         <AdminDashboard initialApplications={applications} initialStreamers={streamers} adminKey="" />

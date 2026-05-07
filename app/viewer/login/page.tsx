@@ -1,3 +1,4 @@
+import { HeaderAuthStatus } from "@/components/HeaderAuthStatus";
 import { ViewerLoginForm } from "@/components/ViewerLoginForm";
 
 export default function ViewerLoginPage() {
@@ -8,8 +9,9 @@ export default function ViewerLoginPage() {
         <nav className="nav" aria-label="メイン">
           <a href="/">スワイプ</a>
           <a href="/viewer">視聴者用</a>
-          <a href="/terms">ヘルプ・利用規約</a>
+          <a href="/terms">ヘルプ</a>
         </nav>
+        <HeaderAuthStatus />
       </header>
       <main className="main grid-page">
         <section className="status-band">

@@ -91,7 +91,9 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
     if (streamerId) localStorage.setItem("vtuber-match-creator-streamer-id", streamerId);
     if (creatorLoginId) localStorage.setItem("vtuber-match-creator-login-id", creatorLoginId);
     localStorage.setItem("vtuber-match-creator-email", email);
+    localStorage.setItem("vtuber-match-creator-name", String(form.get("name") || email));
     localStorage.setItem("vtuber-match-creator-plan", desiredPlan);
+    window.dispatchEvent(new Event("vtuber-match-auth-changed"));
 
     if (desiredPlan === "paid" || desiredPlan === "boost") {
       window.location.assign(`/checkout?application_id=${applicationId}`);
