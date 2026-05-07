@@ -228,6 +228,8 @@ button {
   font-size: 13px;
   font-weight: 800;
   white-space: nowrap;
+}
+
 .header-auth-action {
   color: #e64f86;
   background: rgba(255, 246, 251, 0.86);
