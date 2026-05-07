@@ -20,6 +20,7 @@ export function ViewerUpgradeForm() {
       setStatus("視聴者ログインが必要です。");
       return;
     }
+
     setBusy(true);
     setStatus("決済画面を準備しています...");
     const response = await fetch("/api/checkout/session", {
@@ -28,11 +29,12 @@ export function ViewerUpgradeForm() {
       body: JSON.stringify({
         viewer_id: viewerId,
         plan_type: "viewer_paid",
-        payer_email: email
-      })
+        payer_email: email,
+      }),
     });
     const data = await response.json().catch(() => ({}));
     setBusy(false);
+
     if (!response.ok || !data.url) {
       setStatus(data.error || "決済画面を開けませんでした。");
       return;
@@ -46,22 +48,28 @@ export function ViewerUpgradeForm() {
         <article className="plan-card">
           <strong>無料枠</strong>
           <span className="plan-price">0円</span>
-          <p>表示名とアイコンのみ登録できます。</p>
+          <p>IDとして使う自身の名前とアイコンのみ登録できます。</p>
           <ul>
             <li>自身の名前</li>
-            <li>アイコン</li>
+            <li>アイコン画像</li>
           </ul>
         </article>
+
         <article className="plan-card selected">
           <strong>視聴者応援プラン</strong>
           <span className="plan-price">月額330円</span>
-          <p>マッチした時に配信者へあなたの応援情報を開示し、認知してもらいやすくします。</p>
+          <p>マッチした配信者へ応援情報を開示し、認知してもらいやすくします。</p>
           <ul>
-            {PLAN_FEATURES.viewer_paid.map((feature) => <li key={feature}>{feature}</li>)}
+            {PLAN_FEATURES.viewer_paid.map((feature) => (
+              <li key={feature}>{feature}</li>
+            ))}
           </ul>
         </article>
       </div>
-      <p className="help-text">決済はStripeの安全な画面で行います。カード情報はVtuberマッチでは保存しません。</p>
+
+      <p className="help-text">
+        決済はStripeの安全な画面で行います。カード情報はVtuberマッチでは保存しません。
+      </p>
       <button className="primary-button" type="button" onClick={submit} disabled={busy}>
         {busy ? "準備中..." : "月額330円でアップグレード"}
       </button>

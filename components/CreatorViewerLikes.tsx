@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { Flag, Heart } from "lucide-react";
+import { useEffect, useState } from "react";
 
 type CreatorViewer = {
   id: string;
@@ -24,7 +24,7 @@ export function CreatorViewerLikes() {
     const plan = localStorage.getItem("vtuber-match-creator-plan") || "free";
     setStreamerId(id);
     setPlanType(plan);
-    if (id && plan === "boost") loadViewers(id);
+    if (id) loadViewers(id);
   }, []);
 
   async function loadViewers(id: string) {
@@ -34,9 +34,9 @@ export function CreatorViewerLikes() {
     if (response.ok) {
       setViewers(Array.isArray(data.viewers) ? data.viewers : []);
       setStatus("");
-    } else {
-      setStatus(data.error || "読み込みに失敗しました。");
+      return;
     }
+    setStatus(data.error || "読み込みに失敗しました。");
   }
 
   async function likeViewer(viewerProfileId: string) {
@@ -48,17 +48,23 @@ export function CreatorViewerLikes() {
       setStatus("視聴者へのいいねはプレミアムプラン限定です。");
       return;
     }
+
     const response = await fetch("/api/creator-likes", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ streamer_id: streamerId, viewer_profile_id: viewerProfileId })
+      body: JSON.stringify({ streamer_id: streamerId, viewer_profile_id: viewerProfileId }),
     });
+
     if (response.ok) {
-      setViewers((current) => current.map((viewer) => viewer.id === viewerProfileId ? { ...viewer, liked_by_streamer: true } : viewer));
+      setViewers((current) =>
+        current.map((viewer) =>
+          viewer.id === viewerProfileId ? { ...viewer, liked_by_streamer: true } : viewer,
+        ),
+      );
       setStatus("視聴者にいいねしました。");
-    } else {
-      setStatus("いいねに失敗しました。");
+      return;
     }
+    setStatus("いいねに失敗しました。");
   }
 
   async function reportViewer(viewer: CreatorViewer) {
@@ -66,8 +72,10 @@ export function CreatorViewerLikes() {
       setStatus("配信者ログイン後に通報できます。");
       return;
     }
+
     const detail = window.prompt("通報理由を入力してください。運営が確認します。");
     if (!detail) return;
+
     const response = await fetch("/api/reports", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -77,49 +85,61 @@ export function CreatorViewerLikes() {
         viewer_profile_id: viewer.id,
         viewer_name: viewer.display_name || viewer.youtube_display_name || "",
         reason: "viewer_report",
-        detail
-      })
+        detail,
+      }),
     });
     setStatus(response.ok ? "視聴者の通報を送信しました。" : "通報に失敗しました。");
   }
 
-  if (planType !== "boost") {
-    return (
-      <section className="status-band">
-        <h2>視聴者へのいいね機能</h2>
-        <p>あなたにいいねした視聴者プロフィールの確認、視聴者へのいいね、視聴者通報はプレミアムプラン限定です。</p>
-        <a className="primary-button" href="/creator/upgrade">プレミアムへアップグレード</a>
-      </section>
-    );
-  }
-
   return (
     <section className="status-band">
-      <h2>いいねしてくれた視聴者</h2>
-      <p>あなたにいいねした視聴者プロフィールを確認し、配信者側からもいいねを返せます。不適切なプロフィールは通報できます。</p>
+      <h2>視聴者リアクション</h2>
+      <p>
+        マッチした視聴者プロフィールを確認できます。視聴者へのいいねはプレミアムプラン限定、視聴者通報はマッチ済みならプランを問わず利用できます。
+      </p>
       {!streamerId && (
         <p className="notice-text">配信者ログイン後、掲載データに紐づいた視聴者が表示されます。</p>
       )}
       {status && <p className="help-text">{status}</p>}
+
       <div className="admin-list">
         {viewers.map((viewer) => (
           <article className="admin-card" key={viewer.id}>
             <div className="admin-card-head">
               <h3>{viewer.display_name || viewer.youtube_display_name || "名前未入力の視聴者"}</h3>
-              <span className={`state ${viewer.liked_by_streamer ? "approved" : "pending"}`}>{viewer.liked_by_streamer ? "いいね済み" : "未いいね"}</span>
+              <span className={`state ${viewer.liked_by_streamer ? "approved" : "pending"}`}>
+                {viewer.liked_by_streamer ? "いいね済み" : "未いいね"}
+              </span>
             </div>
+
             {viewer.image && (
               <div className="image-preview-row">
                 <img src={viewer.image} alt="視聴者プロフィール画像" />
               </div>
             )}
+
             <dl className="data-list">
-              <div><dt>YouTube表示名</dt><dd>{viewer.youtube_display_name || "未入力"}</dd></div>
-              <div><dt>プロフィール</dt><dd>{viewer.profile || "未入力"}</dd></div>
-              <div><dt>好きなカテゴリ</dt><dd>{viewer.favorite_categories?.join(" / ") || "未選択"}</dd></div>
+              <div>
+                <dt>YouTube表示名</dt>
+                <dd>{viewer.youtube_display_name || "未入力"}</dd>
+              </div>
+              <div>
+                <dt>プロフィール</dt>
+                <dd>{viewer.profile || "未入力"}</dd>
+              </div>
+              <div>
+                <dt>好きなカテゴリ</dt>
+                <dd>{viewer.favorite_categories?.join(" / ") || "未選択"}</dd>
+              </div>
             </dl>
+
             <div className="inline-actions">
-              <button className="primary-button" type="button" disabled={viewer.liked_by_streamer} onClick={() => likeViewer(viewer.id)}>
+              <button
+                className="primary-button"
+                type="button"
+                disabled={planType !== "boost" || viewer.liked_by_streamer}
+                onClick={() => likeViewer(viewer.id)}
+              >
                 <Heart size={18} />
                 {viewer.liked_by_streamer ? "いいね済み" : "視聴者にいいね"}
               </button>
@@ -130,10 +150,11 @@ export function CreatorViewerLikes() {
             </div>
           </article>
         ))}
+
         {streamerId && !viewers.length && !status && (
           <article className="admin-card">
             <h3>まだ表示できる視聴者がいません</h3>
-            <p>視聴者があなたにいいねし、プロフィール共有をオンにするとここに表示されます。</p>
+            <p>視聴者がマッチし、プロフィール共有をオンにするとここに表示されます。</p>
           </article>
         )}
       </div>

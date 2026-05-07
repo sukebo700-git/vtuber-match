@@ -7,13 +7,9 @@ export default function ViewerLoginPage() {
     <div className="app-shell">
       <header className="topbar">
         <a className="brand" href="/">Vtuberマッチ</a>
-        <nav className="nav" aria-label="メイン">
-          <a href="/">スワイプ</a>
-          <a href="/viewer">視聴者用</a>
-          <a href="/terms">ヘルプ</a>
-        </nav>
         <HeaderAuthStatus />
       </header>
+
       <main className="main grid-page">
         <AuthVisibility
           role="viewer"
@@ -21,17 +17,31 @@ export default function ViewerLoginPage() {
           fallback={
             <section className="status-band">
               <h2>視聴者としてログイン中です</h2>
-              <p>ログイン画面は未ログインの方だけに表示されます。プロフィールの修正へ進めます。</p>
-              <p style={{ marginTop: 12 }}>
+              <p>プロフィールの修正や応援プランの確認へ進めます。</p>
+              <p className="inline-actions" style={{ marginTop: 12 }}>
                 <a className="primary-button" href="/viewer">視聴者プロフィールへ</a>
+                <a className="secondary-button" href="/viewer/upgrade">視聴者応援プラン</a>
               </p>
             </section>
           }
         >
           <section className="status-band">
             <h2>視聴者ログイン</h2>
-            <p>ログインすると、プロフィール登録、好きなカテゴリの保存、マッチ数による積極的なファンアピールができます。初回ログイン時は視聴者プロフィール枠を作成します。</p>
+            <p>
+              未入力でもスワイプは利用できます。ログインすると、自身の名前やアイコンを登録でき、マッチ数もプロフィールに表示できます。
+            </p>
+            <p className="inline-actions" style={{ marginTop: 12 }}>
+              <a className="secondary-button" href="/viewer/upgrade">視聴者応援プラン</a>
+            </p>
           </section>
+
+          <section className="status-band">
+            <h2>視聴者応援プランのメリット</h2>
+            <p>
+              月額330円で、マッチした配信者に名前、YouTube表示名、X / Twitter ID、一言メッセージを開示できます。応援していることが伝わりやすくなります。
+            </p>
+          </section>
+
           <ViewerLoginForm />
         </AuthVisibility>
       </main>

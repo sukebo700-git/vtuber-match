@@ -38,22 +38,24 @@ export async function POST(request: Request) {
   const body = await request.json();
   const id = String(body.id || "");
   if (!id) return NextResponse.json({ error: "id is required" }, { status: 400 });
+  const viewerPlan = body.viewer_plan === "viewer_paid" || body.subscription_status === "active" ? "viewer_paid" : "free";
+  const isPaid = viewerPlan === "viewer_paid";
 
   const profile: ViewerProfile = {
     id,
     email: clean(body.email, 120).toLowerCase(),
     viewer_login_id: clean(body.viewer_login_id, 80),
-    viewer_plan: body.viewer_plan === "viewer_paid" ? "viewer_paid" : "free",
+    viewer_plan: viewerPlan,
     subscription_status: body.subscription_status === "active" ? "active" : body.subscription_status === "canceled" ? "canceled" : undefined,
     stripe_subscription_id: clean(body.stripe_subscription_id, 120),
     display_name: clean(body.display_name, 40),
-    youtube_display_name: clean(body.youtube_display_name, 60),
-    twitter_id: clean(body.twitter_id, 40),
-    one_liner: clean(body.one_liner, 80),
+    youtube_display_name: isPaid ? clean(body.youtube_display_name, 60) : "",
+    twitter_id: isPaid ? clean(body.twitter_id, 40) : "",
+    one_liner: isPaid ? clean(body.one_liner, 30) : "",
     image: clean(body.image, 400000),
-    profile: clean(body.profile, 400),
-    favorite_categories: sanitizeArray(body.favorite_categories).slice(0, 5),
-    visible_to_matched_streamers: body.visible_to_matched_streamers !== false
+    profile: isPaid ? clean(body.profile, 400) : "",
+    favorite_categories: isPaid ? sanitizeArray(body.favorite_categories).slice(0, 5) : [],
+    visible_to_matched_streamers: isPaid ? body.visible_to_matched_streamers !== false : true
   };
 
   const db = getAdminDb();

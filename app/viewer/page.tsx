@@ -8,21 +8,19 @@ export default function ViewerPage() {
     <div className="app-shell">
       <header className="topbar">
         <a className="brand" href="/">Vtuberマッチ</a>
-        <nav className="nav" aria-label="メイン">
-          <a href="/">スワイプ</a>
-          <a href="/viewer/login">ログイン</a>
-          <a href="/creator">配信者用</a>
-          <a href="/terms">ヘルプ</a>
-        </nav>
         <HeaderAuthStatus />
       </header>
+
       <main className="main grid-page">
         <section className="status-band">
           <h2>視聴者用ページ</h2>
-          <p>ログインなしでもスワイプは利用できます。ログインすると、自分のプロフィールや画像、YouTube表示名を登録でき、マッチした配信者に積極的なファンであることを伝えられます。</p>
-          <p style={{ marginTop: 12 }}>
+          <p>
+            ログインなしでもスワイプは利用できます。ログインすると、自身の名前やアイコンを登録でき、マッチ数もプロフィールに表示できます。
+          </p>
+          <p className="inline-actions" style={{ marginTop: 12 }}>
             <a className="primary-button" href="/">スワイプ画面へ戻る</a>
-            <a className="secondary-button" href="/viewer/upgrade" style={{ marginLeft: 10 }}>視聴者応援プラン</a>
+            <a className="secondary-button" href="/viewer/login">視聴者ログイン</a>
+            <a className="secondary-button" href="/viewer/upgrade">視聴者応援プラン</a>
           </p>
         </section>
         <ViewerProfileGate />

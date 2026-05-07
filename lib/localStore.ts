@@ -181,10 +181,10 @@ export async function approveLocalApplication(applicationId: string) {
   return streamer;
 }
 
-export async function incrementLocalStreamer(id: string, field: "impressions" | "likes") {
+export async function incrementLocalStreamer(id: string, field: "impressions" | "likes" | "viewer_like_boosts") {
   const streamers = await readAllLocalStreamers();
   const updated = streamers.map((streamer) => (
-    streamer.id === id ? { ...streamer, [field]: (streamer[field] || 0) + 1 } : streamer
+    streamer.id === id ? { ...streamer, [field]: (Number(streamer[field] || 0)) + 1 } : streamer
   ));
   await fs.writeFile(streamersPath, JSON.stringify(updated, null, 2));
 }

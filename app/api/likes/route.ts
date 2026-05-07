@@ -15,6 +15,7 @@ export async function POST(request: Request) {
   if (!db) {
     await addLocalLike(userId, streamerId, viewerProfile || undefined);
     await incrementLocalStreamer(streamerId, "likes");
+    if (viewerProfile?.viewer_plan === "viewer_paid") await incrementLocalStreamer(streamerId, "viewer_like_boosts");
     return NextResponse.json({ matched: true, source: "local" });
   }
 
@@ -31,7 +32,10 @@ export async function POST(request: Request) {
       viewer_profile: viewerProfile || null,
       timestamp: FieldValue.serverTimestamp()
     });
-    tx.update(streamerRef, { likes: FieldValue.increment(1) });
+    tx.update(streamerRef, {
+      likes: FieldValue.increment(1),
+      ...(viewerProfile?.viewer_plan === "viewer_paid" ? { viewer_like_boosts: FieldValue.increment(1) } : {})
+    });
     tx.set(db.collection("notifications").doc(), {
       target_type: "streamer",
       streamer_id: streamerId,
@@ -67,9 +71,9 @@ function normalizeViewerProfile(value: unknown, fallbackId = "") {
     viewer_plan: isPaid ? "viewer_paid" : "free",
     youtube_display_name: isPaid && typeof input.youtube_display_name === "string" ? input.youtube_display_name : "",
     twitter_id: isPaid && typeof input.twitter_id === "string" ? input.twitter_id : "",
-    one_liner: isPaid && typeof input.one_liner === "string" ? input.one_liner : "",
+    one_liner: isPaid && typeof input.one_liner === "string" ? input.one_liner.slice(0, 30) : "",
     image: typeof input.image === "string" ? input.image : "",
     profile: isPaid && typeof input.profile === "string" ? input.profile : "",
-    favorite_categories: Array.isArray(input.favorite_categories) ? input.favorite_categories.filter((item) => typeof item === "string").slice(0, 5) : []
+    favorite_categories: isPaid && Array.isArray(input.favorite_categories) ? input.favorite_categories.filter((item) => typeof item === "string").slice(0, 5) : []
   };
 }

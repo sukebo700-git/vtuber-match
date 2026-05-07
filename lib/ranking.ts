@@ -12,7 +12,16 @@ export function rankStreamers(streamers: Streamer[]) {
 }
 
 function score(streamer: Streamer) {
-  return (planScore[streamer.plan_type] || 0) + (streamer.likes || 0);
+  const viewerBoosts = streamer.viewer_like_boosts || 0;
+  const likeBoostedPlan = getLikeBoostedPlan(streamer.plan_type, viewerBoosts);
+  return (planScore[likeBoostedPlan] || 0) + Math.min(viewerBoosts, 999);
+}
+
+function getLikeBoostedPlan(planType: PlanType, viewerBoosts: number): PlanType {
+  if (viewerBoosts <= 0) return planType;
+  if (planType === "free") return "paid";
+  if (planType === "paid") return "boost";
+  return "boost";
 }
 
 function shuffle<T>(items: T[]) {

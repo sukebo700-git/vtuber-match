@@ -20,6 +20,7 @@ export type Streamer = {
   is_visible: boolean;
   impressions: number;
   likes: number;
+  viewer_like_boosts?: number;
   created_at?: string;
   source_application_id?: string;
 };

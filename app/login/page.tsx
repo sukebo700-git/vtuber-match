@@ -28,6 +28,10 @@ export default function LoginPage() {
           <strong>視聴者ログイン</strong>
           <span>視聴者プロフィールの登録・修正、応援プラン管理</span>
         </a>
+        <a className="creator-action-card" href="/viewer/upgrade">
+          <strong>視聴者応援プラン</strong>
+          <span>月額330円。マッチ時に名前、YouTube表示名、X ID、一言を配信者へ開示できます。</span>
+        </a>
       </section>
     </main>
   );
