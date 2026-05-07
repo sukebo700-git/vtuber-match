@@ -221,6 +221,12 @@ button {
   background: rgba(255, 246, 251, 0.86);
 }
 
+body.creator-auth .topbar a[href="/apply"],
+body.creator-auth .topbar a[href="/creator/login"],
+body.viewer-auth .topbar a[href="/viewer/login"] {
+  display: none;
+}
+
 .nav a,
 .mini-button {
   min-height: 38px;

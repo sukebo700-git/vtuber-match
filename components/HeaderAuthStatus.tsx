@@ -18,14 +18,19 @@ export function HeaderAuthStatus() {
     setLogin(readLoginState());
 
     function refresh() {
-      setLogin(readLoginState());
+      const nextLogin = readLoginState();
+      setLogin(nextLogin);
+      document.body.classList.toggle("creator-auth", nextLogin?.type === "creator");
+      document.body.classList.toggle("viewer-auth", nextLogin?.type === "viewer");
     }
 
+    refresh();
     window.addEventListener("storage", refresh);
     window.addEventListener("vtuber-match-auth-changed", refresh);
     return () => {
       window.removeEventListener("storage", refresh);
       window.removeEventListener("vtuber-match-auth-changed", refresh);
+      document.body.classList.remove("creator-auth", "viewer-auth");
     };
   }, []);
 
@@ -41,6 +46,7 @@ export function HeaderAuthStatus() {
       "vtuber-match-viewer-id"
     ].forEach((key) => localStorage.removeItem(key));
     setLogin(null);
+    document.body.classList.remove("creator-auth", "viewer-auth");
     window.dispatchEvent(new Event("vtuber-match-auth-changed"));
   }
 

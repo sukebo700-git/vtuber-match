@@ -168,9 +168,7 @@ export function ViewerProfileForm() {
         <input type="checkbox" checked={profile.visible_to_matched_streamers} onChange={(event) => update({ visible_to_matched_streamers: event.target.checked })} />
         いいねした配信者にプロフィールを共有する
       </label>
-      <p className="help-text">
-        プロフィールを共有すると、マッチした配信者があなたのプロフィールを確認できます。連絡先メールは公開されません。
-      </p>
+      <p className="help-text">プロフィールを共有すると、マッチした配信者があなたのプロフィールを確認できます。連絡先メールは公開されません。</p>
       <button className="primary-button" type="submit">
         <Save size={18} />
         保存する
@@ -189,7 +187,7 @@ function fanAppeal(matchCount: number) {
 function safeParse(value: string | null) {
   if (!value) return null;
   try {
-    return JSON.parse(value) as { email?: string; viewer_login_id?: string };
+    return JSON.parse(value) as { email?: string; viewer_login_id?: string; name?: string };
   } catch {
     return null;
   }

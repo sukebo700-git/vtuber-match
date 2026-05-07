@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Send } from "lucide-react";
+import { Save } from "lucide-react";
 import { CATEGORIES, TAGS } from "@/lib/constants";
 
 export function CreatorProfileEditForm() {
@@ -18,7 +18,7 @@ export function CreatorProfileEditForm() {
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
-    setStatus("修正申請を送信しています...");
+    setStatus("プロフィールを更新しています...");
 
     const response = await fetch("/api/profile-edits", {
       method: "POST",
@@ -37,13 +37,17 @@ export function CreatorProfileEditForm() {
       })
     });
 
+    const data = await response.json().catch(() => ({}));
     if (!response.ok) {
-      const data = await response.json().catch(() => ({}));
-      setStatus(data.error || "送信に失敗しました。メールアドレスとパスワードを確認してください。");
+      setStatus(data.error || "更新に失敗しました。メールアドレスとパスワードを確認してください。");
       return;
     }
 
-    setStatus("修正申請を送信しました。運営確認後に掲載プロフィールへ反映されます。");
+    if (data.streamer?.name) {
+      localStorage.setItem("vtuber-match-creator-name", data.streamer.name);
+      window.dispatchEvent(new Event("vtuber-match-auth-changed"));
+    }
+    setStatus("プロフィールを更新しました。管理者確認なしで掲載内容に反映されています。");
   }
 
   async function onFile(event: React.ChangeEvent<HTMLInputElement>) {
@@ -61,8 +65,8 @@ export function CreatorProfileEditForm() {
   return (
     <form className="form compact-form" onSubmit={submit}>
       <section className="status-band soft">
-        <h2>プロフィール修正申請</h2>
-        <p>登録メールアドレスとパスワードで本人確認し、あなたの掲載データに紐づけて申請します。申込ID・掲載IDの入力は不要です。</p>
+        <h2>プロフィール修正</h2>
+        <p>ログイン中の配信者だけが利用できます。メールアドレスとパスワードで本人確認し、掲載中プロフィールを直接更新します。</p>
       </section>
 
       <div className="field">
@@ -105,7 +109,7 @@ export function CreatorProfileEditForm() {
         <input id="edit_image" type="file" accept="image/*" onChange={onFile} />
         {image && (
           <div className="image-preview-row">
-            <img src={image} alt="修正申請画像" />
+            <img src={image} alt="修正画像" />
           </div>
         )}
       </div>
@@ -135,8 +139,8 @@ export function CreatorProfileEditForm() {
       </div>
 
       <button className="primary-button" type="submit">
-        <Send size={18} />
-        修正申請を送る
+        <Save size={18} />
+        プロフィールを更新する
       </button>
       {status && <p className="notice-text">{status}</p>}
     </form>

@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { FieldValue, getAdminDb } from "@/lib/firebaseAdmin";
-import { addLocalProfileEdit, findLocalApplicationByEmail } from "@/lib/localStore";
+import { findLocalApplicationByEmail, updateLocalStreamer } from "@/lib/localStore";
 import { hashPassword } from "@/lib/password";
+import type { PlanType, Streamer } from "@/lib/types";
 
 export async function POST(request: Request) {
   const body = await request.json();
@@ -23,14 +24,13 @@ export async function POST(request: Request) {
     if (!application || application.creator_password_hash !== passwordHash) {
       return NextResponse.json({ error: "メールアドレスまたはパスワードが違います。" }, { status: 401 });
     }
+    if (!application.streamer_id) {
+      return NextResponse.json({ error: "掲載中の配信者データが見つかりません。" }, { status: 404 });
+    }
 
-    const edit = await addLocalProfileEdit(buildPayload(body, {
-      email,
-      application_id: application.id,
-      streamer_id: application.streamer_id || "",
-      youtube_url: application.youtube_url
-    }));
-    return NextResponse.json({ edit, source: "local" }, { status: 201 });
+    const patch = buildStreamerPatch(body, application.desired_plan);
+    const streamer = await updateLocalStreamer(application.streamer_id, patch);
+    return NextResponse.json({ streamer, source: "local" });
   }
 
   const snapshot = await db.collection("applications").where("email", "==", email).limit(1).get();
@@ -39,38 +39,65 @@ export async function POST(request: Request) {
   if (!applicationDoc || !application || application.creator_password_hash !== passwordHash) {
     return NextResponse.json({ error: "メールアドレスまたはパスワードが違います。" }, { status: 401 });
   }
+  if (!application.streamer_id) {
+    return NextResponse.json({ error: "掲載中の配信者データが見つかりません。" }, { status: 404 });
+  }
 
-  const payload = buildPayload(body, {
-    email,
-    application_id: applicationDoc.id,
-    streamer_id: application.streamer_id || "",
-    youtube_url: application.youtube_url || ""
-  });
+  const patch = buildStreamerPatch(body, application.desired_plan || "free");
+  await db.collection("streamers").doc(application.streamer_id).set({
+    ...patch,
+    updated_at: FieldValue.serverTimestamp()
+  }, { merge: true });
 
-  const doc = await db.collection("profile_edits").add({
-    ...payload,
-    status: "pending",
-    created_at: FieldValue.serverTimestamp()
-  });
+  await applicationDoc.ref.set({
+    ...buildApplicationPatch(body, application.desired_plan || "free"),
+    updated_at: FieldValue.serverTimestamp()
+  }, { merge: true });
 
-  return NextResponse.json({ id: doc.id, source: "firestore" }, { status: 201 });
+  const streamerDoc = await db.collection("streamers").doc(application.streamer_id).get();
+  return NextResponse.json({ id: application.streamer_id, streamer: { id: application.streamer_id, ...streamerDoc.data() }, source: "firestore" });
 }
 
-function buildPayload(body: Record<string, unknown>, source: { email: string; application_id: string; streamer_id: string; youtube_url: string }) {
-  const youtubeUrl = clean(body.youtube_url, 240) || source.youtube_url;
-  return {
-    application_id: source.application_id,
-    streamer_id: source.streamer_id,
-    email: source.email,
-    youtube_url: youtubeUrl,
-    name: clean(body.name, 80),
-    image: clean(body.image, 400000),
-    description: clean(body.description, 800),
-    one_liner: clean(body.one_liner, 80),
-    stream_time: clean(body.stream_time, 80),
-    categories: sanitizeArray(body.categories).slice(0, 3),
-    tags: sanitizeArray(body.tags).slice(0, 5)
+function buildStreamerPatch(body: Record<string, unknown>, plan: PlanType): Partial<Streamer> {
+  const maxCategories = plan === "free" ? 1 : 3;
+  const maxTags = plan === "free" ? 1 : 5;
+  const image = clean(body.image, 400000);
+  const patch: Partial<Streamer> = {
+    categories: sanitizeArray(body.categories).slice(0, maxCategories),
+    tags: sanitizeArray(body.tags).slice(0, maxTags)
   };
+
+  setIfPresent(patch, "name", clean(body.name, 80));
+  setIfPresent(patch, "youtube_url", clean(body.youtube_url, 240));
+  setIfPresent(patch, "description", clean(body.description, 800));
+  setIfPresent(patch, "one_liner", clean(body.one_liner, 80));
+  setIfPresent(patch, "stream_time", clean(body.stream_time, 80));
+  if (image) patch.thumbnails = [image];
+
+  return patch;
+}
+
+function buildApplicationPatch(body: Record<string, unknown>, plan: PlanType) {
+  const maxCategories = plan === "free" ? 1 : 3;
+  const maxTags = plan === "free" ? 1 : 5;
+  const image = clean(body.image, 400000);
+  const patch: Record<string, unknown> = {
+    categories: sanitizeArray(body.categories).slice(0, maxCategories),
+    tags: sanitizeArray(body.tags).slice(0, maxTags)
+  };
+
+  setIfPresent(patch, "name", clean(body.name, 80));
+  setIfPresent(patch, "youtube_url", clean(body.youtube_url, 240));
+  setIfPresent(patch, "description", clean(body.description, 800));
+  setIfPresent(patch, "one_liner", clean(body.one_liner, 80));
+  setIfPresent(patch, "stream_time", clean(body.stream_time, 80));
+  if (image) patch.thumbnails = [image];
+
+  return patch;
+}
+
+function setIfPresent(target: Record<string, unknown>, key: string, value: string) {
+  if (value) target[key] = value;
 }
 
 function clean(value: unknown, max: number) {
