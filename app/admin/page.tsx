@@ -1,4 +1,4 @@
-import { AdminDashboard } from "@/components/AdminDashboard";
+﻿import { AdminDashboard } from "@/components/AdminDashboard";
 import { ReportAdminPanel } from "@/components/ReportAdminPanel";
 import { ViewerAdminPanel } from "@/components/ViewerAdminPanel";
 import { PasswordResetAdminPanel } from "@/components/PasswordResetAdminPanel";
@@ -53,6 +53,7 @@ async function readFirestorePasswordResetRequests(): Promise<PasswordResetReques
       id: doc.id,
       user_type: data.user_type === "viewer" ? "viewer" : "creator",
       email: data.email || "",
+      name: data.name || "",
       application_id: data.application_id || "",
       streamer_id: data.streamer_id || "",
       viewer_id: data.viewer_id || "",
@@ -230,3 +231,4 @@ function timestampToIso(value: unknown) {
   }
   return undefined;
 }
+

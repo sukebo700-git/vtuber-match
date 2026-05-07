@@ -948,10 +948,28 @@ button {
   box-shadow: var(--blue-shadow);
 }
 
+.creator-action-card.featured {
+  border-color: rgba(242, 56, 120, 0.32);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(255, 238, 247, 0.96));
+  box-shadow: 0 24px 60px rgba(242, 56, 120, 0.18);
+}
+
 .creator-action-card strong {
   color: var(--pink);
   font-size: 24px;
   line-height: 1.2;
+}
+
+.creator-action-card.featured strong::after {
+  content: "最初はこちら";
+  display: inline-flex;
+  margin-left: 8px;
+  border-radius: 999px;
+  padding: 5px 9px;
+  color: #fff;
+  background: linear-gradient(135deg, var(--pink), #ff6ea5);
+  font-size: 12px;
+  vertical-align: middle;
 }
 
 .creator-action-card span {

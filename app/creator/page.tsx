@@ -10,7 +10,7 @@ export default function CreatorPage() {
         <nav className="nav" aria-label="メイン">
           <a href="/viewer">視聴者用</a>
           <a href="/creator/login">ログイン</a>
-          <a href="/terms">ヘルプ</a>
+          <a href="/terms">ヘルプ・利用規約</a>
         </nav>
       </header>
       <main className="main grid-page">
@@ -20,9 +20,9 @@ export default function CreatorPage() {
         </section>
 
         <section className="creator-action-grid">
-          <a className="creator-action-card" href="/apply">
+          <a className="creator-action-card featured" href="/apply">
             <strong>申し込み</strong>
-            <span>無料掲載は申し込み後すぐ掲載されます。有料掲載と上位表示は決済完了後に掲載されます。</span>
+            <span>まずはこちら。無料掲載は申し込み後すぐ掲載されます。有料掲載と上位表示は決済完了後に掲載されます。</span>
           </a>
           <a className="creator-action-card" href="/creator/login">
             <strong>ログイン</strong>

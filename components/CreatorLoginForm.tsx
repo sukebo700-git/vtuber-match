@@ -20,6 +20,7 @@ export function CreatorLoginForm() {
       setStatus(data.error || "ログインできませんでした。");
       return;
     }
+
     localStorage.setItem("vtuber-match-creator-login-id", data.creator_login_id || "");
     localStorage.setItem("vtuber-match-creator-email", email);
     localStorage.setItem("vtuber-match-creator-application-id", data.application_id || "");
@@ -41,7 +42,7 @@ export function CreatorLoginForm() {
       <p className="help-text">申し込み時のメールアドレスとパスワードでログインできます。管理IDはログインには使いません。</p>
       <button className="primary-button" type="submit">ログイン</button>
       <p className="help-text"><a href="/password-reset?type=creator">パスワードを忘れた方</a></p>
-      {status && <p className="help-text">{status}</p>}
+      {status && <p className="notice-text">{status}</p>}
     </form>
   );
 }

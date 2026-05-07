@@ -9,9 +9,9 @@ export async function POST(request: Request) {
   const password = String(body.password || "");
   const planType = String(body.plan_type || "");
 
-  if (!email || !email.includes("@")) return NextResponse.json({ error: "メールアドレスを入力してください" }, { status: 400 });
-  if (!password) return NextResponse.json({ error: "パスワードを入力してください" }, { status: 400 });
-  if (planType !== "paid" && planType !== "boost") return NextResponse.json({ error: "プランを選択してください" }, { status: 400 });
+  if (!email || !email.includes("@")) return NextResponse.json({ error: "メールアドレスを入力してください。" }, { status: 400 });
+  if (!password) return NextResponse.json({ error: "パスワードを入力してください。" }, { status: 400 });
+  if (planType !== "paid" && planType !== "boost") return NextResponse.json({ error: "プランを選択してください。" }, { status: 400 });
 
   const passwordHash = hashPassword(password);
   const db = getAdminDb();
@@ -19,10 +19,10 @@ export async function POST(request: Request) {
   if (!db) {
     const application = await findLocalApplicationByEmail(email);
     if (!application || application.creator_password_hash !== passwordHash) {
-      return NextResponse.json({ error: "メールアドレスまたはパスワードが違います" }, { status: 401 });
+      return NextResponse.json({ error: "メールアドレスまたはパスワードが違います。" }, { status: 401 });
     }
     if (!application.streamer_id) {
-      return NextResponse.json({ error: "掲載IDがまだ発行されていません。掲載後にアップグレードできます。" }, { status: 400 });
+      return NextResponse.json({ error: "掲載後にアップグレードできます。" }, { status: 400 });
     }
     return NextResponse.json({
       application_id: application.id,
@@ -37,10 +37,10 @@ export async function POST(request: Request) {
   const doc = snapshot.docs[0];
   const data = doc?.data();
   if (!doc || !data || data.creator_password_hash !== passwordHash) {
-    return NextResponse.json({ error: "メールアドレスまたはパスワードが違います" }, { status: 401 });
+    return NextResponse.json({ error: "メールアドレスまたはパスワードが違います。" }, { status: 401 });
   }
   if (!data.streamer_id) {
-    return NextResponse.json({ error: "掲載IDがまだ発行されていません。掲載後にアップグレードできます。" }, { status: 400 });
+    return NextResponse.json({ error: "掲載後にアップグレードできます。" }, { status: 400 });
   }
 
   return NextResponse.json({

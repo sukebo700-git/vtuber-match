@@ -10,13 +10,13 @@ export default function PasswordResetPage({ searchParams }: { searchParams?: { t
         <nav className="nav" aria-label="メイン">
           <a href="/creator">配信者用</a>
           <a href="/viewer">視聴者用</a>
-          <a href="/terms">ヘルプ</a>
+          <a href="/terms">ヘルプ・利用規約</a>
         </nav>
       </header>
       <main className="main grid-page">
         <section className="status-band">
           <h2>パスワード再設定申請</h2>
-          <p>登録メールアドレスと分かる範囲のIDを入力してください。運営が本人確認を行い、新しいパスワードを手動で設定します。</p>
+          <p>登録メールアドレスと名前を入力してください。運営が本人確認を行い、通常3日以内に新しいパスワードを手動で案内します。</p>
         </section>
         <PasswordResetRequestForm defaultType={defaultType} />
       </main>

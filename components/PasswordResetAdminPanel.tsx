@@ -16,16 +16,19 @@ export function PasswordResetAdminPanel({ requests, adminKey }: { requests: Pass
       setMessage("新しいパスワードは8文字以上で入力してください。");
       return;
     }
+
     const response = await fetch(`/api/admin/password-reset-requests/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json", "x-admin-key": adminKey },
       body: JSON.stringify({ new_password: newPassword })
     });
+
     if (!response.ok) {
       const data = await response.json().catch(() => ({}));
       setMessage(data.error || "パスワード更新に失敗しました。");
       return;
     }
+
     setItems((current) => current.map((item) => (
       item.id === id ? { ...item, status: "completed", completed_at: new Date().toISOString() } : item
     )));
@@ -37,9 +40,10 @@ export function PasswordResetAdminPanel({ requests, adminKey }: { requests: Pass
     <>
       <section className="status-band">
         <h2>パスワード再設定申請</h2>
-        <p>本人確認後、新しい仮パスワードを設定します。メール自動送信はしないため、設定後は本人へ手動で案内してください。</p>
+        <p>登録メールアドレスと名前で本人確認し、新しい仮パスワードを設定します。メール自動送信は行いません。</p>
         {message && <p className="notice-text">{message}</p>}
       </section>
+
       <section className="admin-list wide-list">
         {openItems.length ? openItems.map((request) => (
           <article className="admin-card" key={request.id}>
@@ -49,10 +53,9 @@ export function PasswordResetAdminPanel({ requests, adminKey }: { requests: Pass
             </div>
             <dl className="data-list">
               <div><dt>申請ID</dt><dd>{request.id}</dd></div>
+              <div><dt>対象</dt><dd>{request.user_type === "creator" ? "配信者" : "視聴者"}</dd></div>
               <div><dt>メール</dt><dd>{request.email}</dd></div>
-              <div><dt>申込ID</dt><dd>{request.application_id || "未入力"}</dd></div>
-              <div><dt>掲載ID</dt><dd>{request.streamer_id || "未入力"}</dd></div>
-              <div><dt>視聴者ID</dt><dd>{request.viewer_id || "未入力"}</dd></div>
+              <div><dt>名前</dt><dd>{request.name || "未入力"}</dd></div>
               <div><dt>補足</dt><dd>{request.note || "未入力"}</dd></div>
               <div><dt>申請日</dt><dd>{formatDate(request.created_at)}</dd></div>
             </dl>
@@ -76,6 +79,7 @@ export function PasswordResetAdminPanel({ requests, adminKey }: { requests: Pass
           </article>
         )}
       </section>
+
       {!!completedItems.length && (
         <section className="admin-list wide-list">
           {completedItems.slice(0, 10).map((request) => (
@@ -86,6 +90,7 @@ export function PasswordResetAdminPanel({ requests, adminKey }: { requests: Pass
               </div>
               <dl className="data-list">
                 <div><dt>対象</dt><dd>{request.user_type === "creator" ? "配信者" : "視聴者"}</dd></div>
+                <div><dt>名前</dt><dd>{request.name || "未入力"}</dd></div>
                 <div><dt>対応日</dt><dd>{formatDate(request.completed_at)}</dd></div>
               </dl>
             </article>

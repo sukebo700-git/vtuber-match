@@ -125,6 +125,7 @@ export type PasswordResetRequest = {
   id: string;
   user_type: "creator" | "viewer";
   email: string;
+  name?: string;
   application_id?: string;
   streamer_id?: string;
   viewer_id?: string;

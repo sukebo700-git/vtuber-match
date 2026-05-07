@@ -10,34 +10,33 @@ export function PasswordResetRequestForm({ defaultType = "creator" }: PasswordRe
   const [form, setForm] = useState({
     user_type: defaultType,
     email: "",
-    application_id: "",
-    streamer_id: "",
-    viewer_id: "",
+    name: "",
     note: ""
   });
   const [status, setStatus] = useState("");
-  const [busy, setBusy] = useState(false);
+  const isCreator = form.user_type === "creator";
 
-  function update(field: keyof typeof form, value: string) {
-    setForm((current) => ({ ...current, [field]: value }));
+  function update(key: keyof typeof form, value: string) {
+    setForm((current) => ({ ...current, [key]: value }));
   }
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setBusy(true);
     setStatus("申請を送信しています...");
     const response = await fetch("/api/password-reset-requests", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(form)
     });
-    setBusy(false);
+
     if (!response.ok) {
-      setStatus("送信に失敗しました。メールアドレスを確認してください。");
+      const data = await response.json().catch(() => ({}));
+      setStatus(data.error || "申請に失敗しました。入力内容を確認してください。");
       return;
     }
-    setStatus("パスワード再設定申請を受け付けました。運営の本人確認後、新しいパスワードを案内します。");
-    setForm((current) => ({ ...current, application_id: "", streamer_id: "", viewer_id: "", note: "" }));
+
+    setStatus("パスワード再設定申請を受け付けました。通常3日以内に、運営が本人確認後に新しいパスワードを案内します。");
+    setForm((current) => ({ ...current, name: "", note: "" }));
   }
 
   return (
@@ -49,33 +48,43 @@ export function PasswordResetRequestForm({ defaultType = "creator" }: PasswordRe
           <option value="viewer">視聴者</option>
         </select>
       </div>
+
       <div className="field">
         <label htmlFor="reset_email">登録メールアドレス</label>
-        <input id="reset_email" type="email" value={form.email} onChange={(event) => update("email", event.target.value)} required />
+        <input
+          id="reset_email"
+          type="email"
+          required
+          value={form.email}
+          onChange={(event) => update("email", event.target.value)}
+          placeholder="登録時に使ったメールアドレス"
+        />
       </div>
-      {form.user_type === "creator" ? (
-        <>
-          <div className="field">
-            <label htmlFor="reset_application_id">申込IDまたは管理IDが分かる場合</label>
-            <input id="reset_application_id" value={form.application_id} onChange={(event) => update("application_id", event.target.value)} placeholder="申込ID" />
-          </div>
-          <div className="field">
-            <label htmlFor="reset_streamer_id">掲載IDが分かる場合</label>
-            <input id="reset_streamer_id" value={form.streamer_id} onChange={(event) => update("streamer_id", event.target.value)} placeholder="掲載ID" />
-          </div>
-        </>
-      ) : (
-        <div className="field">
-          <label htmlFor="reset_viewer_id">視聴者IDが分かる場合</label>
-          <input id="reset_viewer_id" value={form.viewer_id} onChange={(event) => update("viewer_id", event.target.value)} placeholder="視聴者ID" />
-        </div>
-      )}
+
       <div className="field">
-        <label htmlFor="reset_note">本人確認に使える補足</label>
-        <textarea id="reset_note" value={form.note} onChange={(event) => update("note", event.target.value)} placeholder="チャンネル名、表示名、申し込み時期など" />
+        <label htmlFor="reset_name">{isCreator ? "配信者名" : "表示名"}</label>
+        <input
+          id="reset_name"
+          required
+          value={form.name}
+          onChange={(event) => update("name", event.target.value)}
+          placeholder={isCreator ? "掲載している配信者名" : "視聴者プロフィールの表示名"}
+        />
       </div>
-      <p className="help-text">メール自動送信は行いません。運営が確認後、手動で新しいパスワードを案内します。</p>
-      <button className="primary-button" type="submit" disabled={busy}>{busy ? "送信中..." : "再設定を申請する"}</button>
+
+      <div className="field">
+        <label htmlFor="reset_note">補足情報</label>
+        <textarea
+          id="reset_note"
+          value={form.note}
+          onChange={(event) => update("note", event.target.value)}
+          placeholder="分かる範囲で、YouTube URLや状況を書いてください。"
+        />
+      </div>
+
+      <p className="help-text">申込ID・掲載IDは不要です。運営が登録メールアドレスと名前を確認し、通常3日以内に手動で案内します。</p>
+
+      <button className="primary-button" type="submit">再設定を申請する</button>
       {status && <p className="notice-text">{status}</p>}
     </form>
   );

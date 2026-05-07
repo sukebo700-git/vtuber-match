@@ -6,7 +6,7 @@ const authKey = "vtuber-match-viewer-auth";
 const idKey = "vtuber-match-viewer-id";
 
 export function ViewerLoginForm() {
-  const [form, setForm] = useState({ display_name: "", email: "", password: "" });
+  const [form, setForm] = useState({ email: "", password: "" });
   const [status, setStatus] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -46,19 +46,15 @@ export function ViewerLoginForm() {
   return (
     <form className="form compact-form" onSubmit={submit}>
       <div className="field">
-        <label htmlFor="viewer_name">表示名</label>
-        <input id="viewer_name" value={form.display_name} onChange={(event) => update("display_name", event.target.value)} maxLength={40} />
-      </div>
-      <div className="field">
         <label htmlFor="viewer_email">メールアドレス</label>
-        <input id="viewer_email" type="email" value={form.email} onChange={(event) => update("email", event.target.value)} required />
+        <input id="viewer_email" type="email" value={form.email} onChange={(event) => update("email", event.target.value)} required autoComplete="username" />
       </div>
       <div className="field">
         <label htmlFor="viewer_password">パスワード</label>
-        <input id="viewer_password" type="password" value={form.password} onChange={(event) => update("password", event.target.value)} required minLength={8} />
+        <input id="viewer_password" type="password" value={form.password} onChange={(event) => update("password", event.target.value)} required minLength={8} autoComplete="current-password" />
       </div>
-      <p className="help-text">ログインなしでもスワイプは利用できます。プロフィール登録と配信者への自己アピールにはログインが必要です。</p>
-      <button className="primary-button" type="submit" disabled={busy}>{busy ? "確認中..." : "視聴者としてログイン"}</button>
+      <p className="help-text">はじめての方は、このメールアドレスとパスワードで視聴者プロフィール枠を作成します。表示名や画像はログイン後のプロフィール画面で登録できます。</p>
+      <button className="primary-button" type="submit" disabled={busy}>{busy ? "確認中..." : "ログイン・新規登録"}</button>
       <p className="help-text"><a href="/password-reset?type=viewer">パスワードを忘れた方</a></p>
       {status && <p className="help-text">{status}</p>}
     </form>

@@ -5,29 +5,27 @@ import { Send } from "lucide-react";
 import { CATEGORIES, TAGS } from "@/lib/constants";
 
 export function CreatorProfileEditForm() {
-  const [applicationId, setApplicationId] = useState("");
-  const [streamerId, setStreamerId] = useState("");
+  const [email, setEmail] = useState("");
   const [categories, setCategories] = useState<string[]>([]);
   const [tags, setTags] = useState<string[]>([]);
   const [image, setImage] = useState("");
   const [status, setStatus] = useState("");
 
   useEffect(() => {
-    setApplicationId(localStorage.getItem("vtuber-match-creator-application-id") || "");
-    setStreamerId(localStorage.getItem("vtuber-match-creator-streamer-id") || "");
+    setEmail(localStorage.getItem("vtuber-match-creator-email") || "");
   }, []);
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
-    setStatus("送信中...");
+    setStatus("修正申請を送信しています...");
+
     const response = await fetch("/api/profile-edits", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        application_id: form.get("application_id"),
-        streamer_id: form.get("streamer_id"),
         email: form.get("email"),
+        password: form.get("password"),
         youtube_url: form.get("youtube_url"),
         name: form.get("name"),
         description: form.get("description"),
@@ -38,7 +36,14 @@ export function CreatorProfileEditForm() {
         tags
       })
     });
-    setStatus(response.ok ? "修正申請を送信しました。運営確認後に掲載情報へ反映されます。" : "送信に失敗しました。必須項目を確認してください。");
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      setStatus(data.error || "送信に失敗しました。メールアドレスとパスワードを確認してください。");
+      return;
+    }
+
+    setStatus("修正申請を送信しました。運営確認後に掲載プロフィールへ反映されます。");
   }
 
   async function onFile(event: React.ChangeEvent<HTMLInputElement>) {
@@ -55,50 +60,46 @@ export function CreatorProfileEditForm() {
 
   return (
     <form className="form compact-form" onSubmit={submit}>
+      <section className="status-band soft">
+        <h2>プロフィール修正申請</h2>
+        <p>登録メールアドレスとパスワードで本人確認し、あなたの掲載データに紐づけて申請します。申込ID・掲載IDの入力は不要です。</p>
+      </section>
+
       <div className="field">
-        <label htmlFor="edit_application_id">申込ID</label>
-        <input
-          id="edit_application_id"
-          name="application_id"
-          value={applicationId}
-          onChange={(event) => setApplicationId(event.target.value)}
-          placeholder="申し込み後に固定されます"
-        />
+        <label htmlFor="edit_email">登録メールアドレス</label>
+        <input id="edit_email" name="email" type="email" required value={email} onChange={(event) => setEmail(event.target.value)} />
       </div>
+
       <div className="field">
-        <label htmlFor="edit_streamer_id">掲載ID</label>
-        <input
-          id="edit_streamer_id"
-          name="streamer_id"
-          value={streamerId}
-          onChange={(event) => setStreamerId(event.target.value)}
-          placeholder="掲載後に固定されます"
-        />
+        <label htmlFor="edit_password">パスワード</label>
+        <input id="edit_password" name="password" type="password" required placeholder="申し込み時に表示されたパスワード" />
       </div>
-      <div className="field">
-        <label htmlFor="edit_email">登録メール</label>
-        <input id="edit_email" name="email" type="email" required />
-      </div>
+
       <div className="field">
         <label htmlFor="edit_youtube">YouTube URL</label>
-        <input id="edit_youtube" name="youtube_url" type="url" required />
+        <input id="edit_youtube" name="youtube_url" type="url" placeholder="変更する場合のみ入力" />
       </div>
+
       <div className="field">
         <label htmlFor="edit_name">配信者名</label>
-        <input id="edit_name" name="name" />
+        <input id="edit_name" name="name" placeholder="変更する場合のみ入力" />
       </div>
+
       <div className="field">
         <label htmlFor="edit_one_liner">スワイプカードの一言</label>
-        <input id="edit_one_liner" name="one_liner" maxLength={80} />
+        <input id="edit_one_liner" name="one_liner" maxLength={80} placeholder="例: 深夜にゆるく話せる癒し枠です" />
       </div>
+
       <div className="field">
         <label htmlFor="edit_description">自己アピール</label>
-        <textarea id="edit_description" name="description" />
+        <textarea id="edit_description" name="description" placeholder="プロフィール画面に表示する内容" />
       </div>
+
       <div className="field">
         <label htmlFor="edit_stream_time">配信時間帯</label>
-        <input id="edit_stream_time" name="stream_time" />
+        <input id="edit_stream_time" name="stream_time" placeholder="例: 平日22時から24時" />
       </div>
+
       <div className="field">
         <label htmlFor="edit_image">プロフィール画像</label>
         <input id="edit_image" type="file" accept="image/*" onChange={onFile} />
@@ -108,6 +109,7 @@ export function CreatorProfileEditForm() {
           </div>
         )}
       </div>
+
       <div className="field">
         <label>カテゴリ {categories.length}/3</label>
         <div className="choice-grid dense">
@@ -119,6 +121,7 @@ export function CreatorProfileEditForm() {
           ))}
         </div>
       </div>
+
       <div className="field">
         <label>タグ {tags.length}/5</label>
         <div className="choice-grid dense">
@@ -130,12 +133,12 @@ export function CreatorProfileEditForm() {
           ))}
         </div>
       </div>
-      <p className="help-text">修正申請は固定された申込ID・掲載IDに紐づきます。IDが空の場合は、掲載済みの情報と照合して運営が確認します。</p>
+
       <button className="primary-button" type="submit">
         <Send size={18} />
         修正申請を送る
       </button>
-      {status && <p className="help-text">{status}</p>}
+      {status && <p className="notice-text">{status}</p>}
     </form>
   );
 }

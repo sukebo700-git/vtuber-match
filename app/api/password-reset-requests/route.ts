@@ -7,6 +7,7 @@ export async function POST(request: Request) {
   const body = await request.json();
   const userType = String(body.user_type || "") as PasswordResetRequest["user_type"];
   const email = String(body.email || "").trim().toLowerCase();
+  const name = clean(body.name, 120);
   const applicationId = clean(body.application_id, 80);
   const streamerId = clean(body.streamer_id, 80);
   const viewerId = clean(body.viewer_id, 80);
@@ -18,10 +19,14 @@ export async function POST(request: Request) {
   if (!email || !email.includes("@")) {
     return NextResponse.json({ error: "email is required" }, { status: 400 });
   }
+  if (!name) {
+    return NextResponse.json({ error: "name is required" }, { status: 400 });
+  }
 
   const input = {
     user_type: userType,
     email,
+    name,
     application_id: applicationId,
     streamer_id: streamerId,
     viewer_id: viewerId,
