@@ -11,7 +11,7 @@ export default function CreatorPage() {
         <a className="brand" href="/">Vtuberマッチ</a>
         <nav className="nav" aria-label="メイン">
           <a href="/viewer">視聴者用</a>
-          <a href="/creator/login">ログイン</a>
+          <a href="/login">ログイン</a>
           <a href="/terms">ヘルプ</a>
         </nav>
         <HeaderAuthStatus />
@@ -24,11 +24,11 @@ export default function CreatorPage() {
 
         <AuthVisibility role="creator" mode="logged-out">
           <section className="creator-action-grid">
-            <a className="creator-action-card featured" href="/apply">
+            <a className="creator-action-card featured" href="/creator/apply">
               <strong>申し込み</strong>
               <span>無料掲載は申し込み後すぐ掲載されます。有料掲載とプレミアムは決済完了後に反映されます。</span>
             </a>
-            <a className="creator-action-card" href="/creator/login">
+            <a className="creator-action-card" href="/login">
               <strong>ログイン</strong>
               <span>申し込み時のメールアドレスとパスワードで、掲載データに紐づいて操作できます。</span>
             </a>

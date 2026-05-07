@@ -11,7 +11,7 @@ export function PasswordResetRequestForm({ defaultType = "creator" }: PasswordRe
     user_type: defaultType,
     email: "",
     name: "",
-    note: ""
+    note: "",
   });
   const [status, setStatus] = useState("");
   const isCreator = form.user_type === "creator";
@@ -26,7 +26,7 @@ export function PasswordResetRequestForm({ defaultType = "creator" }: PasswordRe
     const response = await fetch("/api/password-reset-requests", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form)
+      body: JSON.stringify(form),
     });
 
     if (!response.ok) {
@@ -35,7 +35,7 @@ export function PasswordResetRequestForm({ defaultType = "creator" }: PasswordRe
       return;
     }
 
-    setStatus("パスワード再設定申請を受け付けました。通常3日以内に、運営が本人確認後、新しいパスワードを案内します。");
+    setStatus("パスワード再設定申請を受け付けました。通常3日以内に、運営が本人確認後、新しいパスワードをご案内します。");
     setForm((current) => ({ ...current, name: "", note: "" }));
   }
 
@@ -62,7 +62,7 @@ export function PasswordResetRequestForm({ defaultType = "creator" }: PasswordRe
       </div>
 
       <div className="field">
-        <label htmlFor="reset_name">{isCreator ? "配信者名" : "表示名"}</label>
+        <label htmlFor="reset_name">{isCreator ? "配信者名" : "視聴者名・表示名"}</label>
         <input
           id="reset_name"
           required
@@ -73,7 +73,7 @@ export function PasswordResetRequestForm({ defaultType = "creator" }: PasswordRe
       </div>
 
       <div className="field">
-        <label htmlFor="reset_note">補足情報</label>
+        <label htmlFor="reset_note">補足情報 任意</label>
         <textarea
           id="reset_note"
           value={form.note}
@@ -82,7 +82,9 @@ export function PasswordResetRequestForm({ defaultType = "creator" }: PasswordRe
         />
       </div>
 
-      <p className="help-text">申込ID・掲載IDは不要です。運営が登録メールアドレスと名前を確認し、通常3日以内に手動で案内します。</p>
+      <p className="help-text">
+        申込ID・掲載IDは不要です。運営が登録メールアドレスと名前を確認し、通常3日以内に手動で案内します。
+      </p>
 
       <button className="primary-button" type="submit">再設定を申請する</button>
       {status && <p className="notice-text">{status}</p>}
