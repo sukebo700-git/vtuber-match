@@ -16,8 +16,11 @@ export async function GET(request: Request) {
       const data = doc.data();
       return {
         id: doc.id,
+        report_type: data.report_type || "streamer",
         streamer_id: data.streamer_id || "",
         streamer_name: data.streamer_name || "",
+        viewer_profile_id: data.viewer_profile_id || "",
+        viewer_name: data.viewer_name || "",
         reason: data.reason || "",
         detail: data.detail || "",
         reporter_contact: data.reporter_contact || "",
@@ -32,8 +35,11 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const body = await request.json();
   const payload = {
+    report_type: clean(body.report_type, 40) === "viewer" ? "viewer" as const : "streamer" as const,
     streamer_id: clean(body.streamer_id, 120),
     streamer_name: clean(body.streamer_name, 120),
+    viewer_profile_id: clean(body.viewer_profile_id, 120),
+    viewer_name: clean(body.viewer_name, 120),
     reason: clean(body.reason, 80),
     detail: clean(body.detail, 800),
     reporter_contact: clean(body.reporter_contact, 120)
@@ -41,6 +47,9 @@ export async function POST(request: Request) {
 
   if (!payload.streamer_id || !payload.reason) {
     return NextResponse.json({ error: "streamer_id and reason are required" }, { status: 400 });
+  }
+  if (payload.report_type === "viewer" && !payload.viewer_profile_id) {
+    return NextResponse.json({ error: "viewer_profile_id is required" }, { status: 400 });
   }
 
   const db = getAdminDb();

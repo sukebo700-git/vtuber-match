@@ -6,7 +6,7 @@ import type { Streamer } from "./types";
 
 export async function getStreamersForSwipe(): Promise<Streamer[]> {
   const db = getAdminDb();
-  if (!db) return readLocalStreamers();
+  if (!db) return rankStreamers(await readLocalStreamers());
 
   const snapshot = await db.collection("streamers").limit(80).get();
   const streamers = snapshot.docs.map((doc) => normalizeStreamer(doc.id, doc.data()));

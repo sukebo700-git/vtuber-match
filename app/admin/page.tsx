@@ -71,11 +71,14 @@ async function readFirestoreReports(): Promise<StreamerReport[]> {
   const snapshot = await db.collection("reports").orderBy("created_at", "desc").limit(120).get();
   return snapshot.docs.map((doc) => {
     const data = doc.data();
-    return {
-      id: doc.id,
-      streamer_id: data.streamer_id || "",
-      streamer_name: data.streamer_name || "",
-      reason: data.reason || "",
+      return {
+        id: doc.id,
+        report_type: data.report_type || "streamer",
+        streamer_id: data.streamer_id || "",
+        streamer_name: data.streamer_name || "",
+        viewer_profile_id: data.viewer_profile_id || "",
+        viewer_name: data.viewer_name || "",
+        reason: data.reason || "",
       detail: data.detail || "",
       reporter_contact: data.reporter_contact || "",
       status: data.status === "reviewed" ? "reviewed" : "open",

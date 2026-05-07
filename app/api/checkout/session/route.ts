@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAppUrl, getStripePriceId, isPaidPlan } from "@/lib/billing";
+import type { PlanType } from "@/lib/types";
 import { getAdminDb } from "@/lib/firebaseAdmin";
 
 export const dynamic = "force-dynamic";
@@ -9,6 +10,7 @@ export async function POST(request: Request) {
   const applicationId = String(body.application_id || "");
   const streamerId = String(body.streamer_id || "");
   const planType = String(body.plan_type || "");
+  const currentPlan = String(body.current_plan || "free") as PlanType;
   const payerEmail = String(body.payer_email || "");
 
   if ((!applicationId && !streamerId) || !isPaidPlan(planType)) {
@@ -16,7 +18,7 @@ export async function POST(request: Request) {
   }
 
   const secretKey = process.env.STRIPE_SECRET_KEY;
-  const priceId = getStripePriceId(planType);
+  const priceId = getStripePriceId(planType, currentPlan);
   if (!secretKey || !priceId) {
     return NextResponse.json(
       { error: "Stripe is not configured. Set STRIPE_SECRET_KEY and price ids." },
@@ -45,7 +47,9 @@ export async function POST(request: Request) {
   params.set("success_url", `${appUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`);
   params.set("cancel_url", `${appUrl}/checkout?${cancelParams.toString()}`);
   params.set("metadata[plan_type]", planType);
+  params.set("metadata[current_plan]", currentPlan);
   params.set("subscription_data[metadata][plan_type]", planType);
+  params.set("subscription_data[metadata][current_plan]", currentPlan);
   if (applicationId) params.set("metadata[application_id]", applicationId);
   if (streamerId) params.set("metadata[streamer_id]", streamerId);
   if (applicationId) params.set("subscription_data[metadata][application_id]", applicationId);

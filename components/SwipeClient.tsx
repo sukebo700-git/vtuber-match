@@ -79,7 +79,7 @@ export function SwipeClient({ initialStreamers }: SwipeClientProps) {
     return (
       <div className="status-band">
         <h2>掲載中の配信者がまだいません</h2>
-        <p>管理画面で配信者を掲載するか、申込を承認してください。</p>
+        <p>管理画面で配信者を掲載するか、申し込み後の掲載を確認してください。</p>
       </div>
     );
   }
@@ -149,7 +149,7 @@ export function SwipeClient({ initialStreamers }: SwipeClientProps) {
       </div>
 
       <aside className="side-panel">
-        {current && (
+        {current && current.plan_type !== "free" && (
           <div className="status-band today-note">
             <h2>
               <Sparkles size={19} /> 今日のひとこと
@@ -173,7 +173,7 @@ function SwipeCard({ streamer, thumbnail, onSwipe }: { streamer: Streamer; thumb
   const dragXRef = useRef(0);
   const didDragRef = useRef(false);
   const frameRef = useRef<number | null>(null);
-  const hasOfficialBadge = streamer.plan_type === "paid" || streamer.plan_type === "boost";
+  const isPaidOrPremium = streamer.plan_type === "paid" || streamer.plan_type === "boost";
 
   useEffect(() => {
     return () => {
@@ -203,11 +203,11 @@ function SwipeCard({ streamer, thumbnail, onSwipe }: { streamer: Streamer; thumb
 
   function release() {
     const dragX = dragXRef.current;
-    if (dragX > 88) {
+    if (dragX > 76) {
       onSwipe("right");
       return;
     }
-    if (dragX < -88) {
+    if (dragX < -76) {
       onSwipe("left");
       return;
     }
@@ -217,7 +217,7 @@ function SwipeCard({ streamer, thumbnail, onSwipe }: { streamer: Streamer; thumb
   return (
     <article
       ref={cardRef}
-      className="card"
+      className={`card plan-${streamer.plan_type}`}
       onPointerDown={(event) => {
         dragStartRef.current = event.clientX;
         didDragRef.current = false;
@@ -239,11 +239,11 @@ function SwipeCard({ streamer, thumbnail, onSwipe }: { streamer: Streamer; thumb
         window.location.assign(`/detail/${streamer.id}`);
       }}
     >
-      {hasOfficialBadge && (
+      {isPaidOrPremium && (
         <div className="floating-badge">
-          公式
+          {streamer.plan_type === "boost" ? "PREMIUM" : "公式"}
           <br />
-          バッジ
+          {streamer.plan_type === "boost" ? "推し枠" : "バッジ"}
         </div>
       )}
       <div className="floating-like">
@@ -253,22 +253,23 @@ function SwipeCard({ streamer, thumbnail, onSwipe }: { streamer: Streamer; thumb
       </div>
       <img src={thumbnail} alt={`${streamer.name} 掲載画像`} loading="eager" decoding="async" />
       <div className="card-overlay">
-        <div className="pill-row">
-          {hasOfficialBadge && (
+        {isPaidOrPremium && (
+          <div className="pill-row">
             <span className="official-badge">
               <BadgeCheck size={15} />
               公式
             </span>
-          )}
-          <span className="pill">{streamer.categories[0] || "配信"}</span>
-          {streamer.tags.slice(0, 3).map((tag) => (
-            <span className="pill" key={tag}>
-              #{tag}
-            </span>
-          ))}
-        </div>
+            {streamer.categories.slice(0, 1).map((category) => (
+              <span className="pill" key={category}>{category}</span>
+            ))}
+            {streamer.tags.slice(0, 3).map((tag) => (
+              <span className="pill" key={tag}>#{tag}</span>
+            ))}
+            <span className="pill">マッチ {streamer.likes ?? 0}</span>
+          </div>
+        )}
         <h1>{streamer.name}</h1>
-        <p>{streamer.one_liner}</p>
+        {isPaidOrPremium && streamer.one_liner && <p>{streamer.one_liner}</p>}
       </div>
     </article>
   );

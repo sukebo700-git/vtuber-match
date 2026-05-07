@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Heart } from "lucide-react";
+import { Flag, Heart } from "lucide-react";
 
 type CreatorViewer = {
   id: string;
@@ -15,17 +15,20 @@ type CreatorViewer = {
 
 export function CreatorViewerLikes() {
   const [streamerId, setStreamerId] = useState("");
+  const [planType, setPlanType] = useState("free");
   const [viewers, setViewers] = useState<CreatorViewer[]>([]);
   const [status, setStatus] = useState("");
 
   useEffect(() => {
     const id = localStorage.getItem("vtuber-match-creator-streamer-id") || "";
+    const plan = localStorage.getItem("vtuber-match-creator-plan") || "free";
     setStreamerId(id);
-    if (id) loadViewers(id);
+    setPlanType(plan);
+    if (id && plan === "boost") loadViewers(id);
   }, []);
 
   async function loadViewers(id: string) {
-    setStatus("視聴者プロフィールを読み込み中...");
+    setStatus("視聴者プロフィールを読み込み中です...");
     const response = await fetch(`/api/creator-viewers?streamer_id=${encodeURIComponent(id)}`);
     const data = await response.json().catch(() => ({}));
     if (response.ok) {
@@ -38,7 +41,11 @@ export function CreatorViewerLikes() {
 
   async function likeViewer(viewerProfileId: string) {
     if (!streamerId) {
-      setStatus("掲載IDが必要です。配信者ログイン後に利用してください。");
+      setStatus("配信者ログイン後に利用できます。");
+      return;
+    }
+    if (planType !== "boost") {
+      setStatus("視聴者へのいいねはプレミアムプラン限定です。");
       return;
     }
     const response = await fetch("/api/creator-likes", {
@@ -54,12 +61,44 @@ export function CreatorViewerLikes() {
     }
   }
 
+  async function reportViewer(viewer: CreatorViewer) {
+    if (!streamerId) {
+      setStatus("配信者ログイン後に通報できます。");
+      return;
+    }
+    const detail = window.prompt("通報理由を入力してください。運営が確認します。");
+    if (!detail) return;
+    const response = await fetch("/api/reports", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        report_type: "viewer",
+        streamer_id: streamerId,
+        viewer_profile_id: viewer.id,
+        viewer_name: viewer.display_name || viewer.youtube_display_name || "",
+        reason: "viewer_report",
+        detail
+      })
+    });
+    setStatus(response.ok ? "視聴者の通報を送信しました。" : "通報に失敗しました。");
+  }
+
+  if (planType !== "boost") {
+    return (
+      <section className="status-band">
+        <h2>視聴者へのいいね機能</h2>
+        <p>あなたにいいねした視聴者プロフィールの確認、視聴者へのいいね、視聴者通報はプレミアムプラン限定です。</p>
+        <a className="primary-button" href="/creator/upgrade">プレミアムへアップグレード</a>
+      </section>
+    );
+  }
+
   return (
     <section className="status-band">
       <h2>いいねしてくれた視聴者</h2>
-      <p>あなたにいいねした視聴者プロフィールを確認し、配信者側からもいいねを返せます。</p>
+      <p>あなたにいいねした視聴者プロフィールを確認し、配信者側からもいいねを返せます。不適切なプロフィールは通報できます。</p>
       {!streamerId && (
-        <p className="notice-text">配信者ログイン後、掲載IDに紐づいた視聴者が表示されます。</p>
+        <p className="notice-text">配信者ログイン後、掲載データに紐づいた視聴者が表示されます。</p>
       )}
       {status && <p className="help-text">{status}</p>}
       <div className="admin-list">
@@ -79,10 +118,16 @@ export function CreatorViewerLikes() {
               <div><dt>プロフィール</dt><dd>{viewer.profile || "未入力"}</dd></div>
               <div><dt>好きなカテゴリ</dt><dd>{viewer.favorite_categories?.join(" / ") || "未選択"}</dd></div>
             </dl>
-            <button className="primary-button" type="button" disabled={viewer.liked_by_streamer} onClick={() => likeViewer(viewer.id)}>
-              <Heart size={18} />
-              {viewer.liked_by_streamer ? "いいね済み" : "視聴者にいいね"}
-            </button>
+            <div className="inline-actions">
+              <button className="primary-button" type="button" disabled={viewer.liked_by_streamer} onClick={() => likeViewer(viewer.id)}>
+                <Heart size={18} />
+                {viewer.liked_by_streamer ? "いいね済み" : "視聴者にいいね"}
+              </button>
+              <button className="secondary-button" type="button" onClick={() => reportViewer(viewer)}>
+                <Flag size={18} />
+                通報
+              </button>
+            </div>
           </article>
         ))}
         {streamerId && !viewers.length && !status && (

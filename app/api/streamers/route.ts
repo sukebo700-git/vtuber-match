@@ -33,8 +33,8 @@ export async function POST(request: Request) {
     thumbnails: normalizeThumbnails(sanitizeArray(body.thumbnails)),
     categories: sanitizeArray(body.categories),
     tags: sanitizeArray(body.tags).slice(0, 5),
-    description: String(body.description).trim(),
-    one_liner: String(body.one_liner || body.description).trim().slice(0, 80),
+    description: String(body.description || "").trim(),
+    one_liner: String(body.one_liner || body.description || "").trim().slice(0, 80),
     stream_time: String(body.stream_time || "").trim(),
     plan_type: (body.plan_type || "free") as PlanType,
     is_initial_scout: Boolean(body.is_initial_scout),
@@ -63,10 +63,10 @@ function validate(body: Record<string, unknown>) {
   const tagCount = sanitizeArray(body.tags).length;
   if (!body.name) return "name is required";
   if (!body.youtube_url) return "youtube_url is required";
-  if (!body.description) return "profile appeal is required";
+  if (plan !== "free" && !body.description) return "profile appeal is required";
   if (sanitizeArray(body.thumbnails).length > 3) return "thumbnails max is 3";
-  if (plan === "free" && categoryCount > 1) return "free plan category max is 1";
-  if (plan === "free" && tagCount > 1) return "free plan tag max is 1";
+  if (plan === "free" && categoryCount > 0) return "free plan cannot set categories";
+  if (plan === "free" && tagCount > 0) return "free plan cannot set tags";
   if (plan !== "free" && categoryCount > 3) return "paid plan category max is 3";
   if (plan !== "free" && tagCount > 5) return "paid plan tag max is 5";
   return null;

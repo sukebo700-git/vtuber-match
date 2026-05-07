@@ -17,7 +17,7 @@ export const CATEGORIES = [
   "勉強",
   "料理",
   "TRPG",
-  "耐久",
+  "麻雀",
   "FPS",
   "RPG",
   "レトロゲーム",
@@ -81,5 +81,30 @@ export const TAGS = [
 export const PLAN_LABELS: Record<string, string> = {
   free: "無料掲載",
   paid: "有料掲載 500円",
-  boost: "さらに上位表示 980円"
+  boost: "プレミアムプラン 980円"
+};
+
+export const PLAN_FEATURES = {
+  free: [
+    "写真",
+    "名前",
+    "YouTubeチャンネルURL"
+  ],
+  paid: [
+    "写真",
+    "名前",
+    "YouTubeチャンネルURL",
+    "カテゴリ最大3件",
+    "タグ最大5件",
+    "メッセージ表示",
+    "マッチ数表示",
+    "上位表示",
+    "今日のひとことをスワイプ画像に表示",
+    "公式バッジ"
+  ],
+  boost: [
+    "有料掲載のすべて",
+    "おすすめアーカイブをプロフィールに表示",
+    "配信者から視聴者へのいいね機能"
+  ]
 };

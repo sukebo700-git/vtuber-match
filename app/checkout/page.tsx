@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { CheckoutForm } from "@/components/CheckoutForm";
-import { PLAN_AMOUNTS } from "@/lib/billing";
+import { getPlanAmount } from "@/lib/billing";
 import { getAdminDb } from "@/lib/firebaseAdmin";
 import { findLocalApplication } from "@/lib/localStore";
 import type { ApplicationStatus, PlanType, StreamerApplication } from "@/lib/types";
@@ -30,13 +30,13 @@ export default async function CheckoutPage({ searchParams }: { searchParams: { a
       <main className="main grid-page">
         <section className="status-band">
           <h2>掲載プランの決済</h2>
-          <p>決済完了後、運営確認へ進みます。</p>
+          <p>決済完了後、運営確認へ進みます。カード情報はVtuberマッチには保存されません。</p>
         </section>
         <CheckoutForm
           applicationId={application?.id}
           streamerId={streamerId}
           planType={planType}
-          amount={PLAN_AMOUNTS[planType]}
+          amount={getPlanAmount(planType)}
           email={application?.email || ""}
           name={application?.name || "掲載プランのアップグレード"}
         />

@@ -16,6 +16,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ liked: true, created, source: "local" });
   }
 
+  const streamerDoc = await db.collection("streamers").doc(streamerId).get();
+  if (streamerDoc.data()?.plan_type !== "boost") {
+    return NextResponse.json({ error: "premium plan is required" }, { status: 403 });
+  }
+
   const likeRef = db.collection("creator_likes").doc(`${streamerId}_${viewerProfileId}`);
   await db.runTransaction(async (tx) => {
     const likeDoc = await tx.get(likeRef);

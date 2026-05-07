@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Send } from "lucide-react";
+import { BadgeCheck, Crown, ImagePlus, Send } from "lucide-react";
+import { PLAN_FEATURES } from "@/lib/constants";
 
 type ApplicationFormProps = {
   categories: string[];
@@ -13,6 +14,27 @@ type CompletionInfo = {
   password: string;
 };
 
+const planRows = [
+  {
+    id: "free",
+    name: "無料掲載",
+    price: "0円",
+    summary: "まず掲載したい方向け。写真、名前、YouTubeチャンネルURLのみでシンプルに表示します。"
+  },
+  {
+    id: "paid",
+    name: "有料掲載",
+    price: "月額500円",
+    summary: "公式バッジ、タグ、カテゴリ、メッセージ、マッチ数表示、上位表示で見つけてもらいやすくします。"
+  },
+  {
+    id: "boost",
+    name: "プレミアムプラン",
+    price: "月額980円",
+    summary: "有料掲載の内容に加えて、おすすめアーカイブ表示と視聴者へのいいね機能が使えます。"
+  }
+];
+
 export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -21,8 +43,9 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
   const [status, setStatus] = useState("");
   const [completion, setCompletion] = useState<CompletionInfo | null>(null);
 
-  const categoryLimit = selectedPlan === "free" ? 1 : 3;
-  const tagLimit = selectedPlan === "free" ? 1 : 5;
+  const isFree = selectedPlan === "free";
+  const categoryLimit = isFree ? 0 : 3;
+  const tagLimit = isFree ? 0 : 5;
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -37,17 +60,17 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
       email,
       youtube_url: form.get("youtube_url"),
       youtube_channel_id: form.get("youtube_channel_id"),
-      description: form.get("description"),
-      one_liner: form.get("one_liner"),
-      stream_time: form.get("stream_time"),
+      description: desiredPlan === "free" ? "" : form.get("description"),
+      one_liner: desiredPlan === "free" ? "" : form.get("one_liner"),
+      stream_time: desiredPlan === "free" ? "" : form.get("stream_time"),
       creator_password: password,
       desired_plan: desiredPlan,
       thumbnails: images,
-      categories: selectedCategories,
-      tags: selectedTags
+      categories: desiredPlan === "free" ? [] : selectedCategories,
+      tags: desiredPlan === "free" ? [] : selectedTags
     };
 
-    setStatus("送信中...");
+    setStatus("送信中です...");
     const response = await fetch("/api/applications", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -55,7 +78,8 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
     });
 
     if (!response.ok) {
-      setStatus("送信に失敗しました。必須項目と選択数を確認してください。");
+      const data = await response.json().catch(() => ({}));
+      setStatus(data.error || "送信に失敗しました。入力内容を確認してください。");
       return;
     }
 
@@ -66,6 +90,8 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
     if (applicationId) localStorage.setItem("vtuber-match-creator-application-id", applicationId);
     if (streamerId) localStorage.setItem("vtuber-match-creator-streamer-id", streamerId);
     if (creatorLoginId) localStorage.setItem("vtuber-match-creator-login-id", creatorLoginId);
+    localStorage.setItem("vtuber-match-creator-email", email);
+    localStorage.setItem("vtuber-match-creator-plan", desiredPlan);
 
     if (desiredPlan === "paid" || desiredPlan === "boost") {
       window.location.assign(`/checkout?application_id=${applicationId}`);
@@ -105,12 +131,39 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
 
   function changePlan(plan: string) {
     setSelectedPlan(plan);
-    setSelectedCategories((current) => current.slice(0, plan === "free" ? 1 : 3));
-    setSelectedTags((current) => current.slice(0, plan === "free" ? 1 : 5));
+    if (plan === "free") {
+      setSelectedCategories([]);
+      setSelectedTags([]);
+    }
   }
 
   return (
     <form className="form" onSubmit={submit}>
+      <section className="status-band">
+        <h2>プランの違い</h2>
+        <div className="plan-table">
+          {planRows.map((plan) => (
+            <label className={`plan-card ${selectedPlan === plan.id ? "selected" : ""}`} key={plan.id}>
+              <input
+                type="radio"
+                name="desired_plan"
+                value={plan.id}
+                checked={selectedPlan === plan.id}
+                onChange={(event) => changePlan(event.target.value)}
+              />
+              <strong>{plan.name}</strong>
+              <span className="plan-price">{plan.price}</span>
+              <p>{plan.summary}</p>
+              <ul>
+                {PLAN_FEATURES[plan.id as keyof typeof PLAN_FEATURES].map((feature) => (
+                  <li key={feature}>{feature}</li>
+                ))}
+              </ul>
+            </label>
+          ))}
+        </div>
+      </section>
+
       <div className="field">
         <label htmlFor="name">配信者名</label>
         <input id="name" name="name" required maxLength={60} />
@@ -118,48 +171,24 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
       <div className="field">
         <label htmlFor="email">ログイン用メールアドレス</label>
         <input id="email" name="email" type="email" required />
-        <p className="help-text">このメールアドレスで配信者ログインを行います。公開ページやスワイプ画面には表示されません。</p>
+        <p className="help-text">このメールアドレスとパスワードで、後から修正申請やアップグレードができます。スワイプ画面には表示されません。</p>
       </div>
       <div className="field">
-        <label htmlFor="youtube_url">YouTube URL</label>
+        <label htmlFor="creator_password">ログイン用パスワード</label>
+        <input id="creator_password" name="creator_password" type="password" required minLength={8} autoComplete="new-password" />
+      </div>
+      <div className="field">
+        <label htmlFor="youtube_url">YouTubeチャンネルURL</label>
         <input id="youtube_url" name="youtube_url" type="url" required placeholder="https://www.youtube.com/@channel" />
       </div>
       <div className="field">
-        <label htmlFor="youtube_channel_id">YouTube Channel ID</label>
+        <label htmlFor="youtube_channel_id">YouTube Channel ID 任意</label>
         <input id="youtube_channel_id" name="youtube_channel_id" placeholder="UC..." />
       </div>
       <div className="field">
-        <label htmlFor="desired_plan">希望プラン</label>
-        <select id="desired_plan" name="desired_plan" value={selectedPlan} onChange={(event) => changePlan(event.target.value)}>
-          <option value="free">無料掲載</option>
-          <option value="paid">有料掲載 500円</option>
-          <option value="boost">さらに上位表示 980円</option>
-        </select>
-        {selectedPlan === "free" ? (
-          <p className="notice-text">無料掲載は申し込み後すぐ掲載されます。カテゴリ1件、タグ1件のみ選択できます。</p>
-        ) : (
-          <p className="notice-text">送信後に決済画面へ進みます。決済完了後、自動で掲載されます。</p>
-        )}
-      </div>
-      <div className="field">
-        <label htmlFor="creator_password">配信者ログイン用パスワード</label>
-        <input id="creator_password" name="creator_password" type="password" required minLength={8} autoComplete="new-password" />
-        <p className="help-text">ログインはメールアドレスとこのパスワードで行います。</p>
-      </div>
-      <div className="field">
-        <label htmlFor="description">プロフィール画面に表示する自己アピール</label>
-        <textarea id="description" name="description" required maxLength={500} />
-      </div>
-      <div className="field">
-        <label htmlFor="one_liner">スワイプカードの一言</label>
-        <input id="one_liner" name="one_liner" required maxLength={80} />
-      </div>
-      <div className="field">
-        <label htmlFor="stream_time">配信時間帯</label>
-        <input id="stream_time" name="stream_time" placeholder="例: 平日 22:00-24:00" />
-      </div>
-      <div className="field">
-        <label htmlFor="images">スワイプ画面に表示する画像 最大3枚</label>
+        <label htmlFor="images">
+          <ImagePlus size={16} /> 掲載写真 最大3枚
+        </label>
         <input id="images" name="images" type="file" accept="image/*" multiple onChange={onFilesChange} />
         {!!images.length && (
           <div className="image-preview-row">
@@ -169,28 +198,58 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
           </div>
         )}
       </div>
-      <div className="field">
-        <label>カテゴリ {selectedCategories.length}/{categoryLimit}</label>
-        <div className="choice-grid">
-          {categories.map((category) => (
-            <label className="choice" key={category}>
-              <input type="checkbox" checked={selectedCategories.includes(category)} onChange={() => toggleCategory(category)} />
-              {category}
-            </label>
-          ))}
-        </div>
-      </div>
-      <div className="field">
-        <label>タグ {selectedTags.length}/{tagLimit}</label>
-        <div className="choice-grid">
-          {tags.map((tag) => (
-            <label className="choice" key={tag}>
-              <input type="checkbox" checked={selectedTags.includes(tag)} onChange={() => toggleTag(tag)} />
-              {tag}
-            </label>
-          ))}
-        </div>
-      </div>
+
+      {isFree ? (
+        <section className="status-band">
+          <h2>無料掲載の表示内容</h2>
+          <p>無料掲載では、写真・名前・YouTubeチャンネルURLのみを表示します。タグ、カテゴリ、メッセージ、公式バッジ、上位表示は有料掲載から使えます。</p>
+        </section>
+      ) : (
+        <>
+          <div className="field">
+            <label htmlFor="description">プロフィール画面に表示する自己アピール</label>
+            <textarea id="description" name="description" required maxLength={500} />
+          </div>
+          <div className="field">
+            <label htmlFor="one_liner">今日のひとこと</label>
+            <input id="one_liner" name="one_liner" required maxLength={80} />
+            <p className="help-text">有料掲載以上では、スワイプ画面の画像上に表示されます。</p>
+          </div>
+          <div className="field">
+            <label htmlFor="stream_time">配信時間帯</label>
+            <input id="stream_time" name="stream_time" placeholder="例: 平日 22:00-24:00" />
+          </div>
+          <div className="field">
+            <label>カテゴリ {selectedCategories.length}/{categoryLimit}</label>
+            <div className="choice-grid">
+              {categories.map((category) => (
+                <label className="choice" key={category}>
+                  <input type="checkbox" checked={selectedCategories.includes(category)} onChange={() => toggleCategory(category)} />
+                  {category}
+                </label>
+              ))}
+            </div>
+          </div>
+          <div className="field">
+            <label>タグ {selectedTags.length}/{tagLimit}</label>
+            <div className="choice-grid">
+              {tags.map((tag) => (
+                <label className="choice" key={tag}>
+                  <input type="checkbox" checked={selectedTags.includes(tag)} onChange={() => toggleTag(tag)} />
+                  {tag}
+                </label>
+              ))}
+            </div>
+          </div>
+          {selectedPlan === "paid" && (
+            <p className="notice-text"><BadgeCheck size={16} /> 有料掲載では公式バッジと上位表示が付き、視聴者に見つけてもらいやすくなります。</p>
+          )}
+          {selectedPlan === "boost" && (
+            <p className="notice-text"><Crown size={16} /> プレミアムではおすすめアーカイブと視聴者へのいいね機能も使えます。</p>
+          )}
+        </>
+      )}
+
       <button className="primary-button" type="submit">
         <Send size={18} />
         申し込む

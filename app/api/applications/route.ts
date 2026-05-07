@@ -32,8 +32,8 @@ export async function POST(request: Request) {
     thumbnails: normalizeThumbnails(sanitizeArray(body.thumbnails)),
     categories: sanitizeArray(body.categories),
     tags: sanitizeArray(body.tags).slice(0, 5),
-    description: String(body.description).trim(),
-    one_liner: String(body.one_liner || body.description).trim().slice(0, 80),
+    description: String(body.description || "").trim(),
+    one_liner: String(body.one_liner || body.description || "").trim().slice(0, 80),
     stream_time: String(body.stream_time || "").trim(),
     desired_plan: (body.desired_plan || "free") as PlanType,
     creator_login_id: makeCreatorLoginId(),
@@ -106,15 +106,16 @@ function validate(body: Record<string, unknown>) {
   if (!body.name) return "name is required";
   if (!body.email) return "email is required";
   if (!body.youtube_url) return "youtube_url is required";
-  if (!body.description) return "profile appeal is required";
+  if (plan !== "free" && !body.description) return "有料掲載では自己アピールを入力してください。";
+  if (plan !== "free" && !body.one_liner) return "有料掲載では今日のひとことを入力してください。";
   if (String(body.creator_password || "").length < 8) return "creator password must be at least 8 characters";
   if (sanitizeArray(body.thumbnails).length > 3) return "thumbnails max is 3";
-  if (plan === "free" && categoryCount > 1) return "free plan category max is 1";
-  if (plan === "free" && tagCount > 1) return "free plan tag max is 1";
+  if (plan === "free" && categoryCount > 0) return "無料掲載ではカテゴリは登録されません。";
+  if (plan === "free" && tagCount > 0) return "無料掲載ではタグは登録されません。";
   if (plan !== "free" && categoryCount > 3) return "paid plan category max is 3";
   if (plan !== "free" && tagCount > 5) return "paid plan tag max is 5";
-  if (categoryCount < 1) return "category is required";
-  if (tagCount < 1) return "tag is required";
+  if (plan !== "free" && categoryCount < 1) return "有料掲載ではカテゴリを1件以上選択してください。";
+  if (plan !== "free" && tagCount < 1) return "有料掲載ではタグを1件以上選択してください。";
   return null;
 }
 

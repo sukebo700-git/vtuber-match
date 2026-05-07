@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import { NextResponse } from "next/server";
-import { PLAN_AMOUNTS, isPaidPlan } from "@/lib/billing";
+import { getPlanAmount, isPaidPlan } from "@/lib/billing";
+import type { PlanType } from "@/lib/types";
 import { FieldValue, getAdminDb } from "@/lib/firebaseAdmin";
 
 export const dynamic = "force-dynamic";
@@ -27,6 +28,7 @@ export async function POST(request: Request) {
   const session = event.data?.object || {};
   const metadata = session.metadata || {};
   const planType = String(metadata.plan_type || "");
+  const currentPlan = String(metadata.current_plan || "free") as PlanType;
   const applicationId = String(metadata.application_id || "");
   const streamerId = String(metadata.streamer_id || "");
   const subscriptionId = String(session.subscription || "");
@@ -91,7 +93,7 @@ export async function POST(request: Request) {
       application_id: applicationId || null,
       streamer_id: streamerId || null,
       plan_type: planType,
-      amount: PLAN_AMOUNTS[planType],
+      amount: getPlanAmount(planType, currentPlan),
       payer_email: session.customer_details?.email || session.customer_email || "",
       status: "paid",
       provider: "stripe",

@@ -1,25 +1,17 @@
-import type { Streamer } from "./types";
+import type { PlanType, Streamer } from "./types";
 
-const planScore = {
-  boost: 3000,
-  paid: 2000,
-  free: 1000
-};
+const planOrder: PlanType[] = ["boost", "paid", "free"];
 
 export function rankStreamers(streamers: Streamer[]) {
-  const now = Date.now();
-
-  return [...streamers]
-    .filter((streamer) => streamer.is_visible !== false)
-    .sort((a, b) => scoreStreamer(b, now) - scoreStreamer(a, now));
+  const visible = streamers.filter((streamer) => streamer.is_visible !== false);
+  return planOrder.flatMap((plan) => shuffle(visible.filter((streamer) => streamer.plan_type === plan)));
 }
 
-function scoreStreamer(streamer: Streamer, now: number) {
-  const last = streamer.last_video_date ? new Date(streamer.last_video_date).getTime() : 0;
-  const days = last ? (now - last) / 86400000 : 999;
-  const freshBonus = days <= 30 ? 400 : -600;
-  const scoutBonus = streamer.is_initial_scout ? 80 : 0;
-  const engagement = Math.min(300, (streamer.likes || 0) * 2 + (streamer.impressions || 0) * 0.05);
-
-  return planScore[streamer.plan_type] + freshBonus + scoutBonus + engagement;
+function shuffle<T>(items: T[]) {
+  const copied = [...items];
+  for (let index = copied.length - 1; index > 0; index -= 1) {
+    const randomIndex = Math.floor(Math.random() * (index + 1));
+    [copied[index], copied[randomIndex]] = [copied[randomIndex], copied[index]];
+  }
+  return copied;
 }

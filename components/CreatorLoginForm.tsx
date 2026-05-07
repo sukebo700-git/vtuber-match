@@ -9,7 +9,7 @@ export function CreatorLoginForm() {
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setStatus("ログイン確認中...");
+    setStatus("ログイン確認中です...");
     const response = await fetch("/api/creator-login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -24,6 +24,7 @@ export function CreatorLoginForm() {
     localStorage.setItem("vtuber-match-creator-login-id", data.creator_login_id || "");
     localStorage.setItem("vtuber-match-creator-email", email);
     localStorage.setItem("vtuber-match-creator-application-id", data.application_id || "");
+    localStorage.setItem("vtuber-match-creator-plan", data.plan_type || "free");
     if (data.streamer_id) localStorage.setItem("vtuber-match-creator-streamer-id", data.streamer_id);
     setStatus("ログインしました。配信者用ページへ移動します。");
     window.location.assign("/creator");
@@ -39,7 +40,7 @@ export function CreatorLoginForm() {
         <label htmlFor="creator_password">パスワード</label>
         <input id="creator_password" type="password" value={password} onChange={(event) => setPassword(event.target.value)} required autoComplete="current-password" />
       </div>
-      <p className="help-text">申し込み時のメールアドレスとパスワードでログインできます。管理IDはログインには使いません。</p>
+      <p className="help-text">申し込み時に登録したメールアドレスとパスワードでログインできます。</p>
       <button className="primary-button" type="submit">ログイン</button>
       <p className="help-text"><a href="/password-reset?type=creator">パスワードを忘れた方</a></p>
       {status && <p className="notice-text">{status}</p>}

@@ -112,8 +112,11 @@ export type LikePayload = {
 
 export type StreamerReport = {
   id: string;
+  report_type?: "streamer" | "viewer";
   streamer_id: string;
   streamer_name?: string;
+  viewer_profile_id?: string;
+  viewer_name?: string;
   reason: string;
   detail?: string;
   reporter_contact?: string;

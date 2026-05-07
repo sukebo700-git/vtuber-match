@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminDb } from "@/lib/firebaseAdmin";
-import { findLocalApplicationByEmail } from "@/lib/localStore";
+import { findLocalApplicationByEmail, readLocalStreamers } from "@/lib/localStore";
 import { hashPassword } from "@/lib/password";
 
 export async function POST(request: Request) {
@@ -24,11 +24,14 @@ export async function POST(request: Request) {
     if (!application.streamer_id) {
       return NextResponse.json({ error: "掲載後にアップグレードできます。" }, { status: 400 });
     }
+    const streamers = await readLocalStreamers();
+    const streamer = streamers.find((item) => item.id === application.streamer_id);
     return NextResponse.json({
       application_id: application.id,
       streamer_id: application.streamer_id,
       payer_email: application.email,
       plan_type: planType,
+      current_plan: streamer?.plan_type || application.desired_plan || "free",
       source: "local"
     });
   }
@@ -43,11 +46,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "掲載後にアップグレードできます。" }, { status: 400 });
   }
 
+  let currentPlan = data.desired_plan || "free";
+  const streamerDoc = await db.collection("streamers").doc(String(data.streamer_id)).get();
+  const streamerData = streamerDoc.data();
+  if (streamerData?.plan_type) currentPlan = streamerData.plan_type;
+
   return NextResponse.json({
     application_id: doc.id,
     streamer_id: data.streamer_id,
     payer_email: data.email || email,
     plan_type: planType,
+    current_plan: currentPlan,
     source: "firestore"
   });
 }
