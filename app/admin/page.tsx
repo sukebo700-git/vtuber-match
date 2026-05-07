@@ -3,9 +3,10 @@ import { AdminDashboard } from "@/components/AdminDashboard";
 import { ReportAdminPanel } from "@/components/ReportAdminPanel";
 import { ViewerAdminPanel } from "@/components/ViewerAdminPanel";
 import { PasswordResetAdminPanel } from "@/components/PasswordResetAdminPanel";
+import { VisitStatsPanel } from "@/components/VisitStatsPanel";
 import { adminCookieName, verifyAdminSession } from "@/lib/adminSession";
 import { getAdminDb } from "@/lib/firebaseAdmin";
-import { readAllLocalStreamers, readLocalApplications, readLocalPasswordResetRequests, readLocalReports, readLocalViewerProfilesWithStats } from "@/lib/localStore";
+import { readAllLocalStreamers, readLocalApplications, readLocalPasswordResetRequests, readLocalReports, readLocalViewerProfilesWithStats, readLocalVisitStats, summarizeVisits } from "@/lib/localStore";
 import { normalizeStreamer } from "@/lib/streamers";
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
@@ -23,6 +24,7 @@ export default async function AdminPage() {
   const viewers = db ? await readFirestoreViewerProfiles() : await readLocalViewerProfilesWithStats();
   const reports = db ? await readFirestoreReports() : await readLocalReports();
   const passwordResetRequests = db ? await readFirestorePasswordResetRequests() : await readLocalPasswordResetRequests();
+  const visitStats = db ? await readFirestoreVisitStats() : await readLocalVisitStats();
 
   return (
     <div className="app-shell">
@@ -36,6 +38,7 @@ export default async function AdminPage() {
         <HeaderAuthStatus />
       </header>
       <main className="main grid-page">
+        <VisitStatsPanel stats={visitStats} />
         <AdminDashboard initialApplications={applications} initialStreamers={streamers} adminKey="" />
         <ViewerAdminPanel viewers={viewers} />
         <PasswordResetAdminPanel requests={passwordResetRequests} adminKey="" />
@@ -43,6 +46,18 @@ export default async function AdminPage() {
       </main>
     </div>
   );
+}
+
+async function readFirestoreVisitStats() {
+  const db = getAdminDb();
+  if (!db) return { today: 0, week: 0, total: 0 };
+  const snapshot = await db.collection("site_visits").limit(500).get();
+  const visits: Record<string, number> = {};
+  snapshot.docs.forEach((doc) => {
+    const data = doc.data();
+    visits[String(data.date || doc.id)] = Number(data.count || 0);
+  });
+  return summarizeVisits(visits);
 }
 
 async function readFirestorePasswordResetRequests(): Promise<PasswordResetRequest[]> {

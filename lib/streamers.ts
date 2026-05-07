@@ -2,12 +2,14 @@ import { getAdminDb } from "./firebaseAdmin";
 import { findLocalStreamer, readLocalStreamers } from "./localStore";
 import { mockStreamers } from "./mockData";
 import { rankStreamers } from "./ranking";
+import { ensureDailyGuestLikes } from "./dailyGuestLikes";
 import type { Streamer } from "./types";
 
 export async function getStreamersForSwipe(): Promise<Streamer[]> {
   const db = getAdminDb();
   if (!db) return rankStreamers(await readLocalStreamers());
 
+  await ensureDailyGuestLikes();
   const snapshot = await db.collection("streamers").limit(80).get();
   const streamers = snapshot.docs.map((doc) => normalizeStreamer(doc.id, doc.data()));
   return rankStreamers(streamers.length ? streamers : mockStreamers);

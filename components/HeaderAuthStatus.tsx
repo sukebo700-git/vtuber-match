@@ -89,6 +89,7 @@ function readLoginState(): HeaderLoginState | null {
 export function HeaderAuthStatus() {
   const [login, setLogin] = useState<HeaderLoginState | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [loginOpen, setLoginOpen] = useState(false);
 
   useEffect(() => {
     const refresh = () => setLogin(readLoginState());
@@ -103,62 +104,83 @@ export function HeaderAuthStatus() {
     };
   }, []);
 
-  const statusLabel = useMemo(() => {
+  const displayName = useMemo(() => {
     if (!login) return "未ログイン";
     return login.name || login.email || login.id || "ログイン中";
   }, [login]);
 
+  const statusLabel = login ? (login.type === "creator" ? "配信者" : "視聴者") : "未ログイン";
+
   const menuItems = useMemo(() => {
     if (login?.type === "creator") {
       return [
-        { href: "/creator/edit", label: "プロフィール編集" },
+        { href: "/creator/edit", label: "プロフィール" },
         { href: "/creator/upgrade", label: "アップグレード" },
-        { href: "/creator", label: "配信者用ページ" },
       ];
     }
 
     if (login?.type === "viewer") {
       return [
-        { href: "/viewer", label: "視聴者プロフィール" },
-        { href: "/viewer/upgrade", label: "応援プラン" },
-        { href: "/", label: "スワイプへ戻る" },
+        { href: "/viewer", label: "プロフィール" },
+        { href: "/viewer/upgrade", label: "アップグレード" },
       ];
     }
 
-    return [
-      { href: "/login", label: "ログイン" },
-      { href: "/creator", label: "配信者用" },
-      { href: "/viewer", label: "視聴者用" },
-    ];
+    return [];
   }, [login]);
 
   const logout = () => {
     [...CREATOR_KEYS, ...VIEWER_KEYS].forEach((key) => localStorage.removeItem(key));
     setLogin(null);
     setMenuOpen(false);
+    setLoginOpen(false);
     window.dispatchEvent(new Event("vtuber-match-auth-changed"));
   };
 
   return (
     <div className="header-auth-block" aria-label="ログイン状態とメニュー">
       <a className="header-main-link" href="/">
-        スワイプ
+        TOP
       </a>
 
-      <span className="header-user-name" title={statusLabel}>
+      <span className="header-user-name" title={displayName}>
         <UserRound size={15} aria-hidden />
         {statusLabel}
       </span>
 
       {login ? (
-        <button className="header-auth-action" type="button" onClick={logout}>
-          <LogOut size={15} aria-hidden />
-          ログアウト
-        </button>
+        <>
+          <span className="header-auth-action header-display-name" title={displayName}>
+            {displayName}
+          </span>
+          <button className="header-auth-action" type="button" onClick={logout}>
+            <LogOut size={15} aria-hidden />
+            ログアウト
+          </button>
+        </>
       ) : (
-        <a className="header-auth-action" href="/login">
-          ログイン
-        </a>
+        <>
+          <div className="header-menu-wrap">
+            <button
+              className="header-auth-action"
+              type="button"
+              aria-expanded={loginOpen}
+              aria-haspopup="menu"
+              onClick={() => setLoginOpen((current) => !current)}
+            >
+              ログイン
+            </button>
+            {loginOpen ? (
+              <div className="header-menu-panel compact-menu" role="menu">
+                <a href="/creator/login" role="menuitem">配信者ログイン</a>
+                <a href="/viewer/login" role="menuitem">視聴者ログイン</a>
+              </div>
+            ) : null}
+          </div>
+          <a className="header-auth-action signup-action" href="/signup">
+            新規登録
+          </a>
+        </>
       )}
 
       <div className="header-menu-wrap">
@@ -175,16 +197,15 @@ export function HeaderAuthStatus() {
 
         {menuOpen ? (
           <div className="header-menu-panel" role="menu">
-            {menuItems.map((item) => (
-              <a key={item.href} href={item.href} role="menuitem">
-                {item.label}
-              </a>
-            ))}
-            {login ? (
-              <button type="button" role="menuitem" onClick={logout}>
-                ログアウト
-              </button>
-            ) : null}
+            {menuItems.length ? (
+              menuItems.map((item) => (
+                <a key={item.href} href={item.href} role="menuitem">
+                  {item.label}
+                </a>
+              ))
+            ) : (
+              <span className="header-menu-empty">ログイン後に利用できます</span>
+            )}
           </div>
         ) : null}
       </div>

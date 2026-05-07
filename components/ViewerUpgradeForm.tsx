@@ -56,7 +56,7 @@ export function ViewerUpgradeForm() {
         </article>
 
         <article className="plan-card selected">
-          <strong>視聴者応援プラン</strong>
+          <strong>視聴者ブーストプラン</strong>
           <span className="plan-price">月額330円</span>
           <p>マッチした配信者へ応援情報を開示し、認知してもらいやすくします。</p>
           <ul>

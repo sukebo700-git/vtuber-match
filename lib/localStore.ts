@@ -14,9 +14,40 @@ const profileEditsPath = path.join(dataDir, "local-profile-edits.json");
 const reportsPath = path.join(dataDir, "local-reports.json");
 const creatorLikesPath = path.join(dataDir, "local-creator-likes.json");
 const passwordResetRequestsPath = path.join(dataDir, "local-password-reset-requests.json");
+const visitsPath = path.join(dataDir, "local-visits.json");
 
 export async function readLocalStreamers() {
   return rankStreamers(await readAllLocalStreamers());
+}
+
+export async function addLocalVisit(date: string) {
+  await ensureFiles();
+  const raw = await fs.readFile(visitsPath, "utf8");
+  const visits = JSON.parse(raw) as Record<string, number>;
+  visits[date] = (visits[date] || 0) + 1;
+  await fs.writeFile(visitsPath, JSON.stringify(visits, null, 2));
+}
+
+export async function readLocalVisitStats() {
+  await ensureFiles();
+  const raw = await fs.readFile(visitsPath, "utf8");
+  const visits = JSON.parse(raw) as Record<string, number>;
+  return summarizeVisits(visits);
+}
+
+export function summarizeVisits(visits: Record<string, number>) {
+  const today = new Date().toISOString().slice(0, 10);
+  const todayCount = visits[today] || 0;
+  const sevenDays = new Set(
+    Array.from({ length: 7 }, (_, index) => {
+      const date = new Date();
+      date.setDate(date.getDate() - index);
+      return date.toISOString().slice(0, 10);
+    }),
+  );
+  const weekCount = Object.entries(visits).reduce((sum, [date, count]) => sum + (sevenDays.has(date) ? count : 0), 0);
+  const totalCount = Object.values(visits).reduce((sum, count) => sum + count, 0);
+  return { today: todayCount, week: weekCount, total: totalCount };
 }
 
 export async function findLocalStreamer(id: string) {
@@ -475,5 +506,10 @@ async function ensureFiles() {
     await fs.access(passwordResetRequestsPath);
   } catch {
     await fs.writeFile(passwordResetRequestsPath, "[]");
+  }
+  try {
+    await fs.access(visitsPath);
+  } catch {
+    await fs.writeFile(visitsPath, "{}");
   }
 }

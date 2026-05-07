@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
 import { BadgeCheck, Heart, Info, Search, Sparkles, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { CATEGORIES } from "@/lib/constants";
-import type { Streamer, ViewerProfile } from "@/lib/types";
 import { ensureAnonymousUser } from "@/lib/firebase";
+import type { Streamer, ViewerProfile } from "@/lib/types";
 
 type SwipeClientProps = {
   initialStreamers: Streamer[];
@@ -20,7 +20,7 @@ export function SwipeClient({ initialStreamers }: SwipeClientProps) {
 
   const streamers = useMemo(
     () => (categoryFilter ? initialStreamers.filter((streamer) => streamer.categories.includes(categoryFilter)) : initialStreamers),
-    [categoryFilter, initialStreamers]
+    [categoryFilter, initialStreamers],
   );
   const current = streamers.length ? streamers[index % streamers.length] : undefined;
   const next = streamers.length ? streamers[(index + 1) % streamers.length] : undefined;
@@ -43,7 +43,7 @@ export function SwipeClient({ initialStreamers }: SwipeClientProps) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       keepalive: true,
-      body: JSON.stringify({ streamer_id: current.id })
+      body: JSON.stringify({ streamer_id: current.id }),
     }).catch(() => undefined);
   }, [current]);
 
@@ -60,17 +60,15 @@ export function SwipeClient({ initialStreamers }: SwipeClientProps) {
           user_id: userId,
           streamer_id: current.id,
           viewer_profile_id: viewerProfile?.id,
-          viewer_profile: viewerProfile?.visible_to_matched_streamers ? viewerProfile : { id: viewerProfile?.id }
-        })
+          viewer_profile: viewerProfile?.visible_to_matched_streamers ? viewerProfile : { id: viewerProfile?.id },
+        }),
       });
       window.location.href = current.youtube_url;
     }
 
     setIndex((value) => {
       const nextIndex = value + 1;
-      if (nextIndex > 0 && nextIndex % streamers.length === 0) {
-        setLoopCount((loop) => loop + 1);
-      }
+      if (nextIndex > 0 && nextIndex % streamers.length === 0) setLoopCount((loop) => loop + 1);
       return nextIndex;
     });
   }
@@ -79,7 +77,7 @@ export function SwipeClient({ initialStreamers }: SwipeClientProps) {
     return (
       <div className="status-band">
         <h2>掲載中の配信者がまだいません</h2>
-        <p>管理画面で配信者を掲載するか、申し込み後の掲載を確認してください。</p>
+        <p>配信者の掲載後、ここにスワイプカードが表示されます。</p>
       </div>
     );
   }
@@ -122,7 +120,7 @@ export function SwipeClient({ initialStreamers }: SwipeClientProps) {
         {!current ? (
           <div className="status-band">
             <h2>該当する配信者がいません</h2>
-            <p>カテゴリを変えるか、検索を解除してもう一度探してください。</p>
+            <p>カテゴリを変更するか、検索を解除してください。</p>
           </div>
         ) : (
           <>
@@ -157,10 +155,9 @@ export function SwipeClient({ initialStreamers }: SwipeClientProps) {
             <p>{current.one_liner}</p>
           </div>
         )}
-        <a className="secondary-button viewer-profile-link" href="/viewer">視聴者プロフィール</a>
         <div className="status-band next-find-panel">
           <h2>{isLooping ? "再表示中" : "次の推しを見つける"}</h2>
-          <p>気になる配信者を右へ。スキップは左へ。中央のプロフィールボタンで詳細を確認できます。</p>
+          <p>右でいいね、左でスキップ。中央ボタンでプロフィールを確認できます。</p>
         </div>
       </aside>
     </section>
@@ -265,7 +262,7 @@ function SwipeCard({ streamer, thumbnail, onSwipe }: { streamer: Streamer; thumb
             {streamer.tags.slice(0, 3).map((tag) => (
               <span className="pill" key={tag}>#{tag}</span>
             ))}
-            <span className="pill">マッチ {streamer.likes ?? 0}</span>
+            <span className="pill">マッチ{streamer.likes ?? 0}</span>
           </div>
         )}
         <h1>{streamer.name}</h1>

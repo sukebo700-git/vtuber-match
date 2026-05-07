@@ -27,7 +27,7 @@ export default function ViewerUpgradePage() {
           }
         >
           <section className="status-band">
-            <h2>視聴者応援プラン</h2>
+            <h2>さらに応援しよう！視聴者ブーストプラン</h2>
             <p>
               月額330円で、マッチした配信者へ名前、YouTube表示名、X / Twitter ID、一言メッセージを開示できます。応援していることが伝わりやすくなります。
             </p>

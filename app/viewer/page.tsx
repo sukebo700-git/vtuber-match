@@ -23,6 +23,11 @@ export default function ViewerPage() {
             <a className="secondary-button" href="/viewer/upgrade">視聴者応援プラン</a>
           </p>
         </section>
+        <section className="status-band viewer-boost-banner">
+          <h2>さらに応援しよう！視聴者ブーストプラン</h2>
+          <p>月額330円で、マッチした配信者に名前・YouTube表示名・X ID・一言を開示できます。応援していることが伝わりやすくなります。</p>
+          <a className="primary-button" href="/viewer/upgrade">プランを見る</a>
+        </section>
         <ViewerProfileGate />
       </main>
     </div>
