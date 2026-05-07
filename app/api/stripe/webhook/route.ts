@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import { NextResponse } from "next/server";
-import { getPlanAmount, isPaidPlan } from "@/lib/billing";
+import { getPlanAmount, isPaidPlan, isStreamerPaidPlan } from "@/lib/billing";
 import type { PlanType } from "@/lib/types";
 import { FieldValue, getAdminDb } from "@/lib/firebaseAdmin";
 
@@ -31,6 +31,7 @@ export async function POST(request: Request) {
   const currentPlan = String(metadata.current_plan || "free") as PlanType;
   const applicationId = String(metadata.application_id || "");
   const streamerId = String(metadata.streamer_id || "");
+  const viewerId = String(metadata.viewer_id || "");
   const subscriptionId = String(session.subscription || "");
 
   if (!isPaidPlan(planType)) return NextResponse.json({ error: "invalid plan" }, { status: 400 });
@@ -38,7 +39,7 @@ export async function POST(request: Request) {
   const db = getAdminDb();
   if (!db) return NextResponse.json({ received: true, skipped: "firestore not configured" });
 
-  if (applicationId) {
+  if (applicationId && isStreamerPaidPlan(planType)) {
     const applicationRef = db.collection("applications").doc(applicationId);
     await applicationRef.set({
       payment_status: "paid",
@@ -78,9 +79,18 @@ export async function POST(request: Request) {
       }, { merge: true });
     }
   }
-  if (streamerId) {
+  if (streamerId && isStreamerPaidPlan(planType)) {
     await db.collection("streamers").doc(streamerId).set({
       plan_type: planType,
+      subscription_status: "active",
+      stripe_subscription_id: subscriptionId,
+      upgraded_at: FieldValue.serverTimestamp()
+    }, { merge: true });
+  }
+
+  if (viewerId && planType === "viewer_paid") {
+    await db.collection("viewer_profiles").doc(viewerId).set({
+      viewer_plan: "viewer_paid",
       subscription_status: "active",
       stripe_subscription_id: subscriptionId,
       upgraded_at: FieldValue.serverTimestamp()
@@ -92,6 +102,7 @@ export async function POST(request: Request) {
     tx.set(paymentRef, {
       application_id: applicationId || null,
       streamer_id: streamerId || null,
+      viewer_id: viewerId || null,
       plan_type: planType,
       amount: getPlanAmount(planType, currentPlan),
       payer_email: session.customer_details?.email || session.customer_email || "",
@@ -111,13 +122,21 @@ export async function POST(request: Request) {
         paid_at: FieldValue.serverTimestamp()
       });
     }
-    if (streamerId) {
+    if (streamerId && isStreamerPaidPlan(planType)) {
       tx.update(db.collection("streamers").doc(streamerId), {
         plan_type: planType,
         subscription_status: "active",
         stripe_subscription_id: subscriptionId,
         upgraded_at: FieldValue.serverTimestamp()
       });
+    }
+    if (viewerId && planType === "viewer_paid") {
+      tx.set(db.collection("viewer_profiles").doc(viewerId), {
+        viewer_plan: "viewer_paid",
+        subscription_status: "active",
+        stripe_subscription_id: subscriptionId,
+        upgraded_at: FieldValue.serverTimestamp()
+      }, { merge: true });
     }
   });
 
@@ -131,6 +150,7 @@ async function markSubscriptionCanceled(subscription: any) {
   const metadata = subscription.metadata || {};
   const applicationId = String(metadata.application_id || "");
   const streamerId = String(metadata.streamer_id || "");
+  const viewerId = String(metadata.viewer_id || "");
 
   if (applicationId) {
     await db.collection("applications").doc(applicationId).set({
@@ -141,6 +161,13 @@ async function markSubscriptionCanceled(subscription: any) {
   if (streamerId) {
     await db.collection("streamers").doc(streamerId).set({
       plan_type: "free",
+      subscription_status: "canceled",
+      canceled_at: FieldValue.serverTimestamp()
+    }, { merge: true });
+  }
+  if (viewerId) {
+    await db.collection("viewer_profiles").doc(viewerId).set({
+      viewer_plan: "free",
       subscription_status: "canceled",
       canceled_at: FieldValue.serverTimestamp()
     }, { merge: true });

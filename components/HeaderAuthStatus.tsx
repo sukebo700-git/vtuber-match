@@ -6,6 +6,7 @@ import { LogOut, UserRound } from "lucide-react";
 type LoginState = {
   type: "creator" | "viewer";
   name: string;
+  email?: string;
 };
 
 const viewerAuthKey = "vtuber-match-viewer-auth";
@@ -15,8 +16,6 @@ export function HeaderAuthStatus() {
   const [login, setLogin] = useState<LoginState | null>(null);
 
   useEffect(() => {
-    setLogin(readLoginState());
-
     function refresh() {
       const nextLogin = readLoginState();
       setLogin(nextLogin);
@@ -43,25 +42,40 @@ export function HeaderAuthStatus() {
       "vtuber-match-creator-streamer-id",
       "vtuber-match-creator-plan",
       "vtuber-match-viewer-auth",
-      "vtuber-match-viewer-id"
+      "vtuber-match-viewer-id",
+      "vtuber-match-viewer-profile"
     ].forEach((key) => localStorage.removeItem(key));
     setLogin(null);
     document.body.classList.remove("creator-auth", "viewer-auth");
     window.dispatchEvent(new Event("vtuber-match-auth-changed"));
   }
 
-  if (!login) return null;
+  const label = login ? login.name || login.email || "ログイン中" : "未ログイン";
 
   return (
-    <div className="header-auth-status" aria-label="ログイン状態">
-      <span>
-        <UserRound size={15} />
-        ログイン中: {login.name}
-      </span>
-      <button type="button" onClick={logout}>
-        <LogOut size={15} />
-        ログアウト
-      </button>
+    <div className="header-auth-block" aria-label="ログイン状態">
+      <nav className="global-nav" aria-label="メイン">
+        <a href="/">スワイプ</a>
+        <a href="/creator">配信者用</a>
+        <a href="/viewer">視聴者用</a>
+      </nav>
+      <div className="header-auth-row">
+        <span className="header-user-name">
+          <UserRound size={15} />
+          {label}
+        </span>
+        {login ? (
+          <button className="header-auth-action" type="button" onClick={logout}>
+            <LogOut size={15} />
+            ログアウト
+          </button>
+        ) : (
+          <a className="header-auth-action" href="/viewer/login">ログイン</a>
+        )}
+        <span className="header-login-links">
+          ログインページ: <a href="/viewer/login">視聴者</a> / <a href="/creator/login">配信者</a>
+        </span>
+      </div>
     </div>
   );
 }
@@ -71,7 +85,8 @@ function readLoginState(): LoginState | null {
   if (creatorEmail) {
     return {
       type: "creator",
-      name: localStorage.getItem("vtuber-match-creator-name") || creatorEmail
+      name: localStorage.getItem("vtuber-match-creator-name") || creatorEmail,
+      email: creatorEmail
     };
   }
 
@@ -81,7 +96,8 @@ function readLoginState(): LoginState | null {
   if (viewerName) {
     return {
       type: "viewer",
-      name: viewerName
+      name: viewerName,
+      email: viewerAuth?.email || viewerProfile?.email
     };
   }
 

@@ -32,6 +32,16 @@ export async function POST(request: Request) {
       timestamp: FieldValue.serverTimestamp()
     });
     tx.update(streamerRef, { likes: FieldValue.increment(1) });
+    tx.set(db.collection("notifications").doc(), {
+      target_type: "streamer",
+      streamer_id: streamerId,
+      viewer_profile_id: viewerProfile?.id || viewerProfileId || null,
+      type: "LIKE_CREATED",
+      title: "新しいいいね",
+      body: "視聴者からいいねが届きました",
+      read: false,
+      created_at: FieldValue.serverTimestamp()
+    });
   });
 
   const streamer = streamerDoc.data() || {};
@@ -50,12 +60,16 @@ function normalizeViewerProfile(value: unknown, fallbackId = "") {
   }
   const input = value as Record<string, unknown>;
   if (input.visible_to_matched_streamers === false) return null;
+  const isPaid = input.viewer_plan === "viewer_paid" || input.subscription_status === "active";
   return {
     id: typeof input.id === "string" ? input.id : fallbackId,
     display_name: typeof input.display_name === "string" ? input.display_name : "",
-    youtube_display_name: typeof input.youtube_display_name === "string" ? input.youtube_display_name : "",
+    viewer_plan: isPaid ? "viewer_paid" : "free",
+    youtube_display_name: isPaid && typeof input.youtube_display_name === "string" ? input.youtube_display_name : "",
+    twitter_id: isPaid && typeof input.twitter_id === "string" ? input.twitter_id : "",
+    one_liner: isPaid && typeof input.one_liner === "string" ? input.one_liner : "",
     image: typeof input.image === "string" ? input.image : "",
-    profile: typeof input.profile === "string" ? input.profile : "",
+    profile: isPaid && typeof input.profile === "string" ? input.profile : "",
     favorite_categories: Array.isArray(input.favorite_categories) ? input.favorite_categories.filter((item) => typeof item === "string").slice(0, 5) : []
   };
 }

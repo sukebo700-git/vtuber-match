@@ -156,7 +156,7 @@ button {
 }
 
 .topbar {
-  min-height: 70px;
+  min-height: 92px;
   padding: 0 26px;
   display: flex;
   align-items: center;
@@ -189,45 +189,63 @@ button {
 }
 
 .nav {
-  display: flex;
-  gap: 8px;
+  display: none;
 }
 
-.header-auth-status {
+.header-auth-block {
   display: inline-flex;
+  flex-direction: column;
   align-items: center;
   gap: 8px;
-  margin-left: 10px;
+  margin-left: auto;
 }
 
-.header-auth-status span,
-.header-auth-status button {
-  min-height: 36px;
+.global-nav {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.header-auth-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  width: 100%;
+}
+
+.header-user-name,
+.header-auth-action {
+  min-height: 32px;
   display: inline-flex;
   align-items: center;
   gap: 6px;
   border: 1px solid rgba(100, 114, 138, 0.18);
   border-radius: 999px;
-  padding: 7px 12px;
+  padding: 6px 11px;
   background: rgba(255, 255, 255, 0.72);
   color: #526078;
   font-size: 13px;
   font-weight: 800;
   white-space: nowrap;
-}
-
-.header-auth-status button {
+.header-auth-action {
   color: #e64f86;
   background: rgba(255, 246, 251, 0.86);
+  cursor: pointer;
 }
 
-body.creator-auth .topbar a[href="/apply"],
-body.creator-auth .topbar a[href="/creator/login"],
-body.viewer-auth .topbar a[href="/viewer/login"] {
-  display: none;
+.header-login-links {
+  color: #8a93a5;
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
 }
 
-.nav a,
+.header-login-links a {
+  color: var(--blue);
+}
+
+.global-nav a,
 .mini-button {
   min-height: 38px;
   border: 1px solid rgba(242, 56, 120, 0.18);
@@ -1119,6 +1137,12 @@ body.viewer-auth .topbar a[href="/viewer/login"] {
   font-weight: 720;
 }
 
+.danger-button {
+  border-color: rgba(220, 38, 38, 0.24);
+  color: #c83246;
+  background: rgba(255, 245, 247, 0.95);
+}
+
 .checkout-form {
   max-width: 660px;
 }
@@ -1154,24 +1178,35 @@ body.viewer-auth .topbar a[href="/viewer/login"] {
     font-size: 18px;
   }
 
-  .nav a {
+  .global-nav a {
     min-height: 34px;
     padding: 7px 10px;
     font-size: 13px;
   }
 
-  .header-auth-status {
+  .header-auth-block {
     order: 3;
     width: 100%;
-    justify-content: flex-end;
     margin-left: 0;
+    align-items: stretch;
   }
 
-  .header-auth-status span,
-  .header-auth-status button {
+  .global-nav,
+  .header-auth-row {
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+
+  .header-user-name,
+  .header-auth-action {
     min-height: 32px;
     padding: 6px 10px;
     font-size: 12px;
+  }
+
+  .header-login-links {
+    width: 100%;
+    text-align: right;
   }
 
   .main {

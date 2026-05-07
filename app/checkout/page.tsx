@@ -8,16 +8,18 @@ import type { ApplicationStatus, PlanType, StreamerApplication } from "@/lib/typ
 
 export const dynamic = "force-dynamic";
 
-export default async function CheckoutPage({ searchParams }: { searchParams: { application_id?: string; streamer_id?: string; plan?: string } }) {
+export default async function CheckoutPage({ searchParams }: { searchParams: { application_id?: string; streamer_id?: string; viewer_id?: string; plan?: string } }) {
   const applicationId = searchParams.application_id;
   const streamerId = searchParams.streamer_id;
+  const viewerId = searchParams.viewer_id;
   const upgradePlan = searchParams.plan;
 
   const application = applicationId ? await getApplication(applicationId) : null;
   if (applicationId && (!application || application.desired_plan === "free")) notFound();
-  if (!applicationId && (!streamerId || (upgradePlan !== "paid" && upgradePlan !== "boost"))) notFound();
+  if (!applicationId && !viewerId && (!streamerId || (upgradePlan !== "paid" && upgradePlan !== "boost"))) notFound();
+  if (viewerId && upgradePlan !== "viewer_paid") notFound();
 
-  const planType = application ? application.desired_plan as Exclude<PlanType, "free"> : upgradePlan as Exclude<PlanType, "free">;
+  const planType = application ? application.desired_plan as Exclude<PlanType, "free"> : upgradePlan as "paid" | "boost" | "viewer_paid";
 
   return (
     <div className="app-shell">
@@ -37,6 +39,7 @@ export default async function CheckoutPage({ searchParams }: { searchParams: { a
         <CheckoutForm
           applicationId={application?.id}
           streamerId={streamerId}
+          viewerId={viewerId}
           planType={planType}
           amount={getPlanAmount(planType)}
           email={application?.email || ""}

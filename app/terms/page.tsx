@@ -46,6 +46,7 @@ export default function TermsPage() {
         </section>
 
         <section className="status-band legal-footnote">
+          <h2>その他</h2>
           <p><a href="/commercial-disclosure">特定商取引法に基づく表記</a></p>
         </section>
 

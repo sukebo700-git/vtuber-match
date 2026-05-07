@@ -81,7 +81,8 @@ export const TAGS = [
 export const PLAN_LABELS: Record<string, string> = {
   free: "無料掲載",
   paid: "有料掲載 500円",
-  boost: "プレミアムプラン 980円"
+  boost: "プレミアムプラン 980円",
+  viewer_paid: "視聴者応援プラン 330円"
 };
 
 export const PLAN_FEATURES = {
@@ -108,5 +109,13 @@ export const PLAN_FEATURES = {
     "おすすめアーカイブをプロフィールに表示",
     "配信者から視聴者へのいいね機能",
     "より目立つプレミアムフレーム"
+  ],
+  viewer_paid: [
+    "マッチ時に名前を開示",
+    "YouTube表示名を開示",
+    "X / Twitter IDを開示",
+    "一言メッセージを開示",
+    "プロフィール欄で配信者に認知してもらいやすくなる",
+    "いいねした配信者の掲載順位を少し押し上げる"
   ]
 };

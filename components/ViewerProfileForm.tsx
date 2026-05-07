@@ -13,8 +13,11 @@ const emptyProfile: ViewerProfile = {
   id: "",
   email: "",
   viewer_login_id: "",
+  viewer_plan: "free",
   display_name: "",
   youtube_display_name: "",
+  twitter_id: "",
+  one_liner: "",
   image: "",
   profile: "",
   favorite_categories: [],
@@ -106,6 +109,7 @@ export function ViewerProfileForm() {
 
   const matchCount = profile.match_count || 0;
   const streamerLikeCount = profile.streamer_like_count || 0;
+  const isPaid = profile.viewer_plan === "viewer_paid" || profile.subscription_status === "active";
 
   return (
     <form className="form compact-form" onSubmit={submit}>
@@ -130,6 +134,7 @@ export function ViewerProfileForm() {
         <div><dt>視聴者ID</dt><dd>{profile.id || "未発行"}</dd></div>
         <div><dt>視聴者管理ID</dt><dd>{profile.viewer_login_id || "ログイン後に発行"}</dd></div>
         <div><dt>メール</dt><dd>{profile.email || "未登録"}</dd></div>
+        <div><dt>プラン</dt><dd>{isPaid ? "視聴者応援プラン" : "無料"}</dd></div>
       </dl>
 
       <div className="field">
@@ -138,12 +143,27 @@ export function ViewerProfileForm() {
       </div>
       <div className="field">
         <label htmlFor="youtube_display_name">YouTube表示名</label>
-        <input id="youtube_display_name" value={profile.youtube_display_name || ""} onChange={(event) => update({ youtube_display_name: event.target.value })} placeholder="@name など" />
+        <input id="youtube_display_name" value={profile.youtube_display_name || ""} onChange={(event) => update({ youtube_display_name: event.target.value })} placeholder="@name など" disabled={!isPaid} />
+      </div>
+      <div className="field">
+        <label htmlFor="twitter_id">X / Twitter ID</label>
+        <input id="twitter_id" value={profile.twitter_id || ""} onChange={(event) => update({ twitter_id: event.target.value })} placeholder="@vtubermatch など" disabled={!isPaid} />
+      </div>
+      <div className="field">
+        <label htmlFor="viewer_one_liner">一言メッセージ</label>
+        <input id="viewer_one_liner" value={profile.one_liner || ""} onChange={(event) => update({ one_liner: event.target.value })} placeholder="例: 初見でもたくさん応援します" disabled={!isPaid} />
       </div>
       <div className="field">
         <label htmlFor="viewer_profile">プロフィール</label>
-        <textarea id="viewer_profile" value={profile.profile || ""} onChange={(event) => update({ profile: event.target.value })} placeholder="好きな配信ジャンル、応援スタイル、推し活の雰囲気など" />
+        <textarea id="viewer_profile" value={profile.profile || ""} onChange={(event) => update({ profile: event.target.value })} placeholder="好きな配信ジャンル、応援スタイル、推し活の雰囲気など" disabled={!isPaid} />
       </div>
+      {!isPaid && (
+        <p className="notice-text">
+          無料枠は表示名とアイコンのみ登録できます。月額330円の視聴者応援プランにすると、マッチ時にYouTube表示名、X / Twitter ID、一言メッセージ、プロフィールを配信者へ開示できます。
+          <br />
+          <a href="/viewer/upgrade">視聴者応援プランを見る</a>
+        </p>
+      )}
       <div className="field">
         <label htmlFor="viewer_image">プロフィール画像</label>
         <input id="viewer_image" type="file" accept="image/*" onChange={onFile} />

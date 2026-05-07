@@ -28,6 +28,9 @@ export async function POST(request: Request) {
       email,
       viewer_login_id: existing?.viewer_login_id || makeViewerLoginId(),
       viewer_password_hash: existing?.viewer_password_hash || passwordHash,
+      viewer_plan: existing?.viewer_plan || "free",
+      subscription_status: existing?.subscription_status,
+      stripe_subscription_id: existing?.stripe_subscription_id,
       display_name: displayName || existing?.display_name || "",
       visible_to_matched_streamers: existing?.visible_to_matched_streamers !== false
     };
@@ -48,8 +51,13 @@ export async function POST(request: Request) {
     email,
     viewer_login_id: existing?.viewer_login_id || makeViewerLoginId(),
     viewer_password_hash: existing?.viewer_password_hash || passwordHash,
+    viewer_plan: existing?.viewer_plan || "free",
+    subscription_status: existing?.subscription_status,
+    stripe_subscription_id: existing?.stripe_subscription_id,
     display_name: displayName || existing?.display_name || "",
     youtube_display_name: existing?.youtube_display_name || "",
+    twitter_id: existing?.twitter_id || "",
+    one_liner: existing?.one_liner || "",
     image: existing?.image || "",
     profile: existing?.profile || "",
     favorite_categories: Array.isArray(existing?.favorite_categories) ? existing?.favorite_categories : [],

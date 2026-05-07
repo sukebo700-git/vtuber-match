@@ -22,6 +22,7 @@ export default function ViewerPage() {
           <p>ログインなしでもスワイプは利用できます。ログインすると、自分のプロフィールや画像、YouTube表示名を登録でき、マッチした配信者に積極的なファンであることを伝えられます。</p>
           <p style={{ marginTop: 12 }}>
             <a className="primary-button" href="/">スワイプ画面へ戻る</a>
+            <a className="secondary-button" href="/viewer/upgrade" style={{ marginLeft: 10 }}>視聴者応援プラン</a>
           </p>
         </section>
         <ViewerProfileGate />

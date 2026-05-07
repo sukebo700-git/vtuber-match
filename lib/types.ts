@@ -1,4 +1,5 @@
 export type PlanType = "free" | "paid" | "boost";
+export type ViewerPlanType = "free" | "viewer_paid";
 
 export type Streamer = {
   id: string;
@@ -55,7 +56,8 @@ export type PaymentRecord = {
   id: string;
   application_id?: string;
   streamer_id?: string;
-  plan_type: Exclude<PlanType, "free">;
+  viewer_id?: string;
+  plan_type: "paid" | "boost" | "viewer_paid";
   amount: number;
   status: "paid";
   payer_email: string;
@@ -69,8 +71,13 @@ export type ViewerProfile = {
   email?: string;
   viewer_login_id?: string;
   viewer_password_hash?: string;
+  viewer_plan?: ViewerPlanType;
+  subscription_status?: "active" | "canceled";
+  stripe_subscription_id?: string;
   display_name?: string;
   youtube_display_name?: string;
+  twitter_id?: string;
+  one_liner?: string;
   image?: string;
   profile?: string;
   favorite_categories?: string[];

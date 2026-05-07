@@ -1,10 +1,18 @@
 import type { PlanType, Streamer } from "./types";
 
-const planOrder: PlanType[] = ["boost", "paid", "free"];
+const planScore: Record<PlanType, number> = {
+  boost: 3000,
+  paid: 2000,
+  free: 1000
+};
 
 export function rankStreamers(streamers: Streamer[]) {
   const visible = streamers.filter((streamer) => streamer.is_visible !== false);
-  return planOrder.flatMap((plan) => shuffle(visible.filter((streamer) => streamer.plan_type === plan)));
+  return shuffle(visible).sort((a, b) => score(b) - score(a));
+}
+
+function score(streamer: Streamer) {
+  return (planScore[streamer.plan_type] || 0) + (streamer.likes || 0);
 }
 
 function shuffle<T>(items: T[]) {

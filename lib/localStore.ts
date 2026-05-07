@@ -139,7 +139,13 @@ export async function addLocalPayment(input: Omit<PaymentRecord, "id" | "status"
   };
   await fs.writeFile(paymentsPath, JSON.stringify([payment, ...payments], null, 2));
   if (input.application_id) await markLocalApplicationPaid(input.application_id);
-  if (input.streamer_id) await updateLocalStreamer(input.streamer_id, { plan_type: input.plan_type });
+  if (input.streamer_id && input.plan_type !== "viewer_paid") await updateLocalStreamer(input.streamer_id, { plan_type: input.plan_type });
+  if (input.viewer_id && input.plan_type === "viewer_paid") {
+    const profiles = await readLocalViewerProfilesRaw();
+    await fs.writeFile(viewerProfilesPath, JSON.stringify(profiles.map((profile) => (
+      profile.id === input.viewer_id ? { ...profile, viewer_plan: "viewer_paid", subscription_status: "active", updated_at: new Date().toISOString() } : profile
+    )), null, 2));
+  }
   return payment;
 }
 
@@ -235,6 +241,14 @@ export async function readLocalViewerProfilesRaw(): Promise<ViewerProfile[]> {
   await ensureFiles();
   const raw = await fs.readFile(viewerProfilesPath, "utf8");
   return JSON.parse(raw) as ViewerProfile[];
+}
+
+export async function deleteLocalViewerProfile(id: string) {
+  const profiles = await readLocalViewerProfilesRaw();
+  const target = profiles.find((profile) => profile.id === id);
+  if (!target) return null;
+  await fs.writeFile(viewerProfilesPath, JSON.stringify(profiles.filter((profile) => profile.id !== id), null, 2));
+  return target;
 }
 
 export async function readLocalViewerProfilesWithStats(): Promise<ViewerProfileWithStats[]> {

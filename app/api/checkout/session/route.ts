@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getAppUrl, getStripePriceId, isPaidPlan } from "@/lib/billing";
+import { getAppUrl, getStripePriceId, isPaidPlan, isStreamerPaidPlan } from "@/lib/billing";
 import type { PlanType } from "@/lib/types";
 import { getAdminDb } from "@/lib/firebaseAdmin";
 
@@ -9,12 +9,19 @@ export async function POST(request: Request) {
   const body = await request.json();
   const applicationId = String(body.application_id || "");
   const streamerId = String(body.streamer_id || "");
+  const viewerId = String(body.viewer_id || "");
   const planType = String(body.plan_type || "");
   const currentPlan = String(body.current_plan || "free") as PlanType;
   const payerEmail = String(body.payer_email || "");
 
-  if ((!applicationId && !streamerId) || !isPaidPlan(planType)) {
+  if ((!applicationId && !streamerId && !viewerId) || !isPaidPlan(planType)) {
     return NextResponse.json({ error: "invalid checkout request" }, { status: 400 });
+  }
+  if ((applicationId || streamerId) && !isStreamerPaidPlan(planType)) {
+    return NextResponse.json({ error: "invalid streamer checkout request" }, { status: 400 });
+  }
+  if (viewerId && planType !== "viewer_paid") {
+    return NextResponse.json({ error: "invalid viewer checkout request" }, { status: 400 });
   }
 
   const secretKey = process.env.STRIPE_SECRET_KEY;
@@ -35,10 +42,14 @@ export async function POST(request: Request) {
     const streamer = await db.collection("streamers").doc(streamerId).get();
     if (!streamer.exists) return NextResponse.json({ error: "streamer not found" }, { status: 404 });
   }
+  if (db && viewerId) {
+    const viewer = await db.collection("viewer_profiles").doc(viewerId).get();
+    if (!viewer.exists) return NextResponse.json({ error: "viewer not found" }, { status: 404 });
+  }
 
   const appUrl = getAppUrl();
   const cancelParams = new URLSearchParams(
-    applicationId ? { application_id: applicationId } : { streamer_id: streamerId, plan: planType }
+    applicationId ? { application_id: applicationId } : viewerId ? { viewer_id: viewerId, plan: planType } : { streamer_id: streamerId, plan: planType }
   );
   const params = new URLSearchParams();
   params.set("mode", "subscription");
@@ -52,8 +63,10 @@ export async function POST(request: Request) {
   params.set("subscription_data[metadata][current_plan]", currentPlan);
   if (applicationId) params.set("metadata[application_id]", applicationId);
   if (streamerId) params.set("metadata[streamer_id]", streamerId);
+  if (viewerId) params.set("metadata[viewer_id]", viewerId);
   if (applicationId) params.set("subscription_data[metadata][application_id]", applicationId);
   if (streamerId) params.set("subscription_data[metadata][streamer_id]", streamerId);
+  if (viewerId) params.set("subscription_data[metadata][viewer_id]", viewerId);
   if (payerEmail) params.set("customer_email", payerEmail);
 
   const response = await fetch("https://api.stripe.com/v1/checkout/sessions", {

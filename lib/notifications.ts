@@ -16,3 +16,20 @@ export async function notifyStreamerLike(tokens: string[] | undefined, streamerN
     }
   });
 }
+
+export async function notifyViewerCreatorLike(tokens: string[] | undefined) {
+  if (!tokens?.length) return;
+  const app = getAdminApp();
+  if (!app) return;
+
+  await app.messaging().sendEachForMulticast({
+    tokens,
+    notification: {
+      title: "配信者からいいね",
+      body: "マッチした配信者からいいねが届きました"
+    },
+    data: {
+      type: "CREATOR_LIKE_CREATED"
+    }
+  });
+}

@@ -3,12 +3,13 @@
 import { useState } from "react";
 import { CreditCard, ExternalLink } from "lucide-react";
 import { PLAN_LABELS } from "@/lib/constants";
-import type { PlanType } from "@/lib/types";
+import type { BillingPlanType } from "@/lib/billing";
 
 type CheckoutFormProps = {
   applicationId?: string;
   streamerId?: string;
-  planType: Exclude<PlanType, "free">;
+  viewerId?: string;
+  planType: BillingPlanType;
   amount: number;
   email: string;
   name: string;
@@ -16,7 +17,7 @@ type CheckoutFormProps = {
 
 const testPaymentEnabled = process.env.NEXT_PUBLIC_ENABLE_TEST_PAYMENT === "true";
 
-export function CheckoutForm({ applicationId, streamerId, planType, amount, email, name }: CheckoutFormProps) {
+export function CheckoutForm({ applicationId, streamerId, viewerId, planType, amount, email, name }: CheckoutFormProps) {
   const [status, setStatus] = useState("");
 
   async function startCheckout() {
@@ -27,6 +28,7 @@ export function CheckoutForm({ applicationId, streamerId, planType, amount, emai
       body: JSON.stringify({
         application_id: applicationId,
         streamer_id: streamerId,
+        viewer_id: viewerId,
         plan_type: planType,
         payer_email: email
       })
@@ -48,6 +50,7 @@ export function CheckoutForm({ applicationId, streamerId, planType, amount, emai
       body: JSON.stringify({
         application_id: applicationId,
         streamer_id: streamerId,
+        viewer_id: viewerId,
         plan_type: planType,
         amount,
         payer_email: email

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { FieldValue, getAdminDb } from "@/lib/firebaseAdmin";
 import { addLocalCreatorLike } from "@/lib/localStore";
+import { notifyViewerCreatorLike } from "@/lib/notifications";
 
 export async function POST(request: Request) {
   const body = await request.json();
@@ -21,6 +22,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "premium plan is required" }, { status: 403 });
   }
 
+  const viewerDoc = await db.collection("viewer_profiles").doc(viewerProfileId).get();
   const likeRef = db.collection("creator_likes").doc(`${streamerId}_${viewerProfileId}`);
   await db.runTransaction(async (tx) => {
     const likeDoc = await tx.get(likeRef);
@@ -34,7 +36,20 @@ export async function POST(request: Request) {
       streamer_like_count: FieldValue.increment(1),
       updated_at: FieldValue.serverTimestamp()
     }, { merge: true });
+    tx.set(db.collection("notifications").doc(), {
+      target_type: "viewer",
+      viewer_profile_id: viewerProfileId,
+      streamer_id: streamerId,
+      type: "CREATOR_LIKE_CREATED",
+      title: "配信者からいいね",
+      body: "マッチした配信者からいいねが届きました",
+      read: false,
+      created_at: FieldValue.serverTimestamp()
+    });
   });
+
+  const viewer = viewerDoc.data() || {};
+  await notifyViewerCreatorLike(viewer.fcm_tokens);
 
   return NextResponse.json({ liked: true, source: "firestore" });
 }
