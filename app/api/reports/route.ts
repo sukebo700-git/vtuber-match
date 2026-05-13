@@ -34,8 +34,13 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   const body = await request.json();
+  const reportType = clean(body.report_type, 40);
+  if (reportType !== "viewer") {
+    return NextResponse.json({ error: "viewer reports only" }, { status: 400 });
+  }
+
   const payload = {
-    report_type: clean(body.report_type, 40) === "viewer" ? "viewer" as const : "streamer" as const,
+    report_type: "viewer" as const,
     streamer_id: clean(body.streamer_id, 120),
     streamer_name: clean(body.streamer_name, 120),
     viewer_profile_id: clean(body.viewer_profile_id, 120),
@@ -48,7 +53,7 @@ export async function POST(request: Request) {
   if (!payload.streamer_id || !payload.reason) {
     return NextResponse.json({ error: "streamer_id and reason are required" }, { status: 400 });
   }
-  if (payload.report_type === "viewer" && !payload.viewer_profile_id) {
+  if (!payload.viewer_profile_id) {
     return NextResponse.json({ error: "viewer_profile_id is required" }, { status: 400 });
   }
 

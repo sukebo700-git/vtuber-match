@@ -83,7 +83,7 @@ export function CheckoutForm({ applicationId, streamerId, viewerId, planType, am
       </div>
 
       <p className="help-text">
-        決済前に<a href="/terms">ヘルプ・利用上の注意</a>をご確認ください。
+        決済前に<a href="/help">ヘルプ・利用上の注意</a>をご確認ください。
       </p>
 
       {testPaymentEnabled ? (

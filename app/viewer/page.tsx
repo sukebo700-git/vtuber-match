@@ -1,4 +1,5 @@
 import { HeaderAuthStatus } from "@/components/HeaderAuthStatus";
+import { PushNotificationButton } from "@/components/PushNotificationButton";
 import { ViewerProfileGate } from "@/components/ViewerProfileGate";
 
 export const dynamic = "force-dynamic";
@@ -28,6 +29,7 @@ export default function ViewerPage() {
           <p>月額330円で、マッチした配信者に名前・YouTube表示名・X ID・一言を開示できます。応援していることが伝わりやすくなります。</p>
           <a className="primary-button" href="/viewer/upgrade">プランを見る</a>
         </section>
+        <PushNotificationButton targetType="viewer" />
         <ViewerProfileGate />
       </main>
     </div>

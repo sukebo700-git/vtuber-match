@@ -1,6 +1,7 @@
 import { HeaderAuthStatus } from "@/components/HeaderAuthStatus";
 import { AuthVisibility } from "@/components/AuthVisibility";
 import { CreatorViewerLikes } from "@/components/CreatorViewerLikes";
+import { PushNotificationButton } from "@/components/PushNotificationButton";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +13,7 @@ export default function CreatorPage() {
         <nav className="nav" aria-label="メイン">
           <a href="/viewer">視聴者用</a>
           <a href="/login">ログイン</a>
-          <a href="/terms">ヘルプ</a>
+          <a href="/help">ヘルプ</a>
         </nav>
         <HeaderAuthStatus />
       </header>
@@ -46,6 +47,7 @@ export default function CreatorPage() {
               <span>有料掲載やプレミアムプランへ切り替えて、より見つけてもらいやすい掲載にできます。</span>
             </a>
           </section>
+          <PushNotificationButton targetType="creator" />
         </AuthVisibility>
 
         <section className="status-band">

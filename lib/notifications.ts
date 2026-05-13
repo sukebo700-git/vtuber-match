@@ -9,11 +9,12 @@ export async function notifyStreamerLike(tokens: string[] | undefined, streamerN
     tokens,
     notification: {
       title: "新しいいいね",
-      body: `${streamerName}さんに視聴者からいいねが届きました`
+      body: `${streamerName}さんに視聴者からいいねが届きました`,
     },
     data: {
-      type: "LIKE_CREATED"
-    }
+      type: "LIKE_CREATED",
+      url: "/creator",
+    },
   });
 }
 
@@ -26,10 +27,11 @@ export async function notifyViewerCreatorLike(tokens: string[] | undefined) {
     tokens,
     notification: {
       title: "配信者からいいね",
-      body: "マッチした配信者からいいねが届きました"
+      body: "マッチした配信者からいいねが届きました",
     },
     data: {
-      type: "CREATOR_LIKE_CREATED"
-    }
+      type: "CREATOR_LIKE_CREATED",
+      url: "/viewer",
+    },
   });
 }
