@@ -11,8 +11,14 @@ import { normalizeStreamer } from "@/lib/streamers";
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import type { ApplicationStatus, PlanType, StreamerApplication, StreamerProfileEdit, ViewerProfile, ViewerProfileWithStats, StreamerReport, PasswordResetRequest } from "@/lib/types";
+import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "管理画面",
+  robots: { index: false, follow: false },
+};
 
 export default async function AdminPage() {
   const hasCookie = verifyAdminSession(cookies().get(adminCookieName)?.value);

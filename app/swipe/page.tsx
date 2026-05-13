@@ -1,8 +1,17 @@
 import { HeaderAuthStatus } from "@/components/HeaderAuthStatus";
 import { SwipeClient } from "@/components/SwipeClient";
 import { getStreamersForSwipe } from "@/lib/streamers";
+import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Vtuberをスワイプで探す",
+  description: "登録なしでVtuberをスワイプ。気になる配信者を直感で見つけてYouTubeチャンネルへ移動できます。",
+  alternates: {
+    canonical: "/swipe",
+  },
+};
 
 export default async function SwipePage() {
   const streamers = await getStreamersForSwipe();

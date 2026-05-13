@@ -1,5 +1,14 @@
 import { AdminEntryForm } from "@/components/AdminEntryForm";
 import { HeaderAuthStatus } from "@/components/HeaderAuthStatus";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "ヘルプ",
+  description: "Vtuberマッチの使い方、配信者掲載、視聴者利用、通報、問い合わせについて確認できます。",
+  alternates: {
+    canonical: "/help",
+  },
+};
 
 export default function HelpPage() {
   return (

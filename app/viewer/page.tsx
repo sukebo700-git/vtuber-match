@@ -1,8 +1,17 @@
 import { HeaderAuthStatus } from "@/components/HeaderAuthStatus";
 import { PushNotificationButton } from "@/components/PushNotificationButton";
 import { ViewerProfileGate } from "@/components/ViewerProfileGate";
+import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "視聴者向けプロフィール",
+  description: "Vtuber視聴者向けに名前やアイコンを登録。視聴者ブーストプランで推しに認知されやすくできます。",
+  alternates: {
+    canonical: "/viewer",
+  },
+};
 
 export default function ViewerPage() {
   return (

@@ -1,6 +1,12 @@
 import { HeaderAuthStatus } from "@/components/HeaderAuthStatus";
 import { AuthVisibility } from "@/components/AuthVisibility";
 import { ViewerLoginForm } from "@/components/ViewerLoginForm";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "視聴者ログイン",
+  robots: { index: false, follow: false },
+};
 
 export default function ViewerLoginPage() {
   return (

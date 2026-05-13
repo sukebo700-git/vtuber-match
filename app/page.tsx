@@ -1,4 +1,13 @@
 import { HeaderAuthStatus } from "@/components/HeaderAuthStatus";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "登録無料で推しVtuberを探せるスワイプ型マッチング",
+  description: "Vtuberマッチは、気になるVtuberを直感で見つけられる登録無料のスワイプ型マッチングサービスです。",
+  alternates: {
+    canonical: "/",
+  },
+};
 
 export default function HomePage() {
   return (

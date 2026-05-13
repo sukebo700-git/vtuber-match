@@ -1,4 +1,13 @@
 import { HeaderAuthStatus } from "@/components/HeaderAuthStatus";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "新規登録",
+  description: "Vtuberマッチに配信者として無料掲載、または視聴者としてプロフィール登録できます。",
+  alternates: {
+    canonical: "/signup",
+  },
+};
 
 export default function SignupPage() {
   return (

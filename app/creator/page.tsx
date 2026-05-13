@@ -2,8 +2,17 @@ import { HeaderAuthStatus } from "@/components/HeaderAuthStatus";
 import { AuthVisibility } from "@/components/AuthVisibility";
 import { CreatorViewerLikes } from "@/components/CreatorViewerLikes";
 import { PushNotificationButton } from "@/components/PushNotificationButton";
+import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "配信者向け無料掲載",
+  description: "Vtuber配信者を無料プランから掲載。ベーシック、プレミアムで上位表示や公式バッジも使えます。",
+  alternates: {
+    canonical: "/creator",
+  },
+};
 
 export default function CreatorPage() {
   return (

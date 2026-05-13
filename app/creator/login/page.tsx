@@ -1,6 +1,12 @@
 import { HeaderAuthStatus } from "@/components/HeaderAuthStatus";
 import { AuthVisibility } from "@/components/AuthVisibility";
 import { CreatorLoginForm } from "@/components/CreatorLoginForm";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "配信者ログイン",
+  robots: { index: false, follow: false },
+};
 
 export default function CreatorLoginPage() {
   return (

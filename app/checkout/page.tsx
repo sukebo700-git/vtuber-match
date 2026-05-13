@@ -5,8 +5,14 @@ import { getPlanAmount } from "@/lib/billing";
 import { getAdminDb } from "@/lib/firebaseAdmin";
 import { findLocalApplication } from "@/lib/localStore";
 import type { ApplicationStatus, PlanType, StreamerApplication } from "@/lib/types";
+import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "決済",
+  robots: { index: false, follow: false },
+};
 
 export default async function CheckoutPage({ searchParams }: { searchParams: { application_id?: string; streamer_id?: string; viewer_id?: string; plan?: string } }) {
   const applicationId = searchParams.application_id;

@@ -1,12 +1,48 @@
 import { HeaderAuthStatus } from "@/components/HeaderAuthStatus";
 import { ProfileShareButton } from "@/components/ProfileShareButton";
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import { BadgeCheck, CalendarClock, ExternalLink, Radio } from "lucide-react";
 import { getStreamerById } from "@/lib/streamers";
 import { PLAN_LABELS } from "@/lib/constants";
 import { youtubeEmbedUrl, youtubeSubscribeUrl, youtubeWatchUrl } from "@/lib/youtube";
+import { absoluteUrl, siteName } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
+  const streamer = await getStreamerById(params.id);
+  if (!streamer) {
+    return {
+      title: "配信者が見つかりません",
+      robots: { index: false, follow: false },
+    };
+  }
+
+  const description = streamer.description || `${streamer.name}を${siteName}で発見。YouTubeチャンネルを確認できます。`;
+  const image = seoImage(streamer.thumbnails?.[0]);
+
+  return {
+    title: `${streamer.name}のプロフィール`,
+    description,
+    alternates: {
+      canonical: `/detail/${params.id}`,
+    },
+    openGraph: {
+      type: "profile",
+      title: `${streamer.name} | ${siteName}`,
+      description,
+      url: absoluteUrl(`/detail/${params.id}`),
+      images: [{ url: image, alt: streamer.name }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${streamer.name} | ${siteName}`,
+      description,
+      images: [image],
+    },
+  };
+}
 
 export default async function DetailPage({ params }: { params: { id: string } }) {
   const streamer = await getStreamerById(params.id);
@@ -117,4 +153,10 @@ export default async function DetailPage({ params }: { params: { id: string } })
 function xProfileUrl(account: string) {
   const handle = account.trim().replace(/^@/, "");
   return `https://x.com/${encodeURIComponent(handle)}`;
+}
+
+function seoImage(value?: string) {
+  if (!value) return "/promo/landing-oshi.png";
+  if (value.startsWith("http://") || value.startsWith("https://") || value.startsWith("/")) return value;
+  return "/promo/landing-oshi.png";
 }
