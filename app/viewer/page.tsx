@@ -21,11 +21,11 @@ export default function ViewerPage() {
           <p className="inline-actions" style={{ marginTop: 12 }}>
             <a className="primary-button" href="/">スワイプ画面へ戻る</a>
             <a className="secondary-button" href="/viewer/login">視聴者ログイン</a>
-            <a className="secondary-button" href="/viewer/upgrade">視聴者応援プラン</a>
+            <a className="secondary-button" href="/viewer/upgrade">視聴者ブーストプラン</a>
           </p>
         </section>
         <section className="status-band viewer-boost-banner">
-          <h2>さらに応援しよう！視聴者ブーストプラン</h2>
+          <h2>視聴者ブーストプラン</h2>
           <p>月額330円で、マッチした配信者に名前・YouTube表示名・X ID・一言を開示できます。応援していることが伝わりやすくなります。</p>
           <a className="primary-button" href="/viewer/upgrade">プランを見る</a>
         </section>

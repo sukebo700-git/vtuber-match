@@ -1,13 +1,23 @@
 import { NextResponse } from "next/server";
+import type { Firestore } from "firebase-admin/firestore";
 import { FieldValue, getAdminDb } from "@/lib/firebaseAdmin";
-import { findLocalApplicationByEmail, updateLocalStreamer } from "@/lib/localStore";
+import { readLocalApplications, updateLocalStreamer } from "@/lib/localStore";
 import { hashPassword } from "@/lib/password";
-import type { PlanType, Streamer } from "@/lib/types";
+import type { PlanType, Streamer, StreamerApplication } from "@/lib/types";
+
+type ApplicationMatch = {
+  id: string;
+  ref?: FirebaseFirestore.DocumentReference;
+  data: StreamerApplication;
+};
 
 export async function POST(request: Request) {
   const body = await request.json();
   const email = clean(body.email, 120).toLowerCase();
   const password = String(body.password || "");
+  const applicationId = clean(body.application_id, 120);
+  const streamerId = clean(body.streamer_id, 120);
+  const creatorLoginId = clean(body.creator_login_id, 120);
 
   if (!email || !email.includes("@")) {
     return NextResponse.json({ error: "登録メールアドレスを入力してください。" }, { status: 400 });
@@ -20,42 +30,99 @@ export async function POST(request: Request) {
   const db = getAdminDb();
 
   if (!db) {
-    const application = await findLocalApplicationByEmail(email);
-    if (!application || application.creator_password_hash !== passwordHash) {
+    const match = await findLocalApplicationForEdit({ email, applicationId, streamerId, creatorLoginId, passwordHash });
+    if (!match || match.data.creator_password_hash !== passwordHash) {
       return NextResponse.json({ error: "メールアドレスまたはパスワードが違います。" }, { status: 401 });
     }
-    if (!application.streamer_id) {
+    if (!match.data.streamer_id) {
       return NextResponse.json({ error: "掲載中の配信者データが見つかりません。" }, { status: 404 });
     }
 
-    const patch = buildStreamerPatch(body, application.desired_plan);
-    const streamer = await updateLocalStreamer(application.streamer_id, patch);
+    const patch = buildStreamerPatch(body, match.data.desired_plan);
+    const streamer = await updateLocalStreamer(match.data.streamer_id, patch);
     return NextResponse.json({ streamer, source: "local" });
   }
 
-  const snapshot = await db.collection("applications").where("email", "==", email).limit(1).get();
-  const applicationDoc = snapshot.docs[0];
-  const application = applicationDoc?.data();
-  if (!applicationDoc || !application || application.creator_password_hash !== passwordHash) {
+  const match = await findFirestoreApplicationForEdit(db, { email, applicationId, streamerId, creatorLoginId, passwordHash });
+  if (!match || match.data.creator_password_hash !== passwordHash) {
     return NextResponse.json({ error: "メールアドレスまたはパスワードが違います。" }, { status: 401 });
   }
-  if (!application.streamer_id) {
+  if (!match.data.streamer_id) {
     return NextResponse.json({ error: "掲載中の配信者データが見つかりません。" }, { status: 404 });
   }
 
-  const patch = buildStreamerPatch(body, application.desired_plan || "free");
-  await db.collection("streamers").doc(application.streamer_id).set({
+  const patch = buildStreamerPatch(body, match.data.desired_plan || "free");
+  await db.collection("streamers").doc(match.data.streamer_id).set({
     ...patch,
-    updated_at: FieldValue.serverTimestamp()
+    updated_at: FieldValue.serverTimestamp(),
   }, { merge: true });
 
-  await applicationDoc.ref.set({
-    ...buildApplicationPatch(body, application.desired_plan || "free"),
-    updated_at: FieldValue.serverTimestamp()
+  await match.ref?.set({
+    ...buildApplicationPatch(body, match.data.desired_plan || "free"),
+    updated_at: FieldValue.serverTimestamp(),
   }, { merge: true });
 
-  const streamerDoc = await db.collection("streamers").doc(application.streamer_id).get();
-  return NextResponse.json({ id: application.streamer_id, streamer: { id: application.streamer_id, ...streamerDoc.data() }, source: "firestore" });
+  const streamerDoc = await db.collection("streamers").doc(match.data.streamer_id).get();
+  return NextResponse.json({ id: match.data.streamer_id, streamer: { id: match.data.streamer_id, ...streamerDoc.data() }, source: "firestore" });
+}
+
+async function findLocalApplicationForEdit(input: {
+  email: string;
+  applicationId: string;
+  streamerId: string;
+  creatorLoginId: string;
+  passwordHash: string;
+}): Promise<ApplicationMatch | null> {
+  const applications = await readLocalApplications();
+  const candidates = applications
+    .filter((application) => matchesApplication(application, input))
+    .map((application) => ({ id: application.id, data: application }));
+
+  return candidates.find((candidate) => candidate.data.creator_password_hash === input.passwordHash) || candidates[0] || null;
+}
+
+async function findFirestoreApplicationForEdit(db: Firestore, input: {
+  email: string;
+  applicationId: string;
+  streamerId: string;
+  creatorLoginId: string;
+  passwordHash: string;
+}): Promise<ApplicationMatch | null> {
+  const seen = new Set<string>();
+  const candidates: ApplicationMatch[] = [];
+
+  function addSnapshot(doc: FirebaseFirestore.DocumentSnapshot) {
+    if (!doc.exists || seen.has(doc.id)) return;
+    seen.add(doc.id);
+    candidates.push({
+      id: doc.id,
+      ref: doc.ref,
+      data: { id: doc.id, ...doc.data() } as StreamerApplication,
+    });
+  }
+
+  if (input.applicationId) {
+    addSnapshot(await db.collection("applications").doc(input.applicationId).get());
+  }
+
+  const queries: Array<Promise<FirebaseFirestore.QuerySnapshot>> = [];
+  if (input.email) queries.push(db.collection("applications").where("email", "==", input.email).limit(10).get());
+  if (input.streamerId) queries.push(db.collection("applications").where("streamer_id", "==", input.streamerId).limit(10).get());
+  if (input.creatorLoginId) queries.push(db.collection("applications").where("creator_login_id", "==", input.creatorLoginId).limit(10).get());
+
+  const snapshots = await Promise.all(queries);
+  snapshots.forEach((snapshot) => snapshot.docs.forEach(addSnapshot));
+
+  return candidates.find((candidate) => candidate.data.creator_password_hash === input.passwordHash) || candidates[0] || null;
+}
+
+function matchesApplication(application: StreamerApplication, input: { email: string; applicationId: string; streamerId: string; creatorLoginId: string }) {
+  return (
+    application.email?.toLowerCase() === input.email ||
+    Boolean(input.applicationId && application.id === input.applicationId) ||
+    Boolean(input.streamerId && application.streamer_id === input.streamerId) ||
+    Boolean(input.creatorLoginId && application.creator_login_id === input.creatorLoginId)
+  );
 }
 
 function buildStreamerPatch(body: Record<string, unknown>, plan: PlanType): Partial<Streamer> {
@@ -64,7 +131,7 @@ function buildStreamerPatch(body: Record<string, unknown>, plan: PlanType): Part
   const image = clean(body.image, 400000);
   const patch: Partial<Streamer> = {
     categories: sanitizeArray(body.categories).slice(0, maxCategories),
-    tags: sanitizeArray(body.tags).slice(0, maxTags)
+    tags: sanitizeArray(body.tags).slice(0, maxTags),
   };
 
   setIfPresent(patch, "name", clean(body.name, 80));
@@ -83,7 +150,7 @@ function buildApplicationPatch(body: Record<string, unknown>, plan: PlanType) {
   const image = clean(body.image, 400000);
   const patch: Record<string, unknown> = {
     categories: sanitizeArray(body.categories).slice(0, maxCategories),
-    tags: sanitizeArray(body.tags).slice(0, maxTags)
+    tags: sanitizeArray(body.tags).slice(0, maxTags),
   };
 
   setIfPresent(patch, "name", clean(body.name, 80));

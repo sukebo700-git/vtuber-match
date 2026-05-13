@@ -53,7 +53,7 @@ export default async function DetailPage({ params }: { params: { id: string } })
               {isPaidOrPremium ? (
                 <p>{streamer.description}</p>
               ) : (
-                <p>無料掲載のため、プロフィール情報は写真・名前・YouTubeチャンネルURLのみ表示しています。</p>
+                <p>無料プランのため、プロフィール情報は写真・名前・YouTubeチャンネルURLのみ表示しています。</p>
               )}
             </div>
             <a className="primary-button" href={youtubeSubscribeUrl(streamer.youtube_url)} target="_blank" rel="noreferrer">

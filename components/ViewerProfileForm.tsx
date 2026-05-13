@@ -156,7 +156,7 @@ export function ViewerProfileForm() {
         </div>
         <div>
           <dt>プラン</dt>
-          <dd>{isPaid ? "視聴者応援プラン" : "無料"}</dd>
+          <dd>{isPaid ? "視聴者ブーストプラン" : "無料プラン"}</dd>
         </div>
       </dl>
 
@@ -227,9 +227,9 @@ export function ViewerProfileForm() {
 
       {!isPaid && (
         <p className="notice-text">
-          無料枠は自身の名前とアイコンのみ登録できます。月額330円の視聴者応援プランにすると、マッチ時に名前、YouTube表示名、X / Twitter ID、一言メッセージを配信者へ開示できます。
+          無料プランは自身の名前とアイコンのみ登録できます。月額330円の視聴者ブーストプランにすると、マッチ時に名前、YouTube表示名、X / Twitter ID、一言メッセージを配信者へ開示できます。
           <br />
-          <a href="/viewer/upgrade">視聴者応援プランを見る</a>
+          <a href="/viewer/upgrade">視聴者ブーストプランを見る</a>
         </p>
       )}
 

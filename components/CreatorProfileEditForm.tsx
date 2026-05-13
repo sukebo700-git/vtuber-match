@@ -4,15 +4,42 @@ import { useEffect, useState } from "react";
 import { Save } from "lucide-react";
 import { CATEGORIES, TAGS } from "@/lib/constants";
 
+type CreatorDraft = {
+  name?: string;
+  youtube_url?: string;
+  description?: string;
+  one_liner?: string;
+  stream_time?: string;
+  image?: string;
+  categories?: string[];
+  tags?: string[];
+};
+
+const creatorDraftKey = "vtuber-match-creator-profile-draft";
+
 export function CreatorProfileEditForm() {
   const [email, setEmail] = useState("");
+  const [name, setName] = useState("");
+  const [youtubeUrl, setYoutubeUrl] = useState("");
+  const [description, setDescription] = useState("");
+  const [oneLiner, setOneLiner] = useState("");
+  const [streamTime, setStreamTime] = useState("");
   const [categories, setCategories] = useState<string[]>([]);
   const [tags, setTags] = useState<string[]>([]);
   const [image, setImage] = useState("");
   const [status, setStatus] = useState("");
 
   useEffect(() => {
+    const draft = safeParseDraft(localStorage.getItem(creatorDraftKey));
     setEmail(localStorage.getItem("vtuber-match-creator-email") || "");
+    setName(draft?.name || localStorage.getItem("vtuber-match-creator-name") || "");
+    setYoutubeUrl(draft?.youtube_url || localStorage.getItem("vtuber-match-creator-youtube-url") || "");
+    setDescription(draft?.description || "");
+    setOneLiner(draft?.one_liner || "");
+    setStreamTime(draft?.stream_time || "");
+    setImage(draft?.image || "");
+    setCategories(Array.isArray(draft?.categories) ? draft.categories : []);
+    setTags(Array.isArray(draft?.tags) ? draft.tags : []);
   }, []);
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
@@ -26,6 +53,9 @@ export function CreatorProfileEditForm() {
       body: JSON.stringify({
         email: form.get("email"),
         password: form.get("password"),
+        application_id: localStorage.getItem("vtuber-match-creator-application-id") || "",
+        streamer_id: localStorage.getItem("vtuber-match-creator-streamer-id") || "",
+        creator_login_id: localStorage.getItem("vtuber-match-creator-login-id") || "",
         youtube_url: form.get("youtube_url"),
         name: form.get("name"),
         description: form.get("description"),
@@ -33,8 +63,8 @@ export function CreatorProfileEditForm() {
         stream_time: form.get("stream_time"),
         image,
         categories,
-        tags
-      })
+        tags,
+      }),
     });
 
     const data = await response.json().catch(() => ({}));
@@ -43,11 +73,22 @@ export function CreatorProfileEditForm() {
       return;
     }
 
-    if (data.streamer?.name) {
-      localStorage.setItem("vtuber-match-creator-name", data.streamer.name);
-      window.dispatchEvent(new Event("vtuber-match-auth-changed"));
-    }
-    setStatus("プロフィールを更新しました。管理者確認なしで掲載内容に反映されています。");
+    const nextDraft = {
+      name: String(form.get("name") || ""),
+      youtube_url: String(form.get("youtube_url") || ""),
+      description: String(form.get("description") || ""),
+      one_liner: String(form.get("one_liner") || ""),
+      stream_time: String(form.get("stream_time") || ""),
+      image,
+      categories,
+      tags,
+    };
+
+    localStorage.setItem("vtuber-match-creator-name", nextDraft.name);
+    localStorage.setItem("vtuber-match-creator-youtube-url", nextDraft.youtube_url);
+    localStorage.setItem(creatorDraftKey, JSON.stringify(nextDraft));
+    window.dispatchEvent(new Event("vtuber-match-auth-changed"));
+    setStatus("プロフィールを更新しました。");
   }
 
   async function onFile(event: React.ChangeEvent<HTMLInputElement>) {
@@ -66,7 +107,7 @@ export function CreatorProfileEditForm() {
     <form className="form compact-form" onSubmit={submit}>
       <section className="status-band soft">
         <h2>プロフィール修正</h2>
-        <p>ログイン中の配信者だけが利用できます。メールアドレスとパスワードで本人確認し、掲載中プロフィールを直接更新します。</p>
+        <p>申し込み時に入力した配信者名やYouTubeチャンネルURLは、この画面にも引き継がれます。</p>
       </section>
 
       <div className="field">
@@ -76,32 +117,32 @@ export function CreatorProfileEditForm() {
 
       <div className="field">
         <label htmlFor="edit_password">パスワード</label>
-        <input id="edit_password" name="password" type="password" required placeholder="申し込み時に表示されたパスワード" />
+        <input id="edit_password" name="password" type="password" required placeholder="申し込み時のパスワード" />
       </div>
 
       <div className="field">
-        <label htmlFor="edit_youtube">YouTube URL</label>
-        <input id="edit_youtube" name="youtube_url" type="url" placeholder="変更する場合のみ入力" />
+        <label htmlFor="edit_youtube">YouTubeチャンネルURL</label>
+        <input id="edit_youtube" name="youtube_url" type="url" value={youtubeUrl} onChange={(event) => setYoutubeUrl(event.target.value)} placeholder="https://www.youtube.com/@channel" />
       </div>
 
       <div className="field">
         <label htmlFor="edit_name">配信者名</label>
-        <input id="edit_name" name="name" placeholder="変更する場合のみ入力" />
+        <input id="edit_name" name="name" value={name} onChange={(event) => setName(event.target.value)} placeholder="変更する場合のみ入力" />
       </div>
 
       <div className="field">
-        <label htmlFor="edit_one_liner">スワイプカードの一言</label>
-        <input id="edit_one_liner" name="one_liner" maxLength={80} placeholder="例: 深夜にゆるく話せる癒し枠です" />
+        <label htmlFor="edit_one_liner">今日のひとこと</label>
+        <input id="edit_one_liner" name="one_liner" value={oneLiner} onChange={(event) => setOneLiner(event.target.value)} maxLength={80} />
       </div>
 
       <div className="field">
         <label htmlFor="edit_description">自己アピール</label>
-        <textarea id="edit_description" name="description" placeholder="プロフィール画面に表示する内容" />
+        <textarea id="edit_description" name="description" value={description} onChange={(event) => setDescription(event.target.value)} />
       </div>
 
       <div className="field">
         <label htmlFor="edit_stream_time">配信時間帯</label>
-        <input id="edit_stream_time" name="stream_time" placeholder="例: 平日22時から24時" />
+        <input id="edit_stream_time" name="stream_time" value={streamTime} onChange={(event) => setStreamTime(event.target.value)} placeholder="例: 平日22時から24時" />
       </div>
 
       <div className="field">
@@ -145,6 +186,15 @@ export function CreatorProfileEditForm() {
       {status && <p className="notice-text">{status}</p>}
     </form>
   );
+}
+
+function safeParseDraft(value: string | null): CreatorDraft | null {
+  if (!value) return null;
+  try {
+    return JSON.parse(value) as CreatorDraft;
+  } catch {
+    return null;
+  }
 }
 
 async function fileToDataUrl(file: File) {

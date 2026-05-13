@@ -17,32 +17,30 @@ export default function ViewerLoginPage() {
           fallback={
             <section className="status-band">
               <h2>視聴者としてログイン中です</h2>
-              <p>プロフィールの修正や応援プランの確認へ進めます。</p>
+              <p>プロフィールの修正や視聴者ブーストプランの確認へ進めます。</p>
               <p className="inline-actions" style={{ marginTop: 12 }}>
                 <a className="primary-button" href="/viewer">視聴者プロフィールへ</a>
-                <a className="secondary-button" href="/viewer/upgrade">視聴者応援プラン</a>
+                <a className="secondary-button" href="/viewer/upgrade">視聴者ブーストプラン</a>
               </p>
             </section>
           }
         >
           <section className="status-band">
-            <h2>視聴者ログイン</h2>
-            <p>
-              未入力でもスワイプは利用できます。ログインすると、自身の名前やアイコンを登録でき、マッチ数もプロフィールに表示できます。
-            </p>
-            <p className="inline-actions" style={{ marginTop: 12 }}>
-              <a className="secondary-button" href="/viewer/upgrade">視聴者応援プラン</a>
-            </p>
-          </section>
-
-          <section className="status-band">
-            <h2>視聴者応援プランのメリット</h2>
-            <p>
-              月額330円で、マッチした配信者に名前、YouTube表示名、X / Twitter ID、一言メッセージを開示できます。応援していることが伝わりやすくなります。
-            </p>
+            <h2>視聴者ログイン / 新規登録</h2>
+            <p>未登録なら新規登録、登録済みならログインします。先にメールアドレスとパスワードを入力してください。</p>
           </section>
 
           <ViewerLoginForm />
+
+          <section className="status-band">
+            <h2>視聴者ブーストプラン</h2>
+            <p>
+              月額330円で、マッチした配信者に名前、YouTube表示名、X / Twitter ID、一言メッセージを開示できます。
+            </p>
+            <p className="inline-actions" style={{ marginTop: 12 }}>
+              <a className="secondary-button" href="/viewer/upgrade">プランを見る</a>
+            </p>
+          </section>
         </AuthVisibility>
       </main>
     </div>

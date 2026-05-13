@@ -287,8 +287,8 @@ export function AdminDashboard({ initialApplications, initialStreamers, adminKey
                 <>
                   <button className="secondary-button" type="button" onClick={() => startEdit(streamer)}><Edit3 size={16} />プロフィール修正</button>
                   <select value={streamer.plan_type} onChange={(event) => updateStreamer(streamer.id, { plan_type: event.target.value as PlanType })}>
-                    <option value="free">無料掲載</option>
-                    <option value="paid">有料掲載 500円</option>
+                    <option value="free">無料プラン</option>
+                    <option value="paid">ベーシックプラン 月額500円</option>
                     <option value="boost">さらに上位表示 980円</option>
                   </select>
                   <label className="choice">
@@ -319,8 +319,8 @@ function PlanSelect({ value, onChange }: { value: PlanType; onChange: (plan: Pla
     <div className="field">
       <label>プラン</label>
       <select value={value} onChange={(event) => onChange(event.target.value as PlanType)}>
-        <option value="free">無料掲載</option>
-        <option value="paid">有料掲載 500円</option>
+        <option value="free">無料プラン</option>
+        <option value="paid">ベーシックプラン 月額500円</option>
         <option value="boost">さらに上位表示 980円</option>
       </select>
     </div>
@@ -363,7 +363,7 @@ function formatPayment(application?: StreamerApplication) {
   if (!application) return "未連携";
   if (application.payment_status === "paid") return "決済済み";
   if (application.payment_status === "pending") return "決済待ち";
-  return "無料掲載";
+  return "無料プラン";
 }
 
 function formatDate(value?: string) {

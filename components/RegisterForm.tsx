@@ -50,8 +50,8 @@ export function RegisterForm({ categories, tags }: RegisterFormProps) {
       <div className="field">
         <label htmlFor="plan_type">プラン</label>
         <select id="plan_type" name="plan_type" defaultValue="free">
-          <option value="free">無料掲載</option>
-          <option value="paid">有料掲載 500円</option>
+          <option value="free">無料プラン</option>
+          <option value="paid">ベーシックプラン 月額500円</option>
           <option value="boost">さらに上位表示 980円</option>
         </select>
       </div>

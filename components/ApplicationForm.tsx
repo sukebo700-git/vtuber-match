@@ -14,16 +14,18 @@ type CompletionInfo = {
   password: string;
 };
 
+const creatorDraftKey = "vtuber-match-creator-profile-draft";
+
 const planRows = [
   {
     id: "free",
-    name: "無料掲載",
+    name: "無料プラン",
     price: "0円",
     summary: "まず掲載したい方向け。写真、名前、YouTubeチャンネルURLのみでシンプルに表示します。"
   },
   {
     id: "paid",
-    name: "有料掲載",
+    name: "ベーシックプラン",
     price: "月額500円",
     summary: "公式バッジ、タグ、カテゴリ、メッセージ、マッチ数表示、上位表示で見つけてもらいやすくします。"
   },
@@ -31,7 +33,7 @@ const planRows = [
     id: "boost",
     name: "プレミアムプラン",
     price: "月額980円",
-    summary: "有料掲載の内容に加えて、おすすめアーカイブ表示と視聴者へのいいね機能が使えます。"
+    summary: "ベーシックプランの内容に加えて、おすすめアーカイブ表示と視聴者へのいいね機能が使えます。"
   }
 ];
 
@@ -93,6 +95,20 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
     localStorage.setItem("vtuber-match-creator-email", email);
     localStorage.setItem("vtuber-match-creator-name", String(form.get("name") || email));
     localStorage.setItem("vtuber-match-creator-plan", desiredPlan);
+    localStorage.setItem("vtuber-match-creator-youtube-url", String(form.get("youtube_url") || ""));
+    localStorage.setItem("vtuber-match-creator-youtube-channel-id", String(form.get("youtube_channel_id") || ""));
+    localStorage.setItem(creatorDraftKey, JSON.stringify({
+      name: String(form.get("name") || ""),
+      youtube_url: String(form.get("youtube_url") || ""),
+      youtube_channel_id: String(form.get("youtube_channel_id") || ""),
+      description: String(form.get("description") || ""),
+      one_liner: String(form.get("one_liner") || ""),
+      stream_time: String(form.get("stream_time") || ""),
+      image: images[0] || "",
+      categories: selectedCategories,
+      tags: selectedTags,
+      desired_plan: desiredPlan
+    }));
     window.dispatchEvent(new Event("vtuber-match-auth-changed"));
 
     if (desiredPlan === "paid" || desiredPlan === "boost") {
@@ -100,7 +116,7 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
       return;
     }
 
-    setStatus("無料掲載の申し込みを受け付け、掲載しました。");
+    setStatus("無料プランの申し込みを受け付け、掲載しました。");
     setCompletion({ email, password });
     formElement.reset();
     setSelectedCategories([]);
@@ -203,8 +219,8 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
 
       {isFree ? (
         <section className="status-band">
-          <h2>無料掲載の表示内容</h2>
-          <p>無料掲載では、写真・名前・YouTubeチャンネルURLのみを表示します。タグ、カテゴリ、メッセージ、公式バッジ、上位表示は有料掲載から使えます。</p>
+          <h2>無料プランの表示内容</h2>
+          <p>無料プランでは、写真・名前・YouTubeチャンネルURLのみを表示します。タグ、カテゴリ、メッセージ、公式バッジ、上位表示はベーシックプランから使えます。</p>
         </section>
       ) : (
         <>
@@ -215,7 +231,7 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
           <div className="field">
             <label htmlFor="one_liner">今日のひとこと</label>
             <input id="one_liner" name="one_liner" required maxLength={80} />
-            <p className="help-text">有料掲載以上では、スワイプ画面の画像上に表示されます。</p>
+            <p className="help-text">ベーシックプラン以上では、スワイプ画面の画像上に表示されます。</p>
           </div>
           <div className="field">
             <label htmlFor="stream_time">配信時間帯</label>
@@ -244,7 +260,7 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
             </div>
           </div>
           {selectedPlan === "paid" && (
-            <p className="notice-text"><BadgeCheck size={16} /> 有料掲載では公式バッジと上位表示が付き、視聴者に見つけてもらいやすくなります。</p>
+            <p className="notice-text"><BadgeCheck size={16} /> ベーシックプランでは公式バッジと上位表示が付き、視聴者に見つけてもらいやすくなります。</p>
           )}
           {selectedPlan === "boost" && (
             <p className="notice-text"><Crown size={16} /> プレミアムではおすすめアーカイブと視聴者へのいいね機能も使えます。</p>

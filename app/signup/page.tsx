@@ -20,7 +20,7 @@ export default function SignupPage() {
       <section className="creator-action-grid signup-select-grid">
         <a className="creator-action-card featured" href="/creator/apply">
           <strong>配信者として登録</strong>
-          <span>無料掲載から始められます。写真、名前、YouTubeチャンネルURLを登録できます。</span>
+          <span>無料プランから始められます。写真、名前、YouTubeチャンネルURLを登録できます。</span>
         </a>
         <a className="creator-action-card" href="/viewer/register">
           <strong>視聴者として登録</strong>

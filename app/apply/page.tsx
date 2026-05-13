@@ -31,7 +31,7 @@ export default function ApplyPage() {
         >
           <section className="status-band">
             <h2>掲載を申し込む</h2>
-            <p>プロフィール画像、自己アピール、カテゴリ、タグを登録できます。無料掲載は申し込み後すぐ掲載され、有料掲載とプレミアムは決済完了後に反映されます。</p>
+            <p>プロフィール画像、自己アピール、カテゴリ、タグを登録できます。無料プランは申し込み後すぐ掲載され、ベーシックプランとプレミアムプランは決済完了後に反映されます。</p>
           </section>
           <ApplicationForm categories={CATEGORIES} tags={TAGS} />
         </AuthVisibility>

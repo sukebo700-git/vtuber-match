@@ -19,6 +19,7 @@ export async function POST(request: Request) {
   if (!db) {
     const profiles = await readLocalViewerProfilesRaw();
     const existing = profiles.find((profile) => profile.email?.toLowerCase() === email);
+    const created = !existing;
     if (existing?.viewer_password_hash && existing.viewer_password_hash !== passwordHash) {
       return NextResponse.json({ error: "invalid credentials" }, { status: 401 });
     }
@@ -35,12 +36,13 @@ export async function POST(request: Request) {
       visible_to_matched_streamers: existing?.visible_to_matched_streamers !== false
     };
     const saved = await upsertLocalViewerProfile(profile);
-    return NextResponse.json({ profile: publicProfile(saved), source: "local" });
+    return NextResponse.json({ profile: publicProfile(saved), auth_action: created ? "created" : "logged_in", source: "local" });
   }
 
   const snapshot = await db.collection("viewer_profiles").where("email", "==", email).limit(1).get();
   const existingDoc = snapshot.docs[0];
   const existing = existingDoc?.data() as ViewerProfile | undefined;
+  const created = !existingDoc;
   if (existing?.viewer_password_hash && existing.viewer_password_hash !== passwordHash) {
     return NextResponse.json({ error: "invalid credentials" }, { status: 401 });
   }
@@ -69,7 +71,7 @@ export async function POST(request: Request) {
     updated_at: FieldValue.serverTimestamp()
   }, { merge: true });
 
-  return NextResponse.json({ profile: publicProfile(profile), source: "firestore" });
+  return NextResponse.json({ profile: publicProfile(profile), auth_action: created ? "created" : "logged_in", source: "firestore" });
 }
 
 function publicProfile(profile: ViewerProfile) {

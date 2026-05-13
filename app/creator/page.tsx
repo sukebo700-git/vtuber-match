@@ -27,7 +27,7 @@ export default function CreatorPage() {
           <section className="creator-action-grid">
             <a className="creator-action-card featured" href="/creator/apply">
               <strong>申し込み</strong>
-              <span>無料掲載は申し込み後すぐ掲載されます。有料掲載とプレミアムは決済完了後に反映されます。</span>
+              <span>無料プランは申し込み後すぐ掲載されます。ベーシックプランとプレミアムプランは決済完了後に反映されます。</span>
             </a>
             <a className="creator-action-card" href="/login">
               <strong>ログイン</strong>
@@ -44,15 +44,15 @@ export default function CreatorPage() {
             </a>
             <a className="creator-action-card" href="/creator/upgrade">
               <strong>アップグレード</strong>
-              <span>有料掲載やプレミアムプランへ切り替えて、より見つけてもらいやすい掲載にできます。</span>
+              <span>ベーシックプランやプレミアムプランへ切り替えて、より見つけてもらいやすい掲載にできます。</span>
             </a>
           </section>
           <PushNotificationButton targetType="creator" />
         </AuthVisibility>
 
         <section className="status-band">
-          <h2>無料掲載からアップグレード</h2>
-          <p>無料掲載は写真、名前、YouTubeチャンネルURLのみです。有料掲載にすると公式バッジが付き、カテゴリ・タグ・メッセージ・マッチ数表示・今日のひとこと・上位表示が使え、視聴者の目に留まりやすくなります。プレミアムではさらにおすすめアーカイブ表示と視聴者へのいいね機能が使えます。</p>
+          <h2>無料プランからアップグレード</h2>
+          <p>無料プランは写真、名前、YouTubeチャンネルURLのみです。ベーシックプランにすると公式バッジが付き、カテゴリ・タグ・メッセージ・マッチ数表示・今日のひとこと・上位表示が使えます。プレミアムプランではさらにおすすめアーカイブ表示と視聴者へのいいね機能が使えます。</p>
         </section>
 
         <CreatorViewerLikes />

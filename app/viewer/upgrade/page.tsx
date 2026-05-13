@@ -19,7 +19,7 @@ export default function ViewerUpgradePage() {
           fallback={
             <section className="status-band">
               <h2>ログインが必要です</h2>
-              <p>視聴者応援プランへ加入するには、視聴者ログインが必要です。</p>
+              <p>視聴者ブーストプランへ加入するには、先に視聴者ログインをしてください。</p>
               <p style={{ marginTop: 12 }}>
                 <a className="primary-button" href="/viewer/login">視聴者ログインへ</a>
               </p>
@@ -27,9 +27,9 @@ export default function ViewerUpgradePage() {
           }
         >
           <section className="status-band">
-            <h2>さらに応援しよう！視聴者ブーストプラン</h2>
+            <h2>視聴者ブーストプラン</h2>
             <p>
-              月額330円で、マッチした配信者へ名前、YouTube表示名、X / Twitter ID、一言メッセージを開示できます。応援していることが伝わりやすくなります。
+              月額330円で、マッチした配信者へ応援プロフィールを開示できます。応援していることが伝わりやすくなります。
             </p>
           </section>
           <ViewerUpgradeForm />

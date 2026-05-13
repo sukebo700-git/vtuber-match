@@ -46,7 +46,7 @@ export function ViewerUpgradeForm() {
     <section className="form checkout-form">
       <div className="plan-table">
         <article className="plan-card">
-          <strong>無料枠</strong>
+          <strong>無料プラン</strong>
           <span className="plan-price">0円</span>
           <p>IDとして使う自身の名前とアイコンのみ登録できます。</p>
           <ul>
@@ -71,7 +71,7 @@ export function ViewerUpgradeForm() {
         決済はStripeの安全な画面で行います。カード情報はVtuberマッチでは保存しません。
       </p>
       <button className="primary-button" type="button" onClick={submit} disabled={busy}>
-        {busy ? "準備中..." : "月額330円でアップグレード"}
+        {busy ? "準備中..." : "視聴者ブーストプランに加入"}
       </button>
       {status && <p className="notice-text">{status}</p>}
     </section>

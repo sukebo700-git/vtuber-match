@@ -40,7 +40,7 @@ export function ViewerLoginForm() {
       loggedInAt: new Date().toISOString()
     }));
     window.dispatchEvent(new Event("vtuber-match-auth-changed"));
-    setStatus("ログインしました。視聴者プロフィールへ移動します。");
+    setStatus(data.auth_action === "created" ? "新規登録しました。視聴者プロフィールへ移動します。" : "ログインしました。視聴者プロフィールへ移動します。");
     window.location.assign("/viewer");
   }
 
@@ -54,8 +54,8 @@ export function ViewerLoginForm() {
         <label htmlFor="viewer_password">パスワード</label>
         <input id="viewer_password" type="password" value={form.password} onChange={(event) => update("password", event.target.value)} required minLength={8} autoComplete="current-password" />
       </div>
-      <p className="help-text">はじめての方は、このメールアドレスとパスワードで視聴者プロフィール枠を作成します。表示名や画像、YouTube表示名はログイン後に登録できます。</p>
-      <button className="primary-button" type="submit" disabled={busy}>{busy ? "確認中..." : "ログイン・新規登録"}</button>
+      <p className="help-text">未登録のメールアドレスなら新規登録、登録済みならログインします。表示名や画像はログイン後に登録できます。</p>
+      <button className="primary-button" type="submit" disabled={busy}>{busy ? "確認中..." : "ログイン / 新規登録"}</button>
       <p className="help-text"><a href="/password-reset?type=viewer">パスワードを忘れた方</a></p>
       {status && <p className="help-text">{status}</p>}
     </form>

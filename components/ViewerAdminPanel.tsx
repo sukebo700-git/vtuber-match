@@ -43,7 +43,7 @@ export function ViewerAdminPanel({ viewers }: { viewers: ViewerProfileWithStats[
               <div><dt>視聴者ID</dt><dd>{viewer.id}</dd></div>
               <div><dt>視聴者管理ID</dt><dd>{viewer.viewer_login_id || "未発行"}</dd></div>
               <div><dt>メール</dt><dd>{viewer.email || "未登録"}</dd></div>
-              <div><dt>プラン</dt><dd>{viewer.viewer_plan === "viewer_paid" ? "視聴者応援プラン" : "無料"}</dd></div>
+              <div><dt>プラン</dt><dd>{viewer.viewer_plan === "viewer_paid" ? "視聴者ブーストプラン" : "無料プラン"}</dd></div>
               <div><dt>パスワード</dt><dd>{viewer.viewer_password_hash ? "設定済み" : "未設定"}</dd></div>
               <div><dt>YouTube表示名</dt><dd>{viewer.youtube_display_name || "未入力"}</dd></div>
               <div><dt>X / Twitter ID</dt><dd>{viewer.twitter_id || "未入力"}</dd></div>
