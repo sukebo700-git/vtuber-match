@@ -70,7 +70,10 @@ export default function HelpPage() {
           <p><a href="/commercial-disclosure">特定商取引法に基づく表記</a></p>
         </section>
 
-        <AdminEntryForm />
+        <details className="status-band legal-footnote">
+          <summary>運営者ログイン</summary>
+          <AdminEntryForm />
+        </details>
       </main>
     </div>
   );

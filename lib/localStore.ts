@@ -15,17 +15,25 @@ const reportsPath = path.join(dataDir, "local-reports.json");
 const creatorLikesPath = path.join(dataDir, "local-creator-likes.json");
 const passwordResetRequestsPath = path.join(dataDir, "local-password-reset-requests.json");
 const visitsPath = path.join(dataDir, "local-visits.json");
+const visitSourcesPath = path.join(dataDir, "local-visit-sources.json");
 
 export async function readLocalStreamers() {
   return rankStreamers(await readAllLocalStreamers());
 }
 
-export async function addLocalVisit(date: string) {
+export async function addLocalVisit(date: string, source = "direct") {
   await ensureFiles();
   const raw = await fs.readFile(visitsPath, "utf8");
   const visits = JSON.parse(raw) as Record<string, number>;
   visits[date] = (visits[date] || 0) + 1;
   await fs.writeFile(visitsPath, JSON.stringify(visits, null, 2));
+
+  const sourcesRaw = await fs.readFile(visitSourcesPath, "utf8");
+  const sources = JSON.parse(sourcesRaw) as Record<string, Record<string, number>>;
+  sources[date] = sources[date] || {};
+  sources[date].total = (sources[date].total || 0) + 1;
+  sources[date][source] = (sources[date][source] || 0) + 1;
+  await fs.writeFile(visitSourcesPath, JSON.stringify(sources, null, 2));
 }
 
 export async function readLocalVisitStats() {
@@ -33,6 +41,13 @@ export async function readLocalVisitStats() {
   const raw = await fs.readFile(visitsPath, "utf8");
   const visits = JSON.parse(raw) as Record<string, number>;
   return summarizeVisits(visits);
+}
+
+export async function readLocalVisitSourceStats() {
+  await ensureFiles();
+  const raw = await fs.readFile(visitSourcesPath, "utf8");
+  const sources = JSON.parse(raw) as Record<string, Record<string, number>>;
+  return summarizeVisitSources(sources);
 }
 
 export function summarizeVisits(visits: Record<string, number>) {
@@ -48,6 +63,28 @@ export function summarizeVisits(visits: Record<string, number>) {
   const weekCount = Object.entries(visits).reduce((sum, [date, count]) => sum + (sevenDays.has(date) ? count : 0), 0);
   const totalCount = Object.values(visits).reduce((sum, count) => sum + count, 0);
   return { today: todayCount, week: weekCount, total: totalCount };
+}
+
+export function summarizeVisitSources(sources: Record<string, Record<string, number>>) {
+  const sevenDays = new Set(
+    Array.from({ length: 7 }, (_, index) => {
+      const date = new Date();
+      date.setDate(date.getDate() - index);
+      return date.toISOString().slice(0, 10);
+    }),
+  );
+  return Object.entries(sources).reduce(
+    (summary, [date, counts]) => {
+      if (!sevenDays.has(date)) return summary;
+      summary.organic += counts.organic || 0;
+      summary.direct += counts.direct || 0;
+      summary.social += counts.social || 0;
+      summary.referral += counts.referral || 0;
+      summary.ads += counts.ads || 0;
+      return summary;
+    },
+    { organic: 0, direct: 0, social: 0, referral: 0, ads: 0 },
+  );
 }
 
 export async function findLocalStreamer(id: string) {
@@ -513,5 +550,10 @@ async function ensureFiles() {
     await fs.access(visitsPath);
   } catch {
     await fs.writeFile(visitsPath, "{}");
+  }
+  try {
+    await fs.access(visitSourcesPath);
+  } catch {
+    await fs.writeFile(visitSourcesPath, "{}");
   }
 }

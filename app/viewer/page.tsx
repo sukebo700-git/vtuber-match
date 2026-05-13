@@ -28,7 +28,7 @@ export default function ViewerPage() {
             ログインなしでもスワイプは利用できます。ログインすると、自身の名前やアイコンを登録でき、マッチ数もプロフィールに表示できます。
           </p>
           <p className="inline-actions" style={{ marginTop: 12 }}>
-            <a className="primary-button" href="/">スワイプ画面へ戻る</a>
+            <a className="primary-button" href="/swipe">スワイプ画面へ戻る</a>
             <a className="secondary-button" href="/viewer/login">視聴者ログイン</a>
             <a className="secondary-button" href="/viewer/upgrade">視聴者ブーストプラン</a>
           </p>

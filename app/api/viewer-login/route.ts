@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { FieldValue, getAdminDb } from "@/lib/firebaseAdmin";
 import { readLocalViewerProfilesRaw, upsertLocalViewerProfile } from "@/lib/localStore";
 import { hashPassword, makeViewerLoginId } from "@/lib/password";
+import { createUserSession, userSessionCookieOptions, viewerSessionCookie } from "@/lib/userSession";
 import type { ViewerProfile } from "@/lib/types";
 
 export async function POST(request: Request) {
@@ -36,7 +37,13 @@ export async function POST(request: Request) {
       visible_to_matched_streamers: existing?.visible_to_matched_streamers !== false
     };
     const saved = await upsertLocalViewerProfile(profile);
-    return NextResponse.json({ profile: publicProfile(saved), auth_action: created ? "created" : "logged_in", source: "local" });
+    const response = NextResponse.json({ profile: publicProfile(saved), auth_action: created ? "created" : "logged_in", source: "local" });
+    response.cookies.set(viewerSessionCookie, createUserSession({
+      id: saved.id,
+      email: saved.email,
+      viewer_login_id: saved.viewer_login_id,
+    }), userSessionCookieOptions());
+    return response;
   }
 
   const snapshot = await db.collection("viewer_profiles").where("email", "==", email).limit(1).get();
@@ -71,7 +78,13 @@ export async function POST(request: Request) {
     updated_at: FieldValue.serverTimestamp()
   }, { merge: true });
 
-  return NextResponse.json({ profile: publicProfile(profile), auth_action: created ? "created" : "logged_in", source: "firestore" });
+  const response = NextResponse.json({ profile: publicProfile(profile), auth_action: created ? "created" : "logged_in", source: "firestore" });
+  response.cookies.set(viewerSessionCookie, createUserSession({
+    id,
+    email,
+    viewer_login_id: profile.viewer_login_id,
+  }), userSessionCookieOptions());
+  return response;
 }
 
 function publicProfile(profile: ViewerProfile) {

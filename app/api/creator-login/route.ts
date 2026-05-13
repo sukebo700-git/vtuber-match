@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getAdminDb } from "@/lib/firebaseAdmin";
 import { readLocalApplications, readLocalStreamers } from "@/lib/localStore";
 import { hashPassword } from "@/lib/password";
+import { createUserSession, creatorSessionCookie, userSessionCookieOptions } from "@/lib/userSession";
 
 export async function POST(request: Request) {
   const body = await request.json();
@@ -23,13 +24,20 @@ export async function POST(request: Request) {
     if (!application) return NextResponse.json({ error: "メールアドレスまたはパスワードが違います。" }, { status: 401 });
     const streamers = await readLocalStreamers();
     const streamer = streamers.find((item) => item.id === application.streamer_id);
-    return NextResponse.json({
+    const response = NextResponse.json({
       application_id: application.id,
       streamer_id: application.streamer_id || "",
       creator_login_id: application.creator_login_id || "",
       name: application.name || "",
       plan_type: streamer?.plan_type || application.desired_plan || "free"
     });
+    response.cookies.set(creatorSessionCookie, createUserSession({
+      application_id: application.id,
+      streamer_id: application.streamer_id || "",
+      creator_login_id: application.creator_login_id || "",
+      email,
+    }), userSessionCookieOptions());
+    return response;
   }
 
   const emailSnapshot = await db.collection("applications").where("email", "==", email).limit(1).get();
@@ -45,11 +53,18 @@ export async function POST(request: Request) {
     planType = streamerDoc.data()?.plan_type || planType;
   }
 
-  return NextResponse.json({
+  const response = NextResponse.json({
     application_id: doc.id,
     streamer_id: data.streamer_id || "",
     creator_login_id: data.creator_login_id || "",
     name: data.name || "",
     plan_type: planType
   });
+  response.cookies.set(creatorSessionCookie, createUserSession({
+    application_id: doc.id,
+    streamer_id: data.streamer_id || "",
+    creator_login_id: data.creator_login_id || "",
+    email,
+  }), userSessionCookieOptions());
+  return response;
 }

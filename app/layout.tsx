@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 import { PublicFooter } from "@/components/PublicFooter";
 import { ServiceWorker } from "@/components/ServiceWorker";
 import { VisitTracker } from "@/components/VisitTracker";
@@ -13,6 +14,9 @@ export const metadata: Metadata = {
   },
   description: siteDescription,
   keywords: siteKeywords,
+  verification: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION
+    ? { google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION }
+    : undefined,
   applicationName: siteName,
   authors: [{ name: "VtuberMatch" }],
   creator: "VtuberMatch",
@@ -99,6 +103,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ja">
       <body>
+        <GoogleAnalytics />
         <ServiceWorker />
         <VisitTracker />
         {children}

@@ -14,7 +14,10 @@ export async function POST(request: Request) {
 
   const body = await request.json().catch(() => ({}));
   const password = String(body.password || "");
-  const expected = process.env.ADMIN_ACCESS_KEY || "kiya0110";
+  const expected = process.env.ADMIN_ACCESS_KEY || (process.env.NODE_ENV === "production" ? "" : "kiya0110");
+  if (!expected) {
+    return NextResponse.json({ error: "admin password is not configured" }, { status: 503 });
+  }
 
   if (!password || password !== expected) {
     attempts.set(ip, {

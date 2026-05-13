@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import type { Firestore } from "firebase-admin/firestore";
 import { FieldValue, getAdminDb } from "@/lib/firebaseAdmin";
 import { addLocalLike, incrementLocalStreamer } from "@/lib/localStore";
 import { notifyStreamerLike } from "@/lib/notifications";
@@ -22,24 +23,25 @@ export async function POST(request: Request) {
   const streamerRef = db.collection("streamers").doc(streamerId);
   const streamerDoc = await streamerRef.get();
   if (!streamerDoc.exists) return NextResponse.json({ error: "streamer not found" }, { status: 404 });
+  const verifiedViewerProfile = viewerProfileId ? await readVerifiedViewerProfile(db, viewerProfileId) : viewerProfile;
 
   await db.runTransaction(async (tx) => {
     const likeRef = db.collection("likes").doc(`${userId}_${streamerId}_${Date.now()}`);
     tx.set(likeRef, {
       user_id: userId,
       streamer_id: streamerId,
-      viewer_profile_id: viewerProfile?.id || viewerProfileId || null,
-      viewer_profile: viewerProfile || null,
+      viewer_profile_id: verifiedViewerProfile?.id || viewerProfileId || null,
+      viewer_profile: verifiedViewerProfile || null,
       timestamp: FieldValue.serverTimestamp()
     });
     tx.update(streamerRef, {
       likes: FieldValue.increment(1),
-      ...(viewerProfile?.viewer_plan === "viewer_paid" ? { viewer_like_boosts: FieldValue.increment(1) } : {})
+      ...(verifiedViewerProfile?.viewer_plan === "viewer_paid" ? { viewer_like_boosts: FieldValue.increment(1) } : {})
     });
     tx.set(db.collection("notifications").doc(), {
       target_type: "streamer",
       streamer_id: streamerId,
-      viewer_profile_id: viewerProfile?.id || viewerProfileId || null,
+      viewer_profile_id: verifiedViewerProfile?.id || viewerProfileId || null,
       type: "LIKE_CREATED",
       title: "新しいいいね",
       body: "視聴者からいいねが届きました",
@@ -75,5 +77,24 @@ function normalizeViewerProfile(value: unknown, fallbackId = "") {
     image: typeof input.image === "string" ? input.image : "",
     profile: isPaid && typeof input.profile === "string" ? input.profile : "",
     favorite_categories: isPaid && Array.isArray(input.favorite_categories) ? input.favorite_categories.filter((item) => typeof item === "string").slice(0, 5) : []
+  };
+}
+
+async function readVerifiedViewerProfile(db: Firestore, id: string) {
+  const doc = await db.collection("viewer_profiles").doc(id).get();
+  if (!doc.exists) return { id };
+  const data = doc.data() || {};
+  if (data.visible_to_matched_streamers === false) return { id };
+  const isPaid = data.viewer_plan === "viewer_paid" || data.subscription_status === "active";
+  return {
+    id,
+    display_name: typeof data.display_name === "string" ? data.display_name : "",
+    viewer_plan: isPaid ? "viewer_paid" : "free",
+    youtube_display_name: isPaid && typeof data.youtube_display_name === "string" ? data.youtube_display_name : "",
+    twitter_id: isPaid && typeof data.twitter_id === "string" ? data.twitter_id : "",
+    one_liner: isPaid && typeof data.one_liner === "string" ? data.one_liner.slice(0, 30) : "",
+    image: typeof data.image === "string" ? data.image : "",
+    profile: isPaid && typeof data.profile === "string" ? data.profile : "",
+    favorite_categories: isPaid && Array.isArray(data.favorite_categories) ? data.favorite_categories.filter((item) => typeof item === "string").slice(0, 5) : []
   };
 }

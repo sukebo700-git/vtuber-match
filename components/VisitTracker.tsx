@@ -14,7 +14,11 @@ export function VisitTracker() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       keepalive: true,
-      body: JSON.stringify({ path: window.location.pathname }),
+      body: JSON.stringify({
+        path: window.location.pathname,
+        referrer: document.referrer,
+        search: window.location.search,
+      }),
     }).catch(() => undefined);
   }, []);
 

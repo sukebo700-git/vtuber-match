@@ -131,6 +131,7 @@ export function HeaderAuthStatus() {
 
   const logout = () => {
     [...CREATOR_KEYS, ...VIEWER_KEYS].forEach((key) => localStorage.removeItem(key));
+    fetch("/api/logout", { method: "POST", keepalive: true }).catch(() => undefined);
     setLogin(null);
     setMenuOpen(false);
     setLoginOpen(false);

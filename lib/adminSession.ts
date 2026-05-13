@@ -5,7 +5,7 @@ export const adminCookieName = "vtuber_match_admin";
 const sessionHours = 8;
 
 function secret() {
-  return process.env.ADMIN_ACCESS_KEY || "kiya0110";
+  return process.env.ADMIN_ACCESS_KEY || (process.env.NODE_ENV === "production" ? "" : "kiya0110");
 }
 
 function sign(value: string) {
@@ -13,6 +13,7 @@ function sign(value: string) {
 }
 
 export function createAdminSession() {
+  if (!secret()) throw new Error("ADMIN_ACCESS_KEY is required");
   const expires = Date.now() + sessionHours * 60 * 60 * 1000;
   const payload = String(expires);
   return `${payload}.${sign(payload)}`;
@@ -20,6 +21,7 @@ export function createAdminSession() {
 
 export function verifyAdminSession(value?: string | null) {
   if (!value) return false;
+  if (!secret()) return false;
   const [expires, signature] = value.split(".");
   if (!expires || !signature) return false;
   if (Number(expires) < Date.now()) return false;

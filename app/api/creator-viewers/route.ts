@@ -1,10 +1,15 @@
 import { NextResponse } from "next/server";
 import { getAdminDb } from "@/lib/firebaseAdmin";
 import { readLocalViewerProfilesForStreamer } from "@/lib/localStore";
+import { creatorSessionCookie, readUserSession } from "@/lib/userSession";
 
 export async function GET(request: Request) {
   const streamerId = new URL(request.url).searchParams.get("streamer_id") || "";
   if (!streamerId) return NextResponse.json({ error: "streamer_id is required" }, { status: 400 });
+  const session = readUserSession<{ streamer_id?: string }>(request, creatorSessionCookie);
+  if (!session?.streamer_id || session.streamer_id !== streamerId) {
+    return NextResponse.json({ error: "creator login required" }, { status: 401 });
+  }
 
   const db = getAdminDb();
   if (!db) {

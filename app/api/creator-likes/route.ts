@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { FieldValue, getAdminDb } from "@/lib/firebaseAdmin";
 import { addLocalCreatorLike } from "@/lib/localStore";
 import { notifyViewerCreatorLike } from "@/lib/notifications";
+import { creatorSessionCookie, readUserSession } from "@/lib/userSession";
 
 export async function POST(request: Request) {
   const body = await request.json();
@@ -9,6 +10,10 @@ export async function POST(request: Request) {
   const viewerProfileId = String(body.viewer_profile_id || "");
   if (!streamerId || !viewerProfileId) {
     return NextResponse.json({ error: "streamer_id and viewer_profile_id are required" }, { status: 400 });
+  }
+  const session = readUserSession<{ streamer_id?: string }>(request, creatorSessionCookie);
+  if (!session?.streamer_id || session.streamer_id !== streamerId) {
+    return NextResponse.json({ error: "creator login required" }, { status: 401 });
   }
 
   const db = getAdminDb();
@@ -20,6 +25,14 @@ export async function POST(request: Request) {
   const streamerDoc = await db.collection("streamers").doc(streamerId).get();
   if (streamerDoc.data()?.plan_type !== "boost") {
     return NextResponse.json({ error: "premium plan is required" }, { status: 403 });
+  }
+  const matchSnapshot = await db.collection("likes")
+    .where("streamer_id", "==", streamerId)
+    .where("viewer_profile_id", "==", viewerProfileId)
+    .limit(1)
+    .get();
+  if (matchSnapshot.empty) {
+    return NextResponse.json({ error: "matched viewer is required" }, { status: 403 });
   }
 
   const viewerDoc = await db.collection("viewer_profiles").doc(viewerProfileId).get();

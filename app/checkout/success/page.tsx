@@ -15,12 +15,13 @@ export default function CheckoutSuccessPage() {
       <main className="main grid-page">
         <section className="status-band">
           <h2>決済を反映しました</h2>
-          <p>配信者ページでプロフィール修正、通知設定、マッチ済み視聴者の確認ができます。</p>
+          <p>プランを反映しました。該当ページでプロフィール修正、通知設定、マッチ状況の確認ができます。</p>
           <div style={{ marginTop: 12 }}>
             <PushNotificationButton targetType="creator" />
           </div>
           <p className="inline-actions" style={{ marginTop: 12 }}>
             <a className="primary-button" href="/creator">配信者ページへ</a>
+            <a className="secondary-button" href="/viewer">視聴者ページへ</a>
             <a className="secondary-button" href="/">トップへ戻る</a>
           </p>
         </section>

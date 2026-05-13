@@ -6,7 +6,7 @@ import { PasswordResetAdminPanel } from "@/components/PasswordResetAdminPanel";
 import { VisitStatsPanel } from "@/components/VisitStatsPanel";
 import { adminCookieName, verifyAdminSession } from "@/lib/adminSession";
 import { getAdminDb } from "@/lib/firebaseAdmin";
-import { readAllLocalStreamers, readLocalApplications, readLocalPasswordResetRequests, readLocalReports, readLocalViewerProfilesWithStats, readLocalVisitStats, summarizeVisits } from "@/lib/localStore";
+import { readAllLocalStreamers, readLocalApplications, readLocalPasswordResetRequests, readLocalReports, readLocalViewerProfilesWithStats, readLocalVisitSourceStats, readLocalVisitStats, summarizeVisitSources, summarizeVisits } from "@/lib/localStore";
 import { normalizeStreamer } from "@/lib/streamers";
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
@@ -31,6 +31,7 @@ export default async function AdminPage() {
   const reports = db ? await readFirestoreReports() : await readLocalReports();
   const passwordResetRequests = db ? await readFirestorePasswordResetRequests() : await readLocalPasswordResetRequests();
   const visitStats = db ? await readFirestoreVisitStats() : await readLocalVisitStats();
+  const visitSourceStats = db ? await readFirestoreVisitSourceStats() : await readLocalVisitSourceStats();
 
   return (
     <div className="app-shell">
@@ -44,7 +45,7 @@ export default async function AdminPage() {
         <HeaderAuthStatus />
       </header>
       <main className="main grid-page">
-        <VisitStatsPanel stats={visitStats} />
+        <VisitStatsPanel stats={visitStats} sources={visitSourceStats} />
         <AdminDashboard initialApplications={applications} initialStreamers={streamers} adminKey="" />
         <ViewerAdminPanel viewers={viewers} />
         <PasswordResetAdminPanel requests={passwordResetRequests} adminKey="" />
@@ -64,6 +65,24 @@ async function readFirestoreVisitStats() {
     visits[String(data.date || doc.id)] = Number(data.count || 0);
   });
   return summarizeVisits(visits);
+}
+
+async function readFirestoreVisitSourceStats() {
+  const db = getAdminDb();
+  if (!db) return { organic: 0, direct: 0, social: 0, referral: 0, ads: 0 };
+  const snapshot = await db.collection("site_visit_sources").limit(500).get();
+  const sources: Record<string, Record<string, number>> = {};
+  snapshot.docs.forEach((doc) => {
+    const data = doc.data();
+    sources[String(data.date || doc.id)] = {
+      organic: Number(data.organic || 0),
+      direct: Number(data.direct || 0),
+      social: Number(data.social || 0),
+      referral: Number(data.referral || 0),
+      ads: Number(data.ads || 0),
+    };
+  });
+  return summarizeVisitSources(sources);
 }
 
 async function readFirestorePasswordResetRequests(): Promise<PasswordResetRequest[]> {

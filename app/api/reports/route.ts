@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { FieldValue, getAdminDb } from "@/lib/firebaseAdmin";
 import { addLocalReport, readLocalReports } from "@/lib/localStore";
 import { requireAdmin } from "@/lib/adminAuth";
+import { creatorSessionCookie, readUserSession } from "@/lib/userSession";
 
 export async function GET(request: Request) {
   const unauthorized = requireAdmin(request);
@@ -56,11 +57,23 @@ export async function POST(request: Request) {
   if (!payload.viewer_profile_id) {
     return NextResponse.json({ error: "viewer_profile_id is required" }, { status: 400 });
   }
+  const session = readUserSession<{ streamer_id?: string }>(request, creatorSessionCookie);
+  if (!session?.streamer_id || session.streamer_id !== payload.streamer_id) {
+    return NextResponse.json({ error: "creator login required" }, { status: 401 });
+  }
 
   const db = getAdminDb();
   if (!db) {
     const report = await addLocalReport(payload);
     return NextResponse.json({ report, source: "local" }, { status: 201 });
+  }
+  const matchSnapshot = await db.collection("likes")
+    .where("streamer_id", "==", payload.streamer_id)
+    .where("viewer_profile_id", "==", payload.viewer_profile_id)
+    .limit(1)
+    .get();
+  if (matchSnapshot.empty) {
+    return NextResponse.json({ error: "matched viewer is required" }, { status: 403 });
   }
 
   const doc = await db.collection("reports").add({

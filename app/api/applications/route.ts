@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/adminAuth";
 import { FieldValue, getAdminDb } from "@/lib/firebaseAdmin";
 import { addLocalApplication, autoApproveLocalApplication, readLocalApplications } from "@/lib/localStore";
 import { hashPassword, makeCreatorLoginId } from "@/lib/password";
+import { createUserSession, creatorSessionCookie, userSessionCookieOptions } from "@/lib/userSession";
 import type { PlanType } from "@/lib/types";
 
 export async function GET(request: Request) {
@@ -46,7 +47,7 @@ export async function POST(request: Request) {
   if (!db) {
     const application = await addLocalApplication(payload);
     const streamer = payload.desired_plan === "free" ? await autoApproveLocalApplication(application.id) : null;
-    return NextResponse.json({
+    const response = NextResponse.json({
       application: { ...application, status: streamer ? "approved" : application.status },
       streamer,
       streamer_id: streamer?.id || "",
@@ -54,6 +55,13 @@ export async function POST(request: Request) {
       auto_approved: Boolean(streamer),
       source: "local"
     }, { status: 201 });
+    response.cookies.set(creatorSessionCookie, createUserSession({
+      application_id: application.id,
+      streamer_id: streamer?.id || "",
+      creator_login_id: application.creator_login_id || "",
+      email: payload.email,
+    }), userSessionCookieOptions());
+    return response;
   }
 
   const applicationData = {
@@ -92,13 +100,20 @@ export async function POST(request: Request) {
     }, { merge: true });
   }
 
-  return NextResponse.json({
+  const response = NextResponse.json({
     id: doc.id,
     streamer_id: streamerId,
     creator_login_id: payload.creator_login_id,
     auto_approved: payload.desired_plan === "free",
     source: "firestore"
   }, { status: 201 });
+  response.cookies.set(creatorSessionCookie, createUserSession({
+    application_id: doc.id,
+    streamer_id: streamerId,
+    creator_login_id: payload.creator_login_id,
+    email: payload.email,
+  }), userSessionCookieOptions());
+  return response;
 }
 
 function normalizeXAccount(value: unknown) {
