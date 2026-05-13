@@ -139,10 +139,6 @@ export function HeaderAuthStatus() {
 
   return (
     <div className="header-auth-block" aria-label="ログイン状態とメニュー">
-      <a className="header-main-link" href="/">
-        TOP
-      </a>
-
       <span className="header-user-name" title={displayName}>
         <UserRound size={15} aria-hidden />
         {statusLabel}

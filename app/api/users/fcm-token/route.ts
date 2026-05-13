@@ -7,10 +7,11 @@ export async function POST(request: Request) {
   const token = String(body.fcm_token || "");
   const targetType = body.target_type === "viewer" ? "viewer" : "creator";
   const streamerId = String(body.streamer_id || "");
+  const applicationId = String(body.application_id || "");
   const viewerProfileId = String(body.viewer_profile_id || "");
 
   if (!userId || !token) return NextResponse.json({ error: "user_id and fcm_token are required" }, { status: 400 });
-  if (targetType === "creator" && !streamerId) return NextResponse.json({ error: "streamer_id is required" }, { status: 400 });
+  if (targetType === "creator" && !streamerId && !applicationId) return NextResponse.json({ error: "streamer_id or application_id is required" }, { status: 400 });
   if (targetType === "viewer" && !viewerProfileId) return NextResponse.json({ error: "viewer_profile_id is required" }, { status: 400 });
 
   const db = getAdminDb();
@@ -20,6 +21,7 @@ export async function POST(request: Request) {
     fcm_token: token,
     type: targetType,
     streamer_id: streamerId || null,
+    application_id: applicationId || null,
     viewer_profile_id: viewerProfileId || null,
     updated_at: FieldValue.serverTimestamp()
   }, { merge: true });
@@ -27,6 +29,13 @@ export async function POST(request: Request) {
   if (streamerId) {
     await db.collection("streamers").doc(streamerId).set({
       fcm_tokens: FieldValue.arrayUnion(token)
+    }, { merge: true });
+  }
+
+  if (applicationId) {
+    await db.collection("applications").doc(applicationId).set({
+      fcm_tokens: FieldValue.arrayUnion(token),
+      updated_at: FieldValue.serverTimestamp()
     }, { merge: true });
   }
 

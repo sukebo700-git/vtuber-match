@@ -14,6 +14,8 @@ const vapidKey = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY || "";
 export function PushNotificationButton({ targetType }: PushNotificationButtonProps) {
   const [status, setStatus] = useState("");
   const [enabled, setEnabled] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [testing, setTesting] = useState(false);
 
   const label = useMemo(() => {
     if (enabled) return "通知ON";
@@ -56,34 +58,42 @@ export function PushNotificationButton({ targetType }: PushNotificationButtonPro
   }, []);
 
   async function enablePush() {
+    if (busy) return;
+    setBusy(true);
     if (!hasClientFirebaseConfig) {
       setStatus("Firebase設定が未設定です。");
+      setBusy(false);
       return;
     }
     if (!vapidKey) {
       setStatus("通知用のVAPIDキーが未設定です。");
+      setBusy(false);
       return;
     }
     if (!("Notification" in window) || !("serviceWorker" in navigator)) {
       setStatus("このブラウザは通知に対応していません。");
+      setBusy(false);
       return;
     }
 
     const target = readNotificationTarget(targetType);
     if (!target.userId) {
       setStatus(targetType === "creator" ? "配信者ログイン後に利用できます。" : "視聴者ログイン後に利用できます。");
+      setBusy(false);
       return;
     }
 
     const permission = await Notification.requestPermission();
     if (permission !== "granted") {
       setStatus("通知が許可されませんでした。");
+      setBusy(false);
       return;
     }
 
     const supported = await isSupported().catch(() => false);
     if (!supported) {
       setStatus("このブラウザではFirebase通知を利用できません。");
+      setBusy(false);
       return;
     }
 
@@ -91,40 +101,72 @@ export function PushNotificationButton({ targetType }: PushNotificationButtonPro
     const firebase = getClientFirebase();
     if (!firebase) {
       setStatus("Firebase設定を確認してください。");
+      setBusy(false);
       return;
     }
 
-    const registration = await navigator.serviceWorker.ready;
-    const token = await getToken(getMessaging(firebase.app), {
-      vapidKey,
-      serviceWorkerRegistration: registration,
-    });
+    try {
+      const registration = await navigator.serviceWorker.ready;
+      const token = await getToken(getMessaging(firebase.app), {
+        vapidKey,
+        serviceWorkerRegistration: registration,
+      });
 
-    if (!token) {
-      setStatus("通知トークンを取得できませんでした。");
-      return;
+      if (!token) {
+        setStatus("通知トークンを取得できませんでした。");
+        setBusy(false);
+        return;
+      }
+
+      const response = await fetch("/api/users/fcm-token", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user_id: target.userId,
+          target_type: targetType,
+          streamer_id: target.streamerId,
+          application_id: target.applicationId,
+          viewer_profile_id: target.viewerProfileId,
+          fcm_token: token,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        setStatus(data.error || "通知設定の保存に失敗しました。");
+        setBusy(false);
+        return;
+      }
+
+      localStorage.setItem(tokenStorageKey(targetType), "saved");
+      setEnabled(true);
+      setStatus("通知を受け取れるようにしました。");
+    } catch {
+      setStatus("通知設定に失敗しました。ブラウザの通知許可を確認してください。");
+    } finally {
+      setBusy(false);
     }
+  }
 
-    const response = await fetch("/api/users/fcm-token", {
+  async function sendTestNotification() {
+    if (testing) return;
+    setTesting(true);
+    setStatus("テスト通知を送信中...");
+    const target = readNotificationTarget(targetType);
+    const response = await fetch("/api/users/fcm-test", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         user_id: target.userId,
         target_type: targetType,
         streamer_id: target.streamerId,
+        application_id: target.applicationId,
         viewer_profile_id: target.viewerProfileId,
-        fcm_token: token,
       }),
     });
-
-    if (!response.ok) {
-      setStatus("通知設定の保存に失敗しました。");
-      return;
-    }
-
-    localStorage.setItem(tokenStorageKey(targetType), "saved");
-    setEnabled(true);
-    setStatus("通知を受け取れるようにしました。");
+    const data = await response.json().catch(() => ({}));
+    setTesting(false);
+    setStatus(response.ok ? "テスト通知を送信しました。" : data.error || "テスト通知を送信できませんでした。");
   }
 
   return (
@@ -133,10 +175,17 @@ export function PushNotificationButton({ targetType }: PushNotificationButtonPro
         <h2>プッシュ通知</h2>
         <p>{targetType === "creator" ? "視聴者からのいいねを通知します。" : "配信者からのいいねを通知します。"}</p>
       </div>
-      <button className={enabled ? "secondary-button" : "primary-button"} type="button" onClick={enablePush}>
-        <Bell size={18} />
-        {label}
-      </button>
+      <div className="inline-actions">
+        <button className={enabled ? "secondary-button" : "primary-button"} type="button" onClick={enablePush} disabled={busy}>
+          <Bell size={18} />
+          {busy ? "設定中..." : label}
+        </button>
+        {enabled && (
+          <button className="secondary-button" type="button" onClick={sendTestNotification} disabled={testing}>
+            {testing ? "送信中..." : "テスト通知"}
+          </button>
+        )}
+      </div>
       {status && <p className="help-text">{status}</p>}
     </section>
   );
@@ -145,13 +194,15 @@ export function PushNotificationButton({ targetType }: PushNotificationButtonPro
 function readNotificationTarget(targetType: "creator" | "viewer") {
   if (targetType === "creator") {
     const streamerId = localStorage.getItem("vtuber-match-creator-streamer-id") || "";
+    const applicationId = localStorage.getItem("vtuber-match-creator-application-id") || "";
     const userId =
       streamerId ||
+      applicationId ||
       localStorage.getItem("vtuber-match-creator-login-id") ||
       localStorage.getItem("vtuber-match-creator-email") ||
       "";
 
-    return { userId, streamerId, viewerProfileId: "" };
+    return { userId, streamerId, applicationId, viewerProfileId: "" };
   }
 
   const viewerProfile = safeParse<{ id?: string }>(localStorage.getItem("vtuber-match-viewer-profile"));
@@ -161,7 +212,7 @@ function readNotificationTarget(targetType: "creator" | "viewer") {
     localStorage.getItem("vtuber-match-viewer-email") ||
     "";
 
-  return { userId, streamerId: "", viewerProfileId };
+  return { userId, streamerId: "", applicationId: "", viewerProfileId };
 }
 
 function tokenStorageKey(targetType: "creator" | "viewer") {

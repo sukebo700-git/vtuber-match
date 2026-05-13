@@ -30,6 +30,7 @@ export async function POST(request: Request) {
     name: String(body.name).trim(),
     youtube_url: String(body.youtube_url).trim(),
     youtube_channel_id: String(body.youtube_channel_id || "").trim(),
+    x_account: normalizeXAccount(body.x_account),
     thumbnails: normalizeThumbnails(sanitizeArray(body.thumbnails)),
     categories: sanitizeArray(body.categories),
     tags: sanitizeArray(body.tags).slice(0, 5),
@@ -79,4 +80,10 @@ function sanitizeArray(value: unknown) {
 function normalizeThumbnails(values: string[]) {
   const thumbnails = values.slice(0, 3);
   return thumbnails.length ? thumbnails : ["https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&w=900&q=82"];
+}
+
+function normalizeXAccount(value: unknown) {
+  const input = String(value || "").trim();
+  if (!input) return "";
+  return input.replace(/^https?:\/\/(www\.)?(x|twitter)\.com\//i, "@").replace(/^([^@])/, "@$1").slice(0, 40);
 }

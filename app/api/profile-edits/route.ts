@@ -136,6 +136,7 @@ function buildStreamerPatch(body: Record<string, unknown>, plan: PlanType): Part
 
   setIfPresent(patch, "name", clean(body.name, 80));
   setIfPresent(patch, "youtube_url", clean(body.youtube_url, 240));
+  setIfPresent(patch, "x_account", normalizeXAccount(body.x_account));
   setIfPresent(patch, "description", clean(body.description, 800));
   setIfPresent(patch, "one_liner", clean(body.one_liner, 80));
   setIfPresent(patch, "stream_time", clean(body.stream_time, 80));
@@ -155,6 +156,7 @@ function buildApplicationPatch(body: Record<string, unknown>, plan: PlanType) {
 
   setIfPresent(patch, "name", clean(body.name, 80));
   setIfPresent(patch, "youtube_url", clean(body.youtube_url, 240));
+  setIfPresent(patch, "x_account", normalizeXAccount(body.x_account));
   setIfPresent(patch, "description", clean(body.description, 800));
   setIfPresent(patch, "one_liner", clean(body.one_liner, 80));
   setIfPresent(patch, "stream_time", clean(body.stream_time, 80));
@@ -173,4 +175,10 @@ function clean(value: unknown, max: number) {
 
 function sanitizeArray(value: unknown) {
   return Array.isArray(value) ? value.map(String).map((item) => item.trim()).filter(Boolean) : [];
+}
+
+function normalizeXAccount(value: unknown) {
+  const input = String(value || "").trim();
+  if (!input) return "";
+  return input.replace(/^https?:\/\/(www\.)?(x|twitter)\.com\//i, "@").replace(/^([^@])/, "@$1").slice(0, 40);
 }

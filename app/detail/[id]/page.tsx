@@ -1,4 +1,5 @@
 import { HeaderAuthStatus } from "@/components/HeaderAuthStatus";
+import { ProfileShareButton } from "@/components/ProfileShareButton";
 import { notFound } from "next/navigation";
 import { BadgeCheck, CalendarClock, ExternalLink, Radio } from "lucide-react";
 import { getStreamerById } from "@/lib/streamers";
@@ -60,6 +61,15 @@ export default async function DetailPage({ params }: { params: { id: string } })
               <ExternalLink size={18} />
               チャンネル登録へ
             </a>
+            <ProfileShareButton
+              title={`${streamer.name} | Vtuberマッチ`}
+              text={`${streamer.name}をVtuberマッチで見つけました`}
+            />
+            {streamer.x_account && (
+              <a className="secondary-button" href={xProfileUrl(streamer.x_account)} target="_blank" rel="noreferrer">
+                Xを見る
+              </a>
+            )}
             {isPremium && (
               <a className="secondary-button" href={youtubeWatchUrl(streamer.latest_video_id, streamer.youtube_url)} target="_blank" rel="noreferrer">
                 おすすめアーカイブを見る
@@ -102,4 +112,9 @@ export default async function DetailPage({ params }: { params: { id: string } })
       </main>
     </div>
   );
+}
+
+function xProfileUrl(account: string) {
+  const handle = account.trim().replace(/^@/, "");
+  return `https://x.com/${encodeURIComponent(handle)}`;
 }

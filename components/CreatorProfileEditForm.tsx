@@ -7,6 +7,7 @@ import { CATEGORIES, TAGS } from "@/lib/constants";
 type CreatorDraft = {
   name?: string;
   youtube_url?: string;
+  x_account?: string;
   description?: string;
   one_liner?: string;
   stream_time?: string;
@@ -21,6 +22,7 @@ export function CreatorProfileEditForm() {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [youtubeUrl, setYoutubeUrl] = useState("");
+  const [xAccount, setXAccount] = useState("");
   const [description, setDescription] = useState("");
   const [oneLiner, setOneLiner] = useState("");
   const [streamTime, setStreamTime] = useState("");
@@ -34,6 +36,7 @@ export function CreatorProfileEditForm() {
     setEmail(localStorage.getItem("vtuber-match-creator-email") || "");
     setName(draft?.name || localStorage.getItem("vtuber-match-creator-name") || "");
     setYoutubeUrl(draft?.youtube_url || localStorage.getItem("vtuber-match-creator-youtube-url") || "");
+    setXAccount(draft?.x_account || localStorage.getItem("vtuber-match-creator-x-account") || "");
     setDescription(draft?.description || "");
     setOneLiner(draft?.one_liner || "");
     setStreamTime(draft?.stream_time || "");
@@ -57,6 +60,7 @@ export function CreatorProfileEditForm() {
         streamer_id: localStorage.getItem("vtuber-match-creator-streamer-id") || "",
         creator_login_id: localStorage.getItem("vtuber-match-creator-login-id") || "",
         youtube_url: form.get("youtube_url"),
+        x_account: form.get("x_account"),
         name: form.get("name"),
         description: form.get("description"),
         one_liner: form.get("one_liner"),
@@ -76,6 +80,7 @@ export function CreatorProfileEditForm() {
     const nextDraft = {
       name: String(form.get("name") || ""),
       youtube_url: String(form.get("youtube_url") || ""),
+      x_account: String(form.get("x_account") || ""),
       description: String(form.get("description") || ""),
       one_liner: String(form.get("one_liner") || ""),
       stream_time: String(form.get("stream_time") || ""),
@@ -86,6 +91,7 @@ export function CreatorProfileEditForm() {
 
     localStorage.setItem("vtuber-match-creator-name", nextDraft.name);
     localStorage.setItem("vtuber-match-creator-youtube-url", nextDraft.youtube_url);
+    localStorage.setItem("vtuber-match-creator-x-account", nextDraft.x_account);
     localStorage.setItem(creatorDraftKey, JSON.stringify(nextDraft));
     window.dispatchEvent(new Event("vtuber-match-auth-changed"));
     setStatus("プロフィールを更新しました。");
@@ -123,6 +129,11 @@ export function CreatorProfileEditForm() {
       <div className="field">
         <label htmlFor="edit_youtube">YouTubeチャンネルURL</label>
         <input id="edit_youtube" name="youtube_url" type="url" value={youtubeUrl} onChange={(event) => setYoutubeUrl(event.target.value)} placeholder="https://www.youtube.com/@channel" />
+      </div>
+
+      <div className="field">
+        <label htmlFor="edit_x_account">Xアカウント</label>
+        <input id="edit_x_account" name="x_account" value={xAccount} onChange={(event) => setXAccount(event.target.value)} placeholder="@vtubermatch" />
       </div>
 
       <div className="field">

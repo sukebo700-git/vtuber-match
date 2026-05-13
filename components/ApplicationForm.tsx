@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { BadgeCheck, Crown, ImagePlus, Send } from "lucide-react";
 import { PLAN_FEATURES } from "@/lib/constants";
+import { PushNotificationButton } from "@/components/PushNotificationButton";
 
 type ApplicationFormProps = {
   categories: string[];
@@ -62,6 +63,7 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
       email,
       youtube_url: form.get("youtube_url"),
       youtube_channel_id: form.get("youtube_channel_id"),
+      x_account: form.get("x_account"),
       description: desiredPlan === "free" ? "" : form.get("description"),
       one_liner: desiredPlan === "free" ? "" : form.get("one_liner"),
       stream_time: desiredPlan === "free" ? "" : form.get("stream_time"),
@@ -97,10 +99,12 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
     localStorage.setItem("vtuber-match-creator-plan", desiredPlan);
     localStorage.setItem("vtuber-match-creator-youtube-url", String(form.get("youtube_url") || ""));
     localStorage.setItem("vtuber-match-creator-youtube-channel-id", String(form.get("youtube_channel_id") || ""));
+    localStorage.setItem("vtuber-match-creator-x-account", String(form.get("x_account") || ""));
     localStorage.setItem(creatorDraftKey, JSON.stringify({
       name: String(form.get("name") || ""),
       youtube_url: String(form.get("youtube_url") || ""),
       youtube_channel_id: String(form.get("youtube_channel_id") || ""),
+      x_account: String(form.get("x_account") || ""),
       description: String(form.get("description") || ""),
       one_liner: String(form.get("one_liner") || ""),
       stream_time: String(form.get("stream_time") || ""),
@@ -204,6 +208,10 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
         <input id="youtube_channel_id" name="youtube_channel_id" placeholder="UC..." />
       </div>
       <div className="field">
+        <label htmlFor="x_account">Xアカウント 任意</label>
+        <input id="x_account" name="x_account" placeholder="@vtubermatch" />
+      </div>
+      <div className="field">
         <label htmlFor="images">
           <ImagePlus size={16} /> 掲載写真 最大3枚
         </label>
@@ -282,6 +290,12 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
             <div><dt>パスワード</dt><dd>{completion.password}</dd></div>
           </dl>
           <p className="help-text">管理ID、申込ID、掲載IDは運営管理用のため、この画面には表示していません。</p>
+          <div style={{ marginTop: 12 }}>
+            <PushNotificationButton targetType="creator" />
+          </div>
+          <p className="inline-actions" style={{ marginTop: 12 }}>
+            <a className="secondary-button" href="/creator">配信者ページへ</a>
+          </p>
         </section>
       )}
     </form>

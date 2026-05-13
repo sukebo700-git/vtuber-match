@@ -29,6 +29,7 @@ export function normalizeStreamer(id: string, data: Record<string, any>): Stream
     name: data.name || "",
     youtube_url: data.youtube_url || "",
     youtube_channel_id: data.youtube_channel_id,
+    x_account: data.x_account || data.twitter_id || "",
     thumbnails: Array.isArray(data.thumbnails) ? data.thumbnails.slice(0, 3) : [],
     categories: Array.isArray(data.categories) ? data.categories : [],
     tags: Array.isArray(data.tags) ? data.tags.slice(0, 5) : [],

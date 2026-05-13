@@ -56,6 +56,7 @@ export async function POST(request: Request) {
         name: application.name || "",
         youtube_url: application.youtube_url || "",
         youtube_channel_id: application.youtube_channel_id || "",
+        x_account: application.x_account || "",
         thumbnails: Array.isArray(application.thumbnails) ? application.thumbnails : [],
         categories: Array.isArray(application.categories) ? application.categories : [],
         tags: Array.isArray(application.tags) ? application.tags : [],
@@ -70,6 +71,7 @@ export async function POST(request: Request) {
         source_application_id: applicationId,
         subscription_status: "active",
         stripe_subscription_id: subscriptionId,
+        fcm_tokens: Array.isArray(application.fcm_tokens) ? application.fcm_tokens : [],
         created_at: FieldValue.serverTimestamp()
       });
       await applicationRef.set({

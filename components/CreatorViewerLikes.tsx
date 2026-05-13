@@ -28,7 +28,7 @@ export function CreatorViewerLikes() {
   }, []);
 
   async function loadViewers(id: string) {
-    setStatus("視聴者プロフィールを読み込み中です...");
+    setStatus("マッチ済み視聴者を読み込んでいます...");
     const response = await fetch(`/api/creator-viewers?streamer_id=${encodeURIComponent(id)}`);
     const data = await response.json().catch(() => ({}));
     if (response.ok) {
@@ -64,7 +64,8 @@ export function CreatorViewerLikes() {
       setStatus("視聴者にいいねしました。");
       return;
     }
-    setStatus("いいねに失敗しました。");
+    const data = await response.json().catch(() => ({}));
+    setStatus(data.error || "いいねに失敗しました。");
   }
 
   async function reportViewer(viewer: CreatorViewer) {
@@ -93,12 +94,15 @@ export function CreatorViewerLikes() {
 
   return (
     <section className="status-band">
-      <h2>視聴者リアクション</h2>
+      <h2>マッチ済み視聴者</h2>
       <p>
-        マッチした視聴者プロフィールを確認できます。視聴者へのいいねはプレミアムプラン限定、視聴者通報はマッチ済みならプランを問わず利用できます。
+        あなたにいいねした視聴者を確認できます。プレミアムプランでは、視聴者へいいねを返せます。
       </p>
+      {planType !== "boost" && streamerId && (
+        <p className="notice-text">視聴者へのいいねはプレミアムプラン限定です。</p>
+      )}
       {!streamerId && (
-        <p className="notice-text">配信者ログイン後、掲載データに紐づいた視聴者が表示されます。</p>
+        <p className="notice-text">配信者ログイン後、マッチ済み視聴者が表示されます。</p>
       )}
       {status && <p className="help-text">{status}</p>}
 
@@ -153,8 +157,8 @@ export function CreatorViewerLikes() {
 
         {streamerId && !viewers.length && !status && (
           <article className="admin-card">
-            <h3>まだ表示できる視聴者がいません</h3>
-            <p>視聴者がマッチし、プロフィール共有をオンにするとここに表示されます。</p>
+            <h3>マッチ済み視聴者はまだいません</h3>
+            <p>視聴者があなたにいいねすると、ここに表示されます。</p>
           </article>
         )}
       </div>

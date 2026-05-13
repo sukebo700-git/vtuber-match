@@ -29,6 +29,7 @@ export async function POST(request: Request) {
     email: String(body.email).trim().toLowerCase(),
     youtube_url: String(body.youtube_url).trim(),
     youtube_channel_id: String(body.youtube_channel_id || "").trim(),
+    x_account: normalizeXAccount(body.x_account),
     thumbnails: normalizeThumbnails(sanitizeArray(body.thumbnails)),
     categories: sanitizeArray(body.categories),
     tags: sanitizeArray(body.tags).slice(0, 5),
@@ -69,6 +70,7 @@ export async function POST(request: Request) {
       name: payload.name,
       youtube_url: payload.youtube_url,
       youtube_channel_id: payload.youtube_channel_id,
+      x_account: payload.x_account,
       thumbnails: payload.thumbnails,
       categories: payload.categories,
       tags: payload.tags,
@@ -97,6 +99,10 @@ export async function POST(request: Request) {
     auto_approved: payload.desired_plan === "free",
     source: "firestore"
   }, { status: 201 });
+}
+
+function normalizeXAccount(value: unknown) {
+  return String(value || "").trim().replace(/^https?:\/\/(www\.)?(x|twitter)\.com\//i, "@").replace(/^([^@])/, "@$1").slice(0, 40);
 }
 
 function validate(body: Record<string, unknown>) {

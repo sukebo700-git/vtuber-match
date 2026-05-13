@@ -6,6 +6,7 @@ export type Streamer = {
   name: string;
   youtube_url: string;
   youtube_channel_id?: string;
+  x_account?: string;
   thumbnails: string[];
   categories: string[];
   tags: string[];
@@ -33,6 +34,7 @@ export type StreamerApplication = {
   email: string;
   youtube_url: string;
   youtube_channel_id?: string;
+  x_account?: string;
   thumbnails: string[];
   categories: string[];
   tags: string[];

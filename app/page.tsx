@@ -15,6 +15,7 @@ export default function HomePage() {
       <main className="main landing-main">
         <section className="landing-hero">
           <div className="landing-copy">
+            <span className="landing-free-label">登録無料</span>
             <h1>気になるVtuberを、直感で見つける。</h1>
             <div className="landing-actions">
               <a className="primary-button" href="/swipe">スワイプを始める</a>
