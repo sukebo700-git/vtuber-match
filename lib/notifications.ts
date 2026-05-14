@@ -11,6 +11,15 @@ export async function notifyStreamerLike(tokens: string[] | undefined, streamerN
       title: "新しいいいね",
       body: `${streamerName}さんに視聴者からいいねが届きました`,
     },
+    webpush: {
+      notification: {
+        title: "新しいいいね",
+        body: `${streamerName}さんに視聴者からいいねが届きました`,
+        icon: "/icon.svg",
+        badge: "/icon.svg",
+      },
+      fcmOptions: { link: "/creator" },
+    },
     data: {
       type: "LIKE_CREATED",
       url: "/creator",
@@ -28,6 +37,15 @@ export async function notifyViewerCreatorLike(tokens: string[] | undefined) {
     notification: {
       title: "配信者からいいね",
       body: "マッチした配信者からいいねが届きました",
+    },
+    webpush: {
+      notification: {
+        title: "配信者からいいね",
+        body: "マッチした配信者からいいねが届きました",
+        icon: "/icon.svg",
+        badge: "/icon.svg",
+      },
+      fcmOptions: { link: "/viewer" },
     },
     data: {
       type: "CREATOR_LIKE_CREATED",
@@ -63,6 +81,15 @@ export async function notifyAdminNewApplication(input: {
     notification: {
       title: "新規配信者登録",
       body: `${input.streamerName}さんから登録がありました`,
+    },
+    webpush: {
+      notification: {
+        title: "新規配信者登録",
+        body: `${input.streamerName}さんから登録がありました`,
+        icon: "/icon.svg",
+        badge: "/icon.svg",
+      },
+      fcmOptions: { link: "/admin" },
     },
     data: {
       type: "STREAMER_APPLICATION_CREATED",
