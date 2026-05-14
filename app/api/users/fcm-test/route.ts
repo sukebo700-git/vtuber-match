@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/adminAuth";
 import { getAdminApp, getAdminDb } from "@/lib/firebaseAdmin";
+import { creatorSessionCookie, readUserSession, viewerSessionCookie } from "@/lib/userSession";
 
 type NotificationTargetType = "admin" | "creator" | "viewer";
 
@@ -13,10 +14,9 @@ export async function POST(request: Request) {
   const viewerProfileId = String(body.viewer_profile_id || "");
 
   if (!userId) return NextResponse.json({ error: "user_id is required" }, { status: 400 });
-  if (targetType === "admin") {
-    const unauthorized = requireAdmin(request);
-    if (unauthorized) return unauthorized;
-  }
+
+  const unauthorized = authorizeNotificationTarget(request, { targetType, streamerId, applicationId, viewerProfileId });
+  if (unauthorized) return unauthorized;
 
   const db = getAdminDb();
   const app = getAdminApp();
@@ -90,6 +90,27 @@ async function readTokens(
   }
 
   return Array.from(tokenSet);
+}
+
+function authorizeNotificationTarget(
+  request: Request,
+  input: { targetType: NotificationTargetType; streamerId: string; applicationId: string; viewerProfileId: string },
+) {
+  if (input.targetType === "admin") return requireAdmin(request);
+
+  if (input.targetType === "creator") {
+    const session = readUserSession<{ streamer_id?: string; application_id?: string }>(request, creatorSessionCookie);
+    const matchesStreamer = input.streamerId && session?.streamer_id === input.streamerId;
+    const matchesApplication = input.applicationId && session?.application_id === input.applicationId;
+    if (!matchesStreamer && !matchesApplication) return NextResponse.json({ error: "creator login required" }, { status: 401 });
+  }
+
+  if (input.targetType === "viewer") {
+    const session = readUserSession<{ id?: string }>(request, viewerSessionCookie);
+    if (!session?.id || session.id !== input.viewerProfileId) return NextResponse.json({ error: "viewer login required" }, { status: 401 });
+  }
+
+  return null;
 }
 
 function addTokens(tokenSet: Set<string>, value: unknown) {

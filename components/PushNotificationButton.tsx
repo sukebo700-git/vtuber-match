@@ -22,8 +22,15 @@ export function PushNotificationButton({ targetType }: PushNotificationButtonPro
   const label = useMemo(() => {
     if (enabled) return "通知ON";
     if (targetType === "admin") return "新規登録通知を受け取る";
-    return targetType === "creator" ? "いいね通知を受け取る" : "配信者からの通知を受け取る";
+    if (targetType === "creator") return "いいね通知を受け取る";
+    return "配信者からの通知を受け取る";
   }, [enabled, targetType]);
+
+  const description = useMemo(() => {
+    if (targetType === "admin") return "新規配信者登録を管理者だけに通知します。";
+    if (targetType === "creator") return "視聴者からのいいねを通知します。";
+    return "配信者からのいいねを通知します。";
+  }, [targetType]);
 
   useEffect(() => {
     if (typeof window === "undefined" || Notification.permission !== "granted") return;
@@ -40,8 +47,8 @@ export function PushNotificationButton({ targetType }: PushNotificationButtonPro
 
       const messaging = getMessaging(firebase.app);
       unsubscribe = onMessage(messaging, (payload) => {
-        const title = payload.notification?.title || "VtuberMatch";
-        const body = payload.notification?.body || "新しい通知があります";
+        const title = payload.notification?.title || "Vtuberマッチ";
+        const body = payload.notification?.body || "新しい通知があります。";
         setStatus(`${title}: ${body}`);
         if (Notification.permission === "granted") {
           navigator.serviceWorker.ready
@@ -63,6 +70,7 @@ export function PushNotificationButton({ targetType }: PushNotificationButtonPro
   async function enablePush() {
     if (busy) return;
     setBusy(true);
+
     if (!hasClientFirebaseConfig) {
       setStatus("Firebase設定が未設定です。");
       setBusy(false);
@@ -169,14 +177,23 @@ export function PushNotificationButton({ targetType }: PushNotificationButtonPro
     });
     const data = await response.json().catch(() => ({}));
     setTesting(false);
-    setStatus(response.ok ? "テスト通知を送信しました。" : data.error || "テスト通知を送信できませんでした。");
+
+    if (response.ok) {
+      setStatus("テスト通知を送信しました。");
+      return;
+    }
+
+    const failure = Array.isArray(data.failure_errors) && data.failure_errors.length
+      ? ` ${data.failure_errors[0]}`
+      : "";
+    setStatus(`${data.error || "テスト通知を送信できませんでした。"}${failure}`);
   }
 
   return (
     <section className="status-band push-notice-card">
       <div>
         <h2>プッシュ通知</h2>
-        <p>{targetType === "admin" ? "新規配信者登録を管理者だけに通知します。" : targetType === "creator" ? "視聴者からのいいねを通知します。" : "配信者からのいいねを通知します。"}</p>
+        <p>{description}</p>
       </div>
       <div className="inline-actions">
         <button className={enabled ? "secondary-button" : "primary-button"} type="button" onClick={enablePush} disabled={busy}>

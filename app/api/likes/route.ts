@@ -95,6 +95,6 @@ async function readVerifiedViewerProfile(db: Firestore, id: string) {
     one_liner: isPaid && typeof data.one_liner === "string" ? data.one_liner.slice(0, 30) : "",
     image: typeof data.image === "string" ? data.image : "",
     profile: isPaid && typeof data.profile === "string" ? data.profile : "",
-    favorite_categories: isPaid && Array.isArray(data.favorite_categories) ? data.favorite_categories.filter((item) => typeof item === "string").slice(0, 5) : []
+    favorite_categories: isPaid && Array.isArray(data.favorite_categories) ? data.favorite_categories.filter((item: unknown) => typeof item === "string").slice(0, 5) : []
   };
 }

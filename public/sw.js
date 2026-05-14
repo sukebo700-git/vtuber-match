@@ -13,9 +13,9 @@ self.addEventListener("push", (event) => {
   const payload = readPushPayload(event);
   const notification = payload.notification || {};
   const data = payload.data || {};
-  const title = notification.title || data.title || "VtuberMatch";
+  const title = notification.title || data.title || "Vtuberマッチ";
   const options = {
-    body: notification.body || data.body || "新しい通知があります",
+    body: notification.body || data.body || "新しい通知があります。",
     icon: notification.icon || "/icon.svg",
     badge: notification.badge || "/icon.svg",
     data: {

@@ -37,9 +37,11 @@ export async function POST(request: Request) {
 
   const viewerDoc = await db.collection("viewer_profiles").doc(viewerProfileId).get();
   const likeRef = db.collection("creator_likes").doc(`${streamerId}_${viewerProfileId}`);
+  let created = false;
   await db.runTransaction(async (tx) => {
     const likeDoc = await tx.get(likeRef);
     if (likeDoc.exists) return;
+    created = true;
     tx.set(likeRef, {
       streamer_id: streamerId,
       viewer_profile_id: viewerProfileId,
@@ -62,7 +64,7 @@ export async function POST(request: Request) {
   });
 
   const viewer = viewerDoc.data() || {};
-  await notifyViewerCreatorLike(viewer.fcm_tokens);
+  if (created) await notifyViewerCreatorLike(viewer.fcm_tokens);
 
-  return NextResponse.json({ liked: true, source: "firestore" });
+  return NextResponse.json({ liked: true, created, source: "firestore" });
 }
