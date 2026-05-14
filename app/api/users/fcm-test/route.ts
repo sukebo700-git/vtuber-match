@@ -1,15 +1,20 @@
 import { NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/adminAuth";
 import { getAdminApp, getAdminDb } from "@/lib/firebaseAdmin";
 
 export async function POST(request: Request) {
   const body = await request.json();
   const userId = String(body.user_id || "");
-  const targetType = body.target_type === "viewer" ? "viewer" : "creator";
+  const targetType = body.target_type === "admin" ? "admin" : body.target_type === "viewer" ? "viewer" : "creator";
   const streamerId = String(body.streamer_id || "");
   const applicationId = String(body.application_id || "");
   const viewerProfileId = String(body.viewer_profile_id || "");
 
   if (!userId) return NextResponse.json({ error: "user_id is required" }, { status: 400 });
+  if (targetType === "admin") {
+    const unauthorized = requireAdmin(request);
+    if (unauthorized) return unauthorized;
+  }
 
   const db = getAdminDb();
   const app = getAdminApp();
@@ -26,7 +31,7 @@ export async function POST(request: Request) {
     },
     data: {
       type: "PUSH_TEST",
-      url: targetType === "viewer" ? "/viewer" : "/creator",
+      url: targetType === "admin" ? "/admin" : targetType === "viewer" ? "/viewer" : "/creator",
     },
   });
 
@@ -39,13 +44,18 @@ export async function POST(request: Request) {
 
 async function readTokens(
   db: FirebaseFirestore.Firestore,
-  input: { userId: string; targetType: "creator" | "viewer"; streamerId: string; applicationId: string; viewerProfileId: string },
+  input: { userId: string; targetType: "admin" | "creator" | "viewer"; streamerId: string; applicationId: string; viewerProfileId: string },
 ) {
   const tokenSet = new Set<string>();
 
   const userDoc = await db.collection("users").doc(input.userId).get();
   const userToken = userDoc.data()?.fcm_token;
   if (typeof userToken === "string") tokenSet.add(userToken);
+
+  if (input.targetType === "admin") {
+    const adminDoc = await db.collection("admin_settings").doc("notifications").get();
+    addTokens(tokenSet, adminDoc.data()?.fcm_tokens);
+  }
 
   if (input.streamerId) {
     const streamerDoc = await db.collection("streamers").doc(input.streamerId).get();

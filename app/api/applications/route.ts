@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/adminAuth";
 import { FieldValue, getAdminDb } from "@/lib/firebaseAdmin";
 import { addLocalApplication, autoApproveLocalApplication, readLocalApplications } from "@/lib/localStore";
+import { notifyAdminNewApplication } from "@/lib/notifications";
 import { hashPassword, makeCreatorLoginId } from "@/lib/password";
 import { createUserSession, creatorSessionCookie, userSessionCookieOptions } from "@/lib/userSession";
 import type { PlanType } from "@/lib/types";
@@ -71,6 +72,11 @@ export async function POST(request: Request) {
     created_at: FieldValue.serverTimestamp()
   };
   const doc = await db.collection("applications").add(applicationData);
+  await notifyAdminNewApplication({
+    applicationId: doc.id,
+    streamerName: payload.name,
+    desiredPlan: payload.desired_plan,
+  }).catch((error) => console.error("Failed to notify admin about new application", error));
 
   let streamerId = "";
   if (payload.desired_plan === "free") {

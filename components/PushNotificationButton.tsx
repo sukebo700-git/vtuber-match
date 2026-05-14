@@ -5,8 +5,10 @@ import { getMessaging, getToken, isSupported, onMessage } from "firebase/messagi
 import { useEffect, useMemo, useState } from "react";
 import { getClientFirebase, hasClientFirebaseConfig } from "@/lib/firebase";
 
+type NotificationTargetType = "admin" | "creator" | "viewer";
+
 type PushNotificationButtonProps = {
-  targetType: "creator" | "viewer";
+  targetType: NotificationTargetType;
 };
 
 const vapidKey = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY || "";
@@ -19,6 +21,7 @@ export function PushNotificationButton({ targetType }: PushNotificationButtonPro
 
   const label = useMemo(() => {
     if (enabled) return "通知ON";
+    if (targetType === "admin") return "新規登録通知を受け取る";
     return targetType === "creator" ? "いいね通知を受け取る" : "配信者からの通知を受け取る";
   }, [enabled, targetType]);
 
@@ -78,7 +81,7 @@ export function PushNotificationButton({ targetType }: PushNotificationButtonPro
 
     const target = readNotificationTarget(targetType);
     if (!target.userId) {
-      setStatus(targetType === "creator" ? "配信者ログイン後に利用できます。" : "視聴者ログイン後に利用できます。");
+      setStatus(targetType === "admin" ? "管理画面で利用できます。" : targetType === "creator" ? "配信者ログイン後に利用できます。" : "視聴者ログイン後に利用できます。");
       setBusy(false);
       return;
     }
@@ -173,7 +176,7 @@ export function PushNotificationButton({ targetType }: PushNotificationButtonPro
     <section className="status-band push-notice-card">
       <div>
         <h2>プッシュ通知</h2>
-        <p>{targetType === "creator" ? "視聴者からのいいねを通知します。" : "配信者からのいいねを通知します。"}</p>
+        <p>{targetType === "admin" ? "新規配信者登録を管理者だけに通知します。" : targetType === "creator" ? "視聴者からのいいねを通知します。" : "配信者からのいいねを通知します。"}</p>
       </div>
       <div className="inline-actions">
         <button className={enabled ? "secondary-button" : "primary-button"} type="button" onClick={enablePush} disabled={busy}>
@@ -191,7 +194,11 @@ export function PushNotificationButton({ targetType }: PushNotificationButtonPro
   );
 }
 
-function readNotificationTarget(targetType: "creator" | "viewer") {
+function readNotificationTarget(targetType: NotificationTargetType) {
+  if (targetType === "admin") {
+    return { userId: "admin", streamerId: "", applicationId: "", viewerProfileId: "" };
+  }
+
   if (targetType === "creator") {
     const streamerId = localStorage.getItem("vtuber-match-creator-streamer-id") || "";
     const applicationId = localStorage.getItem("vtuber-match-creator-application-id") || "";
@@ -215,7 +222,7 @@ function readNotificationTarget(targetType: "creator" | "viewer") {
   return { userId, streamerId: "", applicationId: "", viewerProfileId };
 }
 
-function tokenStorageKey(targetType: "creator" | "viewer") {
+function tokenStorageKey(targetType: NotificationTargetType) {
   return `vtuber-match-${targetType}-push-token-saved`;
 }
 

@@ -4,6 +4,7 @@ import { ReportAdminPanel } from "@/components/ReportAdminPanel";
 import { ViewerAdminPanel } from "@/components/ViewerAdminPanel";
 import { PasswordResetAdminPanel } from "@/components/PasswordResetAdminPanel";
 import { VisitStatsPanel } from "@/components/VisitStatsPanel";
+import { PushNotificationButton } from "@/components/PushNotificationButton";
 import { adminCookieName, verifyAdminSession } from "@/lib/adminSession";
 import { getAdminDb } from "@/lib/firebaseAdmin";
 import { readAllLocalStreamers, readLocalApplications, readLocalPasswordResetRequests, readLocalReports, readLocalViewerProfilesWithStats, readLocalVisitSourceStats, readLocalVisitStats, summarizeVisitSources, summarizeVisits } from "@/lib/localStore";
@@ -45,6 +46,7 @@ export default async function AdminPage() {
         <HeaderAuthStatus />
       </header>
       <main className="main grid-page">
+        <PushNotificationButton targetType="admin" />
         <VisitStatsPanel stats={visitStats} sources={visitSourceStats} />
         <AdminDashboard initialApplications={applications} initialStreamers={streamers} adminKey="" />
         <ViewerAdminPanel viewers={viewers} />
