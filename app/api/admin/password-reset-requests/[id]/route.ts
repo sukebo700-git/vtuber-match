@@ -66,14 +66,36 @@ export async function PATCH(request: Request, { params }: { params: { id: string
 async function findCreatorApplication(db: FirebaseFirestore.Firestore, email: string, applicationId: string, streamerId: string) {
   if (applicationId) {
     const doc = await db.collection("applications").doc(applicationId).get();
-    if (doc.exists) return doc;
+    if (doc.exists && isActiveApplication(doc.data())) return doc;
   }
   if (streamerId) {
-    const snapshot = await db.collection("applications").where("streamer_id", "==", streamerId).limit(1).get();
-    if (!snapshot.empty) return snapshot.docs[0];
+    const streamerDoc = await db.collection("streamers").doc(streamerId).get();
+    if (isActiveStreamer(streamerDoc.data())) {
+      const sourceApplicationId = String(streamerDoc.data()?.source_application_id || "");
+      if (sourceApplicationId) {
+        const doc = await db.collection("applications").doc(sourceApplicationId).get();
+        if (doc.exists && isActiveApplication(doc.data())) return doc;
+      }
+      const snapshot = await db.collection("applications").where("streamer_id", "==", streamerId).limit(10).get();
+      const active = snapshot.docs.find((doc) => isActiveApplication(doc.data()));
+      if (active) return active;
+    }
   }
-  const snapshot = await db.collection("applications").where("email", "==", email).limit(1).get();
-  return snapshot.docs[0] || null;
+  const [applicationSnapshot, streamerSnapshot] = await Promise.all([
+    db.collection("applications").where("email", "==", email).limit(20).get(),
+    db.collection("streamers").where("creator_email", "==", email).limit(20).get(),
+  ]);
+  const activeApplications = applicationSnapshot.docs.filter((doc) => isActiveApplication(doc.data()));
+  for (const streamerDoc of streamerSnapshot.docs) {
+    if (!isActiveStreamer(streamerDoc.data())) continue;
+    const sourceApplicationId = String(streamerDoc.data().source_application_id || "");
+    const linked = sourceApplicationId ? activeApplications.find((doc) => doc.id === sourceApplicationId) : undefined;
+    if (linked) return linked;
+    const streamerId = streamerDoc.id;
+    const byStreamer = activeApplications.find((doc) => String(doc.data().streamer_id || "") === streamerId);
+    if (byStreamer) return byStreamer;
+  }
+  return activeApplications[0] || null;
 }
 
 async function findViewerProfile(db: FirebaseFirestore.Firestore, email: string, viewerId: string) {
@@ -83,4 +105,12 @@ async function findViewerProfile(db: FirebaseFirestore.Firestore, email: string,
   }
   const snapshot = await db.collection("viewer_profiles").where("email", "==", email).limit(1).get();
   return snapshot.docs[0] || null;
+}
+
+function isActiveApplication(data?: FirebaseFirestore.DocumentData | null) {
+  return data?.withdrawal_status !== "requested" && data?.is_deleted !== true;
+}
+
+function isActiveStreamer(data?: FirebaseFirestore.DocumentData | null) {
+  return Boolean(data) && data?.withdrawal_status !== "requested" && data?.is_deleted !== true;
 }

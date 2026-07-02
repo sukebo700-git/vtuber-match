@@ -29,11 +29,11 @@ export default function SignupPage() {
       <section className="creator-action-grid signup-select-grid">
         <a className="creator-action-card featured" href="/creator/apply">
           <strong>配信者として登録</strong>
-          <span>無料プランから始められます。写真、名前、YouTubeチャンネルURLを登録できます。</span>
+          <span>無料プランから始められます。写真、名前、動画・配信サイトURL、自己アピールを掲載し、視聴者からの通常いいねを受け取れます。</span>
         </a>
         <a className="creator-action-card" href="/viewer/register">
           <strong>視聴者として登録</strong>
-          <span>無料で名前とアイコンを登録できます。応援プランへの変更もできます。</span>
+          <span>無料で名前とアイコンを登録できます。通常いいねとスーパーいいねの履歴を確認しやすくなります。</span>
         </a>
       </section>
     </main>

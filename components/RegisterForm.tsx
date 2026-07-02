@@ -52,7 +52,7 @@ export function RegisterForm({ categories, tags }: RegisterFormProps) {
         <select id="plan_type" name="plan_type" defaultValue="free">
           <option value="free">無料プラン</option>
           <option value="paid">ベーシックプラン 月額500円</option>
-          <option value="boost">さらに上位表示 980円</option>
+          <option value="boost">プレミアムプラン 月額980円</option>
         </select>
       </div>
       <div className="field">
@@ -61,7 +61,7 @@ export function RegisterForm({ categories, tags }: RegisterFormProps) {
       </div>
       <div className="field">
         <label htmlFor="one_liner">スワイプカードの一言</label>
-        <input id="one_liner" name="one_liner" required />
+        <input id="one_liner" name="one_liner" required maxLength={20} />
       </div>
       <div className="field">
         <label>カテゴリ</label>

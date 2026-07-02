@@ -4,7 +4,7 @@
 
 `.env.example` を参考に、公開先の環境変数を設定します。
 
-- `ADMIN_ACCESS_KEY`: 管理画面用パスワード。本番では `kiya0110` から必ず変更します。
+- `ADMIN_ACCESS_KEY`: 管理画面用パスワード。本番では32文字以上のランダム値を設定します。
 - `NEXT_PUBLIC_APP_URL`: 公開URL。例: `https://example.com`
 - `ENABLE_TEST_PAYMENTS`: 本番は `false`
 - `NEXT_PUBLIC_ENABLE_TEST_PAYMENT`: 本番は `false`

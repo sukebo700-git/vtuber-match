@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { FieldValue, getAdminDb } from "@/lib/firebaseAdmin";
+import { FieldValue, getAdminDb, stripUndefined } from "@/lib/firebaseAdmin";
 import { addLocalReport, readLocalReports } from "@/lib/localStore";
 import { requireAdmin } from "@/lib/adminAuth";
 import { creatorSessionCookie, readUserSession } from "@/lib/userSession";
@@ -11,7 +11,7 @@ export async function GET(request: Request) {
   const db = getAdminDb();
   if (!db) return NextResponse.json({ reports: await readLocalReports(), source: "local" });
 
-  const snapshot = await db.collection("reports").orderBy("created_at", "desc").limit(120).get();
+  const snapshot = await db.collection("reports").limit(300).get();
   return NextResponse.json({
     reports: snapshot.docs.map((doc) => {
       const data = doc.data();
@@ -26,9 +26,9 @@ export async function GET(request: Request) {
         detail: data.detail || "",
         reporter_contact: data.reporter_contact || "",
         status: data.status || "open",
-        created_at: typeof data.created_at === "string" ? data.created_at : data.created_at?.toDate?.().toISOString()
+        created_at: timestampToIso(data.created_at ?? data.updated_at)
       };
-    }),
+    }).sort((a, b) => sortTime(b.created_at) - sortTime(a.created_at)).slice(0, 120),
     source: "firestore"
   });
 }
@@ -76,15 +76,29 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "matched viewer is required" }, { status: 403 });
   }
 
-  const doc = await db.collection("reports").add({
+  const doc = await db.collection("reports").add(stripUndefined({
     ...payload,
     status: "open",
     created_at: FieldValue.serverTimestamp()
-  });
+  }));
 
   return NextResponse.json({ id: doc.id, source: "firestore" }, { status: 201 });
 }
 
 function clean(value: unknown, max: number) {
   return String(value || "").trim().slice(0, max);
+}
+
+function timestampToIso(value: unknown) {
+  if (typeof value === "string") return value;
+  if (value && typeof value === "object" && "toDate" in value && typeof value.toDate === "function") {
+    return value.toDate().toISOString();
+  }
+  return undefined;
+}
+
+function sortTime(value?: string) {
+  if (!value) return 0;
+  const time = Date.parse(value);
+  return Number.isFinite(time) ? time : 0;
 }

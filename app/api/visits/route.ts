@@ -2,31 +2,116 @@ import { NextResponse } from "next/server";
 import { FieldValue, getAdminDb } from "@/lib/firebaseAdmin";
 import { addLocalVisit } from "@/lib/localStore";
 
+const detailedAnalyticsEnabled = process.env.ENABLE_DETAILED_ANALYTICS === "1";
+
 export async function POST(request: Request) {
-  const body = await request.json().catch(() => ({}));
-  const date = new Date().toISOString().slice(0, 10);
-  const source = classifySource(String(body.referrer || ""), String(body.search || ""));
-  const db = getAdminDb();
+  try {
+    const body = await request.json().catch(() => ({}));
+    const now = new Date();
+    const date = now.toISOString().slice(0, 10);
+    const hour = now.getHours();
+    const path = normalizePath(body.path);
+    const kind = String(body.kind || "visit");
+    const userType = normalizeUserType(body.user_type);
+    const durationSeconds = Math.max(0, Math.min(24 * 60 * 60, Number(body.duration_seconds || 0)));
+    const source = classifySource(String(body.referrer || ""), String(body.search || ""));
+    const db = getAdminDb();
 
-  if (!db) {
-    await addLocalVisit(date, source);
-    return NextResponse.json({ ok: true, source: "local" });
+    if (!db) {
+      if (kind === "visit") await addLocalVisit(date, source, { hour, path }).catch(() => undefined);
+      return NextResponse.json({ ok: true, source: "local" });
+    }
+
+    if (kind === "engagement") {
+      if (!detailedAnalyticsEnabled) return NextResponse.json({ ok: true, skipped: true });
+      await db.collection("site_engagement").doc(date).set({
+        date,
+        total_duration_seconds: FieldValue.increment(durationSeconds),
+        session_count: FieldValue.increment(1),
+        updated_at: FieldValue.serverTimestamp(),
+      }, { merge: true });
+      return NextResponse.json({ ok: true, source: "firestore" });
+    }
+
+    if (kind === "visit") {
+      await Promise.all([
+        db.collection("site_visits").doc(date).set({
+          date,
+          count: FieldValue.increment(1),
+          updated_at: FieldValue.serverTimestamp(),
+        }, { merge: true }),
+        db.collection("aggregates").doc("analytics_totals").set({
+          site_visits_total: FieldValue.increment(1),
+          [`source_${source}`]: FieldValue.increment(1),
+          [`${userType}_visits`]: FieldValue.increment(1),
+          updated_at: FieldValue.serverTimestamp(),
+        }, { merge: true })
+      ]);
+
+      if (!detailedAnalyticsEnabled) return NextResponse.json({ ok: true, source: "firestore", mode: "minimal" });
+
+      await db.collection("site_visit_sources").doc(date).set({
+        date,
+        total: FieldValue.increment(1),
+        [source]: FieldValue.increment(1),
+        updated_at: FieldValue.serverTimestamp(),
+      }, { merge: true });
+
+      await db.collection("site_visit_roles").doc(date).set({
+        date,
+        [`${userType}_visits`]: FieldValue.increment(1),
+        updated_at: FieldValue.serverTimestamp(),
+      }, { merge: true });
+    }
+
+    if (kind !== "page_view" || !detailedAnalyticsEnabled) {
+      return NextResponse.json({ ok: true, skipped: true });
+    }
+
+    await db.collection("site_page_views").doc(date).set({
+      date,
+      count: FieldValue.increment(1),
+      [`${userType}_page_views`]: FieldValue.increment(1),
+      updated_at: FieldValue.serverTimestamp(),
+    }, { merge: true });
+    await db.collection("aggregates").doc("analytics_totals").set({
+      site_page_views_total: FieldValue.increment(1),
+      [`${userType}_page_views`]: FieldValue.increment(1),
+      updated_at: FieldValue.serverTimestamp(),
+    }, { merge: true });
+
+    await db.collection("site_visit_hours").doc(date).set({
+      date,
+      [`h${String(hour).padStart(2, "0")}`]: FieldValue.increment(1),
+      updated_at: FieldValue.serverTimestamp(),
+    }, { merge: true });
+
+    await db.collection("site_visit_pages").doc(`${date}_${encodePathId(path)}`).set({
+      date,
+      path,
+      count: FieldValue.increment(1),
+      updated_at: FieldValue.serverTimestamp(),
+    }, { merge: true });
+
+    return NextResponse.json({ ok: true, source: "firestore" });
+  } catch (error) {
+    console.error("visit analytics skipped:", error instanceof Error ? error.message : String(error || "unknown"));
+    return NextResponse.json({ ok: true, skipped: true });
   }
+}
 
-  await db.collection("site_visits").doc(date).set({
-    date,
-    count: FieldValue.increment(1),
-    updated_at: FieldValue.serverTimestamp(),
-  }, { merge: true });
+function normalizeUserType(value: unknown) {
+  if (value === "creator" || value === "viewer") return value;
+  return "guest";
+}
 
-  await db.collection("site_visit_sources").doc(date).set({
-    date,
-    total: FieldValue.increment(1),
-    [source]: FieldValue.increment(1),
-    updated_at: FieldValue.serverTimestamp(),
-  }, { merge: true });
+function normalizePath(value: unknown) {
+  const path = String(value || "/").trim().split("?")[0] || "/";
+  return path.slice(0, 120);
+}
 
-  return NextResponse.json({ ok: true, source: "firestore" });
+function encodePathId(path: string) {
+  return Buffer.from(path).toString("base64url").slice(0, 160);
 }
 
 function classifySource(referrer: string, search: string) {

@@ -1,0 +1,23 @@
+0 verbose cli C:\Program Files\nodejs\node.exe C:\Program Files\nodejs\node_modules\npm\bin\npm-cli.js
+1 info using npm@11.12.1
+2 info using node@v24.15.0
+3 silly config load:file:C:\Program Files\nodejs\node_modules\npm\npmrc
+4 silly config load:file:C:\Users\kk\Documents\Codex\2026-05-16\https-vtuber-match-vercel-app-top\.npmrc
+5 silly config load:file:C:\Users\kk\.npmrc
+6 silly config load:file:C:\Users\kk\AppData\Roaming\npm\etc\npmrc
+7 verbose title npm exec vercel deploy --prod --yes
+8 verbose argv "exec" "--yes" "--cache" ".npm-cache" "--" "vercel" "deploy" "--prod" "--yes"
+9 verbose logfile logs-max:10 dir:C:\Users\kk\Documents\Codex\2026-05-16\https-vtuber-match-vercel-app-top\.npm-cache\_logs\2026-07-02T15_13_35_306Z-
+10 verbose logfile C:\Users\kk\Documents\Codex\2026-05-16\https-vtuber-match-vercel-app-top\.npm-cache\_logs\2026-07-02T15_13_35_306Z-debug-0.log
+11 silly logfile start cleaning logs, removing 1 files
+12 silly logfile done cleaning log files
+13 silly packumentCache heap:4496293888 maxSize:1124073472 maxEntrySize:562036736
+14 http fetch GET 200 https://registry.npmjs.org/vercel 257ms (cache revalidated)
+15 silly packumentCache heap:4496293888 maxSize:1124073472 maxEntrySize:562036736
+16 silly packumentCache heap:4496293888 maxSize:1124073472 maxEntrySize:562036736
+17 verbose cwd C:\Users\kk\Documents\Codex\2026-05-16\https-vtuber-match-vercel-app-top
+18 verbose os Windows_NT 10.0.26200
+19 verbose node v24.15.0
+20 verbose npm  v11.12.1
+21 verbose exit 0
+22 info ok

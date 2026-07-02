@@ -1,41 +1,62 @@
 "use client";
 
-import { Bell } from "lucide-react";
+import { Bell, X } from "lucide-react";
 import { getMessaging, getToken, isSupported, onMessage } from "firebase/messaging";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { getClientFirebase, hasClientFirebaseConfig } from "@/lib/firebase";
 
 type NotificationTargetType = "admin" | "creator" | "viewer";
 
 type PushNotificationButtonProps = {
   targetType: NotificationTargetType;
+  intent?: "default" | "onboarding";
 };
 
 const vapidKey = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY || "";
 
-export function PushNotificationButton({ targetType }: PushNotificationButtonProps) {
+export function PushNotificationButton({ targetType, intent = "default" }: PushNotificationButtonProps) {
   const [status, setStatus] = useState("");
   const [enabled, setEnabled] = useState(false);
   const [busy, setBusy] = useState(false);
   const [testing, setTesting] = useState(false);
+  const [promptOpen, setPromptOpen] = useState(false);
+  const cardRef = useRef<HTMLElement | null>(null);
 
   const label = useMemo(() => {
     if (enabled) return "通知ON";
     if (targetType === "admin") return "新規登録通知を受け取る";
     if (targetType === "creator") return "いいね通知を受け取る";
-    return "配信者からの通知を受け取る";
+    return "視聴者向け通知を受け取る";
   }, [enabled, targetType]);
 
   const description = useMemo(() => {
     if (targetType === "admin") return "新規配信者登録を管理者だけに通知します。";
-    if (targetType === "creator") return "視聴者からのいいねを通知します。";
-    return "配信者からのいいねを通知します。";
+    if (targetType === "creator") return "視聴者からいいねが来た時にすぐ確認できます。";
+    return "スーパーいいねの控えや重要なお知らせを見逃しにくくします。";
+  }, [targetType]);
+
+  const title = useMemo(() => {
+    if (targetType === "admin") return "新規登録通知";
+    if (targetType === "creator") return "視聴者からのいいねを通知で受け取る";
+    return "視聴者向けのお知らせを通知で受け取る";
   }, [targetType]);
 
   useEffect(() => {
     if (typeof window === "undefined" || Notification.permission !== "granted") return;
     setEnabled(localStorage.getItem(tokenStorageKey(targetType)) === "saved");
   }, [targetType]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("notify") !== "1") return;
+    window.setTimeout(() => cardRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 220);
+    const target = readNotificationTarget(targetType);
+    const alreadySaved = localStorage.getItem(tokenStorageKey(targetType)) === "saved";
+    if (intent === "onboarding" && target.userId && !alreadySaved) {
+      window.setTimeout(() => setPromptOpen(true), 420);
+    }
+  }, [intent, targetType]);
 
   useEffect(() => {
     let unsubscribe: (() => void) | undefined;
@@ -151,6 +172,7 @@ export function PushNotificationButton({ targetType }: PushNotificationButtonPro
 
       localStorage.setItem(tokenStorageKey(targetType), "saved");
       setEnabled(true);
+      setPromptOpen(false);
       setStatus("通知を受け取れるようにしました。");
     } catch {
       setStatus("通知設定に失敗しました。ブラウザの通知許可を確認してください。");
@@ -189,11 +211,14 @@ export function PushNotificationButton({ targetType }: PushNotificationButtonPro
     setStatus(`${data.error || "テスト通知を送信できませんでした。"}${failure}`);
   }
 
-  return (
-    <section className="status-band push-notice-card">
+  const body = (
+    <>
       <div>
-        <h2>プッシュ通知</h2>
+        <h2>{title}</h2>
         <p>{description}</p>
+        {intent === "onboarding" && !enabled && (
+          <p className="help-text">このあと届く反応を見逃さないため、ここで通知ONにしておくのがおすすめです。</p>
+        )}
       </div>
       <div className="inline-actions">
         <button className={enabled ? "secondary-button" : "primary-button"} type="button" onClick={enablePush} disabled={busy}>
@@ -207,7 +232,36 @@ export function PushNotificationButton({ targetType }: PushNotificationButtonPro
         )}
       </div>
       {status && <p className="help-text">{status}</p>}
-    </section>
+    </>
+  );
+
+  return (
+    <>
+      <section ref={cardRef} className={`status-band push-notice-card ${intent === "onboarding" ? "push-onboarding-card" : ""}`}>
+        {body}
+      </section>
+      {promptOpen && (
+        <div className="like-choice-backdrop" role="dialog" aria-modal="true" aria-labelledby={`${targetType}-push-title`}>
+          <div className="like-choice-modal push-permission-modal">
+            <button className="detail-lightbox-close" type="button" aria-label="閉じる" onClick={() => setPromptOpen(false)}>
+              <X size={20} />
+            </button>
+            <div className="like-choice-icon">
+              <Bell size={28} />
+            </div>
+            <h2 id={`${targetType}-push-title`}>{title}</h2>
+            <p>{description}</p>
+            <div className="like-choice-actions">
+              <button className="secondary-button" type="button" onClick={() => setPromptOpen(false)}>あとで</button>
+              <button className="primary-button" type="button" onClick={enablePush} disabled={busy}>
+                {busy ? "設定中..." : "通知ONにする"}
+              </button>
+            </div>
+            {status && <p className="help-text">{status}</p>}
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 

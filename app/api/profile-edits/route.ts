@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import type { Firestore } from "firebase-admin/firestore";
-import { FieldValue, getAdminDb } from "@/lib/firebaseAdmin";
-import { readLocalApplications, updateLocalStreamer } from "@/lib/localStore";
+import { FieldValue, getAdminDb, stripUndefined } from "@/lib/firebaseAdmin";
+import { autoApproveLocalApplication, readLocalApplications, readLocalStreamers, updateLocalStreamer } from "@/lib/localStore";
 import { hashPassword } from "@/lib/password";
+import { creatorSessionCookie, readUserSession } from "@/lib/userSession";
 import type { PlanType, Streamer, StreamerApplication } from "@/lib/types";
 
 type ApplicationMatch = {
@@ -11,59 +12,205 @@ type ApplicationMatch = {
   data: StreamerApplication;
 };
 
+type CreatorSession = {
+  email?: string;
+  application_id?: string;
+  streamer_id?: string;
+  creator_login_id?: string;
+};
+
+export async function GET(request: Request) {
+  const session = readUserSession<CreatorSession>(request, creatorSessionCookie);
+  if (!session?.email && !session?.streamer_id && !session?.application_id && !session?.creator_login_id) {
+    return NextResponse.json({ error: "creator login required" }, { status: 401 });
+  }
+
+  const db = getAdminDb();
+  if (!db) {
+    const [applications, streamers] = await Promise.all([readLocalApplications(), readLocalStreamers()]);
+    const application = applications
+      .filter(isActiveApplication)
+      .sort((a, b) => recordTime(b) - recordTime(a))
+      .find((item) => (
+        Boolean(session.application_id && item.id === session.application_id) ||
+        Boolean(session.streamer_id && item.streamer_id === session.streamer_id) ||
+        Boolean(session.creator_login_id && item.creator_login_id === session.creator_login_id) ||
+        Boolean(session.email && item.email.toLowerCase() === String(session.email).toLowerCase())
+      ));
+    const streamerIds = [application?.streamer_id, session.streamer_id].filter(Boolean).map(String);
+    const streamer = streamers.find((item) => streamerIds.includes(item.id) && isActiveStreamer(item));
+    return NextResponse.json({ profile: buildProfileResponse(streamer, application), source: "local" });
+  }
+
+  let applicationDoc: FirebaseFirestore.DocumentSnapshot | undefined;
+  if (session.application_id) {
+    applicationDoc = await db.collection("applications").doc(String(session.application_id)).get();
+    if (applicationDoc.exists && !isActiveApplication(applicationDoc.data())) applicationDoc = undefined;
+  }
+  if ((!applicationDoc || !applicationDoc.exists) && session.email) {
+    const snapshot = await db.collection("applications").where("email", "==", String(session.email).toLowerCase()).limit(20).get();
+    applicationDoc = snapshot.docs
+      .filter((doc) => isActiveApplication(doc.data()))
+      .sort((a, b) => sortTime(b.data().created_at ?? b.data().updated_at) - sortTime(a.data().created_at ?? a.data().updated_at))[0];
+  }
+
+  const application = applicationDoc?.exists ? ({ id: applicationDoc.id, ...applicationDoc.data() } as StreamerApplication) : undefined;
+  const streamerIds = [application?.streamer_id, session.streamer_id].filter(Boolean).map(String);
+  let streamer: Streamer | undefined;
+  for (const streamerId of Array.from(new Set(streamerIds))) {
+    const streamerDoc = await db.collection("streamers").doc(streamerId).get();
+    if (streamerDoc.exists && isActiveStreamer(streamerDoc.data())) {
+      streamer = { id: streamerDoc.id, ...streamerDoc.data() } as Streamer;
+      break;
+    }
+  }
+
+  return NextResponse.json({ profile: buildProfileResponse(streamer, application), source: "firestore" });
+}
+
 export async function POST(request: Request) {
   const body = await request.json();
-  const email = clean(body.email, 120).toLowerCase();
+  const session = readUserSession<CreatorSession>(request, creatorSessionCookie);
+  const email = clean(body.email || session?.email, 120).toLowerCase();
   const password = String(body.password || "");
-  const applicationId = clean(body.application_id, 120);
-  const streamerId = clean(body.streamer_id, 120);
-  const creatorLoginId = clean(body.creator_login_id, 120);
+  const applicationId = clean(body.application_id || session?.application_id, 120);
+  const streamerId = clean(body.streamer_id || session?.streamer_id, 120);
+  const creatorLoginId = clean(body.creator_login_id || session?.creator_login_id, 120);
 
   if (!email || !email.includes("@")) {
     return NextResponse.json({ error: "登録メールアドレスを入力してください。" }, { status: 400 });
   }
-  if (!password) {
-    return NextResponse.json({ error: "パスワードを入力してください。" }, { status: 400 });
+  if (!password && !session?.email && !session?.streamer_id && !session?.application_id && !session?.creator_login_id) {
+    return NextResponse.json({ error: "配信者ログイン後に利用できます。" }, { status: 401 });
   }
 
-  const passwordHash = hashPassword(password);
+  const passwordHash = password ? hashPassword(password) : "";
   const db = getAdminDb();
 
   if (!db) {
     const match = await findLocalApplicationForEdit({ email, applicationId, streamerId, creatorLoginId, passwordHash });
-    if (!match || match.data.creator_password_hash !== passwordHash) {
+    if (!match || (passwordHash && match.data.creator_password_hash !== passwordHash)) {
       return NextResponse.json({ error: "メールアドレスまたはパスワードが違います。" }, { status: 401 });
     }
-    if (!match.data.streamer_id) {
-      return NextResponse.json({ error: "掲載中の配信者データが見つかりません。" }, { status: 404 });
+    const thumbnailError = validateThumbnailCount(body, match.data.desired_plan);
+    if (thumbnailError) return thumbnailError;
+    const patch = buildStreamerPatch(body, match.data.desired_plan);
+    const resolvedStreamerId = await resolveLocalStreamerId(match);
+    if (!resolvedStreamerId) {
+      return NextResponse.json({ error: "掲載データの準備中です。無料プランは少し時間をおいて再度お試しください。有料プランは決済完了後にプロフィール修正できます。" }, { status: 409 });
     }
 
-    const patch = buildStreamerPatch(body, match.data.desired_plan);
-    const streamer = await updateLocalStreamer(match.data.streamer_id, patch);
+    const streamer = await updateLocalStreamer(resolvedStreamerId, patch);
     return NextResponse.json({ streamer, source: "local" });
   }
 
   const match = await findFirestoreApplicationForEdit(db, { email, applicationId, streamerId, creatorLoginId, passwordHash });
-  if (!match || match.data.creator_password_hash !== passwordHash) {
+  if (!match || (passwordHash && match.data.creator_password_hash !== passwordHash)) {
     return NextResponse.json({ error: "メールアドレスまたはパスワードが違います。" }, { status: 401 });
   }
-  if (!match.data.streamer_id) {
-    return NextResponse.json({ error: "掲載中の配信者データが見つかりません。" }, { status: 404 });
+  const plan = match.data.desired_plan || "free";
+  const thumbnailError = validateThumbnailCount(body, plan);
+  if (thumbnailError) return thumbnailError;
+  const patch = buildStreamerPatch(body, plan);
+  const resolvedStreamerId = await resolveFirestoreStreamerId(db, match);
+  if (!resolvedStreamerId) {
+    return NextResponse.json({ error: "掲載データの準備中です。無料プランは少し時間をおいて再度お試しください。有料プランは決済完了後にプロフィール修正できます。" }, { status: 409 });
   }
 
-  const patch = buildStreamerPatch(body, match.data.desired_plan || "free");
-  await db.collection("streamers").doc(match.data.streamer_id).set({
+  await db.collection("streamers").doc(resolvedStreamerId).set(stripUndefined({
     ...patch,
     updated_at: FieldValue.serverTimestamp(),
-  }, { merge: true });
+  }), { merge: true });
 
-  await match.ref?.set({
-    ...buildApplicationPatch(body, match.data.desired_plan || "free"),
+  await match.ref?.set(stripUndefined({
+    ...buildApplicationPatch(body, plan),
     updated_at: FieldValue.serverTimestamp(),
-  }, { merge: true });
+  }), { merge: true });
 
-  const streamerDoc = await db.collection("streamers").doc(match.data.streamer_id).get();
-  return NextResponse.json({ id: match.data.streamer_id, streamer: { id: match.data.streamer_id, ...streamerDoc.data() }, source: "firestore" });
+  const streamerDoc = await db.collection("streamers").doc(resolvedStreamerId).get();
+  return NextResponse.json({ id: resolvedStreamerId, streamer: { id: resolvedStreamerId, ...streamerDoc.data() }, source: "firestore" });
+}
+
+async function resolveLocalStreamerId(match: ApplicationMatch) {
+  const streamers = await readLocalStreamers();
+  if (match.data.streamer_id) {
+    const linked = streamers.find((streamer) => streamer.id === match.data.streamer_id);
+    if (isActiveStreamer(linked)) return match.data.streamer_id;
+  }
+  const existing = streamers.find((streamer) => (
+    isActiveStreamer(streamer) &&
+    streamer.source_application_id === match.id ||
+    (isActiveStreamer(streamer) && streamer.creator_email && streamer.creator_email.toLowerCase() === match.data.email.toLowerCase())
+  ));
+  if (existing) return existing.id;
+  const created = await autoApproveLocalApplication(match.id);
+  return created?.id || "";
+}
+
+async function resolveFirestoreStreamerId(db: Firestore, match: ApplicationMatch) {
+  if (match.data.streamer_id) {
+    const linked = await db.collection("streamers").doc(String(match.data.streamer_id)).get();
+    if (linked.exists && isActiveStreamer(linked.data())) return String(match.data.streamer_id);
+  }
+
+  const byApplication = await db.collection("streamers").where("source_application_id", "==", match.id).limit(10).get();
+  const activeByApplication = byApplication.docs.find((doc) => isActiveStreamer(doc.data()));
+  if (activeByApplication) {
+    const id = activeByApplication.id;
+    await match.ref?.set(stripUndefined({ streamer_id: id, status: "approved", reviewed_at: FieldValue.serverTimestamp() }), { merge: true });
+    return id;
+  }
+
+  const email = String(match.data.email || "").trim().toLowerCase();
+  if (email) {
+    const byEmail = await db.collection("streamers").where("creator_email", "==", email).limit(20).get();
+    const activeByEmail = byEmail.docs
+      .filter((doc) => isActiveStreamer(doc.data()))
+      .sort((a, b) => sortTime(b.data().created_at ?? b.data().updated_at) - sortTime(a.data().created_at ?? a.data().updated_at))[0];
+    if (activeByEmail) {
+      const id = activeByEmail.id;
+      await match.ref?.set(stripUndefined({ streamer_id: id, status: "approved", reviewed_at: FieldValue.serverTimestamp() }), { merge: true });
+      return id;
+    }
+  }
+
+  const paid = match.data.desired_plan === "free" ||
+    match.data.payment_status === "paid" ||
+    match.data.subscription_status === "active" ||
+    Boolean(match.data.stripe_subscription_id);
+  if (!paid) return "";
+
+  const streamerRef = db.collection("streamers").doc();
+  await streamerRef.set(stripUndefined({
+    name: match.data.name,
+    creator_email: email,
+    youtube_url: match.data.youtube_url,
+    youtube_channel_id: match.data.youtube_channel_id || "",
+    x_account: match.data.x_account || "",
+    thumbnails: match.data.thumbnails || [],
+    categories: match.data.categories || [],
+    tags: match.data.tags || [],
+    description: match.data.description || "",
+    one_liner: String(match.data.one_liner || match.data.description || "").slice(0, 20),
+    stream_time: match.data.stream_time || "",
+    plan_type: match.data.desired_plan || "free",
+    subscription_status: match.data.subscription_status || null,
+    stripe_subscription_id: match.data.stripe_subscription_id || null,
+    is_initial_scout: false,
+    is_visible: true,
+    is_deleted: false,
+    withdrawal_status: "none",
+    impressions: 0,
+    likes: 0,
+    source_application_id: match.id,
+    created_at: FieldValue.serverTimestamp(),
+  }));
+  await match.ref?.set(stripUndefined({
+    streamer_id: streamerRef.id,
+    status: "approved",
+    reviewed_at: FieldValue.serverTimestamp(),
+  }), { merge: true });
+  return streamerRef.id;
 }
 
 async function findLocalApplicationForEdit(input: {
@@ -71,14 +218,14 @@ async function findLocalApplicationForEdit(input: {
   applicationId: string;
   streamerId: string;
   creatorLoginId: string;
-  passwordHash: string;
+  passwordHash?: string;
 }): Promise<ApplicationMatch | null> {
   const applications = await readLocalApplications();
   const candidates = applications
-    .filter((application) => matchesApplication(application, input))
+    .filter((application) => isActiveApplication(application) && matchesApplication(application, input))
     .map((application) => ({ id: application.id, data: application }));
 
-  return candidates.find((candidate) => candidate.data.creator_password_hash === input.passwordHash) || candidates[0] || null;
+  return (input.passwordHash ? candidates.find((candidate) => candidate.data.creator_password_hash === input.passwordHash) : undefined) || candidates[0] || null;
 }
 
 async function findFirestoreApplicationForEdit(db: Firestore, input: {
@@ -86,13 +233,14 @@ async function findFirestoreApplicationForEdit(db: Firestore, input: {
   applicationId: string;
   streamerId: string;
   creatorLoginId: string;
-  passwordHash: string;
+  passwordHash?: string;
 }): Promise<ApplicationMatch | null> {
   const seen = new Set<string>();
   const candidates: ApplicationMatch[] = [];
 
   function addSnapshot(doc: FirebaseFirestore.DocumentSnapshot) {
     if (!doc.exists || seen.has(doc.id)) return;
+    if (!isActiveApplication(doc.data())) return;
     seen.add(doc.id);
     candidates.push({
       id: doc.id,
@@ -113,7 +261,7 @@ async function findFirestoreApplicationForEdit(db: Firestore, input: {
   const snapshots = await Promise.all(queries);
   snapshots.forEach((snapshot) => snapshot.docs.forEach(addSnapshot));
 
-  return candidates.find((candidate) => candidate.data.creator_password_hash === input.passwordHash) || candidates[0] || null;
+  return (input.passwordHash ? candidates.find((candidate) => candidate.data.creator_password_hash === input.passwordHash) : undefined) || candidates[0] || null;
 }
 
 function matchesApplication(application: StreamerApplication, input: { email: string; applicationId: string; streamerId: string; creatorLoginId: string }) {
@@ -126,9 +274,9 @@ function matchesApplication(application: StreamerApplication, input: { email: st
 }
 
 function buildStreamerPatch(body: Record<string, unknown>, plan: PlanType): Partial<Streamer> {
-  const maxCategories = plan === "free" ? 1 : 3;
-  const maxTags = plan === "free" ? 1 : 5;
-  const image = clean(body.image, 400000);
+  const maxCategories = 3;
+  const maxTags = 3;
+  const thumbnails = normalizeThumbnails(body.thumbnails, body.image, plan);
   const patch: Partial<Streamer> = {
     categories: sanitizeArray(body.categories).slice(0, maxCategories),
     tags: sanitizeArray(body.tags).slice(0, maxTags),
@@ -137,18 +285,18 @@ function buildStreamerPatch(body: Record<string, unknown>, plan: PlanType): Part
   setIfPresent(patch, "name", clean(body.name, 80));
   setIfPresent(patch, "youtube_url", clean(body.youtube_url, 240));
   setIfPresent(patch, "x_account", normalizeXAccount(body.x_account));
-  setIfPresent(patch, "description", clean(body.description, 800));
-  setIfPresent(patch, "one_liner", clean(body.one_liner, 80));
-  setIfPresent(patch, "stream_time", clean(body.stream_time, 80));
-  if (image) patch.thumbnails = [image];
+  setIfPresent(patch, "description", clean(body.description, plan === "free" ? 100 : 800));
+  setIfPresent(patch, "one_liner", clean(body.one_liner, 20));
+  setIfPresent(patch, "stream_time", clean(body.stream_time, 50));
+  if (thumbnails.length) patch.thumbnails = thumbnails;
 
   return patch;
 }
 
 function buildApplicationPatch(body: Record<string, unknown>, plan: PlanType) {
-  const maxCategories = plan === "free" ? 1 : 3;
-  const maxTags = plan === "free" ? 1 : 5;
-  const image = clean(body.image, 400000);
+  const maxCategories = 3;
+  const maxTags = 3;
+  const thumbnails = normalizeThumbnails(body.thumbnails, body.image, plan);
   const patch: Record<string, unknown> = {
     categories: sanitizeArray(body.categories).slice(0, maxCategories),
     tags: sanitizeArray(body.tags).slice(0, maxTags),
@@ -157,10 +305,10 @@ function buildApplicationPatch(body: Record<string, unknown>, plan: PlanType) {
   setIfPresent(patch, "name", clean(body.name, 80));
   setIfPresent(patch, "youtube_url", clean(body.youtube_url, 240));
   setIfPresent(patch, "x_account", normalizeXAccount(body.x_account));
-  setIfPresent(patch, "description", clean(body.description, 800));
-  setIfPresent(patch, "one_liner", clean(body.one_liner, 80));
-  setIfPresent(patch, "stream_time", clean(body.stream_time, 80));
-  if (image) patch.thumbnails = [image];
+  setIfPresent(patch, "description", clean(body.description, plan === "free" ? 100 : 800));
+  setIfPresent(patch, "one_liner", clean(body.one_liner, 20));
+  setIfPresent(patch, "stream_time", clean(body.stream_time, 50));
+  if (thumbnails.length) patch.thumbnails = thumbnails;
 
   return patch;
 }
@@ -173,12 +321,73 @@ function clean(value: unknown, max: number) {
   return String(value || "").trim().slice(0, max);
 }
 
+function isActiveApplication(data?: { withdrawal_status?: string; is_deleted?: boolean } | null) {
+  return data?.withdrawal_status !== "requested" && data?.is_deleted !== true;
+}
+
+function isActiveStreamer(data?: { withdrawal_status?: string; is_deleted?: boolean } | null) {
+  return Boolean(data) && data?.withdrawal_status !== "requested" && data?.is_deleted !== true;
+}
+
+function sortTime(value: unknown) {
+  const iso = typeof value === "string"
+    ? value
+    : value && typeof value === "object" && "toDate" in value && typeof value.toDate === "function"
+      ? value.toDate().toISOString()
+      : "";
+  const time = Date.parse(iso);
+  return Number.isFinite(time) ? time : 0;
+}
+
+function recordTime(value: Record<string, unknown>) {
+  return sortTime(value.created_at ?? value.updated_at);
+}
+
 function sanitizeArray(value: unknown) {
   return Array.isArray(value) ? value.map(String).map((item) => item.trim()).filter(Boolean) : [];
+}
+
+function validateThumbnailCount(body: Record<string, unknown>, plan: PlanType) {
+  const maxImages = plan === "free" ? 1 : 3;
+  const count = normalizeThumbnailInput(body.thumbnails, body.image).length;
+  if (count > maxImages) {
+    return NextResponse.json({ error: plan === "free" ? "無料プランの画像登録は1枚までです。" : "画像登録は最大3枚までです。", code: "TOO_MANY_IMAGES" }, { status: 400 });
+  }
+  return null;
+}
+
+function normalizeThumbnails(value: unknown, fallback: unknown, plan: PlanType = "boost") {
+  const maxImages = plan === "free" ? 1 : 3;
+  const thumbnails = normalizeThumbnailInput(value, fallback).map((item) => item.slice(0, 650000)).slice(0, maxImages);
+  return thumbnails;
+}
+
+function normalizeThumbnailInput(value: unknown, fallback: unknown) {
+  const thumbnails = sanitizeArray(value).filter(Boolean);
+  if (thumbnails.length) return thumbnails;
+  const image = clean(fallback, 650000);
+  return image ? [image] : [];
 }
 
 function normalizeXAccount(value: unknown) {
   const input = String(value || "").trim();
   if (!input) return "";
   return input.replace(/^https?:\/\/(www\.)?(x|twitter)\.com\//i, "@").replace(/^([^@])/, "@$1").slice(0, 40);
+}
+
+function buildProfileResponse(streamer?: Partial<Streamer>, application?: Partial<StreamerApplication>) {
+  return {
+    name: streamer?.name || application?.name || "",
+    youtube_url: streamer?.youtube_url || application?.youtube_url || "",
+    youtube_channel_id: streamer?.youtube_channel_id || application?.youtube_channel_id || "",
+    x_account: streamer?.x_account || application?.x_account || "",
+    description: streamer?.description || application?.description || "",
+    one_liner: streamer?.one_liner || application?.one_liner || "",
+    stream_time: streamer?.stream_time || application?.stream_time || "",
+    plan_type: streamer?.plan_type || application?.desired_plan || "free",
+    image: streamer?.thumbnails?.[0] || application?.thumbnails?.[0] || "",
+    images: streamer?.thumbnails || application?.thumbnails || [],
+    categories: streamer?.categories || application?.categories || [],
+    tags: streamer?.tags || application?.tags || []
+  };
 }

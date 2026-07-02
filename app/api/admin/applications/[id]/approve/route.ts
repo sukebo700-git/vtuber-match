@@ -20,14 +20,47 @@ export async function POST(request: Request, { params }: { params: { id: string 
       const applicationDoc = await tx.get(applicationRef);
       if (!applicationDoc.exists) throw new Error("application not found");
       const application = applicationDoc.data() || {};
+      if (application.streamer_id) {
+        return String(application.streamer_id);
+      }
       const paid = application.payment_status === "paid" || application.subscription_status === "active" || Boolean(application.stripe_subscription_id);
       if (application.desired_plan !== "free" && !paid) {
         throw new Error("payment required");
       }
 
+      const existingByApplication = await tx.get(
+        db.collection("streamers").where("source_application_id", "==", params.id).limit(1)
+      );
+      if (!existingByApplication.empty) {
+        const existingId = existingByApplication.docs[0].id;
+        tx.update(applicationRef, {
+          status: "approved",
+          reviewed_at: FieldValue.serverTimestamp(),
+          streamer_id: existingId
+        });
+        return existingId;
+      }
+
+      const email = String(application.email || "").trim().toLowerCase();
+      if (email) {
+        const existingByEmail = await tx.get(
+          db.collection("streamers").where("creator_email", "==", email).limit(1)
+        );
+        if (!existingByEmail.empty) {
+          const existingId = existingByEmail.docs[0].id;
+          tx.update(applicationRef, {
+            status: "approved",
+            reviewed_at: FieldValue.serverTimestamp(),
+            streamer_id: existingId
+          });
+          return existingId;
+        }
+      }
+
       const streamerRef = db.collection("streamers").doc();
       tx.set(streamerRef, {
         name: application.name,
+        creator_email: String(application.email || "").trim().toLowerCase(),
         youtube_url: application.youtube_url,
         youtube_channel_id: application.youtube_channel_id || null,
         x_account: application.x_account || "",
@@ -35,7 +68,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
         categories: application.categories || [],
         tags: application.tags || [],
         description: application.description,
-        one_liner: application.one_liner || application.description,
+        one_liner: String(application.one_liner || application.description || "").slice(0, 20),
         stream_time: application.stream_time || "",
         plan_type: application.desired_plan || "free",
         subscription_status: application.subscription_status || null,
@@ -45,14 +78,24 @@ export async function POST(request: Request, { params }: { params: { id: string 
         is_visible: true,
         impressions: 0,
         likes: 0,
+        source_application_id: params.id,
+        registered_at: FieldValue.serverTimestamp(),
         created_at: FieldValue.serverTimestamp()
       });
       tx.update(applicationRef, {
         status: "approved",
-        reviewed_at: FieldValue.serverTimestamp()
+        reviewed_at: FieldValue.serverTimestamp(),
+        streamer_id: streamerRef.id
       });
 
       return streamerRef.id;
+    });
+    await db.collection("admin_audit_logs").add({
+      action: "application_approved",
+      target_type: "application",
+      target_id: params.id,
+      payload: { streamer_id: streamerId },
+      created_at: FieldValue.serverTimestamp()
     });
 
     return NextResponse.json({ id: streamerId, source: "firestore" });

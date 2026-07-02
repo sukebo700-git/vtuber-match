@@ -19,10 +19,10 @@ export function ViewerProfileGate() {
   if (!loggedIn) {
     return (
       <section className="status-band">
-        <h2>プロフィール登録にはログインが必要です</h2>
-        <p>スワイプ画面はログインなしで利用できます。プロフィール登録、画像登録、YouTube表示名、マッチ数の表示はログイン後に使えます。</p>
+        <h2>無料登録でプロフィールを使えます</h2>
+        <p>プロフィール登録、画像登録、スーパーいいね履歴は無料登録後に使えます。</p>
         <p style={{ marginTop: 12 }}>
-          <a className="primary-button" href="/viewer/login">視聴者ログインへ</a>
+          <a className="primary-button" href="/viewer/register">無料登録する</a>
         </p>
       </section>
     );

@@ -7,13 +7,42 @@ import type { PlanType } from "@/lib/types";
 
 export async function GET() {
   const db = getAdminDb();
-  if (!db) return NextResponse.json({ streamers: await readLocalStreamers(), source: "local" });
+  if (!db) {
+    return NextResponse.json({
+      streamers: (await readLocalStreamers()).map(lightweightStreamer),
+      source: "local",
+    });
+  }
 
-  const snapshot = await db.collection("streamers").limit(80).get();
+  const snapshot = await db.collection("streamers")
+    .select(
+      "name",
+      "youtube_url",
+      "archive_url",
+      "x_account",
+      "categories",
+      "tags",
+      "one_liner",
+      "stream_time",
+      "plan_type",
+      "admin_placement",
+      "is_visible",
+      "is_deleted",
+      "super_boost_until",
+      "super_boost_effect",
+      "basic_premium_trial_until",
+      "elite_boost_days",
+      "likes",
+      "weekly_impressions",
+      "latest_video_id",
+    )
+    .limit(100)
+    .get();
   return NextResponse.json({
     streamers: snapshot.docs
       .map((doc) => normalizeStreamer(doc.id, doc.data()))
-      .filter((streamer) => streamer.is_visible !== false),
+      .filter((streamer) => streamer.is_visible !== false && streamer.is_deleted !== true)
+      .map(lightweightStreamer),
     source: "firestore"
   });
 }
@@ -34,14 +63,15 @@ export async function POST(request: Request) {
     thumbnails: normalizeThumbnails(sanitizeArray(body.thumbnails)),
     categories: sanitizeArray(body.categories),
     tags: sanitizeArray(body.tags).slice(0, 5),
-    description: String(body.description || "").trim(),
-    one_liner: String(body.one_liner || body.description || "").trim().slice(0, 80),
+    description: String(body.description || "").trim().slice(0, String(body.plan_type || "free") === "free" ? 100 : 500),
+    one_liner: String(body.one_liner || "").trim().slice(0, 20),
     stream_time: String(body.stream_time || "").trim(),
     plan_type: (body.plan_type || "free") as PlanType,
     is_initial_scout: Boolean(body.is_initial_scout),
     is_visible: body.is_visible !== false,
     impressions: 0,
-    likes: 0
+    likes: 0,
+    registered_at: new Date().toISOString(),
   };
 
   const db = getAdminDb();
@@ -52,6 +82,7 @@ export async function POST(request: Request) {
 
   const doc = await db.collection("streamers").add({
     ...payload,
+    registered_at: FieldValue.serverTimestamp(),
     created_at: FieldValue.serverTimestamp()
   });
 
@@ -64,6 +95,7 @@ function validate(body: Record<string, unknown>) {
   const tagCount = sanitizeArray(body.tags).length;
   if (!body.name) return "name is required";
   if (!body.youtube_url) return "youtube_url is required";
+  if (String(body.description || "").length > (plan === "free" ? 100 : 500)) return "description is too long";
   if (plan !== "free" && !body.description) return "profile appeal is required";
   if (sanitizeArray(body.thumbnails).length > 3) return "thumbnails max is 3";
   if (plan === "free" && categoryCount > 0) return "free plan cannot set categories";
@@ -86,4 +118,12 @@ function normalizeXAccount(value: unknown) {
   const input = String(value || "").trim();
   if (!input) return "";
   return input.replace(/^https?:\/\/(www\.)?(x|twitter)\.com\//i, "@").replace(/^([^@])/, "@$1").slice(0, 40);
+}
+
+function lightweightStreamer(streamer: ReturnType<typeof normalizeStreamer>) {
+  return {
+    ...streamer,
+    thumbnails: [`/api/streamer-image/${encodeURIComponent(streamer.id)}?i=0`],
+    description: "",
+  };
 }

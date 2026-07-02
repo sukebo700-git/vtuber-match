@@ -1,19 +1,22 @@
-self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open("swipecast-v1").then((cache) => cache.addAll(["/", "/manifest.json", "/icon.svg"]))
-  );
+self.addEventListener("install", () => {
+  self.skipWaiting();
 });
 
-self.addEventListener("fetch", (event) => {
-  if (event.request.method !== "GET") return;
-  event.respondWith(fetch(event.request).catch(() => caches.match(event.request)));
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    (async () => {
+      const keys = await caches.keys();
+      await Promise.all(keys.map((key) => caches.delete(key)));
+      await self.clients.claim();
+    })()
+  );
 });
 
 self.addEventListener("push", (event) => {
   const payload = readPushPayload(event);
   const notification = payload.notification || {};
   const data = payload.data || {};
-  const title = notification.title || data.title || "Vtuberマッチ";
+  const title = notification.title || data.title || "VtuberMatch";
   const options = {
     body: notification.body || data.body || "新しい通知があります。",
     icon: notification.icon || "/icon.svg",

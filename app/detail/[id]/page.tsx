@@ -1,12 +1,17 @@
 import { HeaderAuthStatus } from "@/components/HeaderAuthStatus";
+import { DetailMediaGallery } from "@/components/DetailMediaGallery";
+import { DetailLikeButton } from "@/components/DetailLikeButton";
+import { ViewerActivityTracker } from "@/components/ViewerActivityTracker";
 import { ProfileShareButton } from "@/components/ProfileShareButton";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { BadgeCheck, CalendarClock, ExternalLink, Radio } from "lucide-react";
-import { getStreamerById } from "@/lib/streamers";
+import { getStreamerById, publicStreamerPath } from "@/lib/streamers";
 import { PLAN_LABELS } from "@/lib/constants";
-import { youtubeEmbedUrl, youtubeSubscribeUrl, youtubeWatchUrl } from "@/lib/youtube";
+import { videoSiteLabel, youtubeSubscribeUrl, youtubeWatchUrl } from "@/lib/youtube";
 import { absoluteUrl, siteName } from "@/lib/seo";
+import { readUserSession, viewerSessionCookie } from "@/lib/userSession";
+import { cookies } from "next/headers";
 
 export const dynamic = "force-dynamic";
 
@@ -19,20 +24,21 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
     };
   }
 
-  const description = streamer.description || `${streamer.name}を${siteName}で発見。YouTubeチャンネルを確認できます。`;
-  const image = seoImage(streamer.thumbnails?.[0]);
+  const description = streamer.description || `${streamer.name}を${siteName}で発見。配信サイトを確認できます。`;
+  const image = seoImage(streamer.thumbnails?.[0], streamer.id);
 
   return {
     title: `${streamer.name}のプロフィール`,
     description,
+    robots: { index: false, follow: true },
     alternates: {
-      canonical: `/detail/${params.id}`,
+      canonical: publicStreamerPath(streamer),
     },
     openGraph: {
       type: "profile",
       title: `${streamer.name} | ${siteName}`,
       description,
-      url: absoluteUrl(`/detail/${params.id}`),
+      url: absoluteUrl(publicStreamerPath(streamer)),
       images: [{ url: image, alt: streamer.name }],
     },
     twitter: {
@@ -50,6 +56,13 @@ export default async function DetailPage({ params }: { params: { id: string } })
 
   const isPaidOrPremium = streamer.plan_type === "paid" || streamer.plan_type === "boost";
   const isPremium = streamer.plan_type === "boost";
+  const viewerSession = readUserSession<{ id?: string }>(
+    new Request("https://vtuber-match.local", { headers: { cookie: cookies().toString() } }),
+    viewerSessionCookie,
+  );
+  const canViewXAccount = Boolean(viewerSession?.id);
+  const siteLabel = videoSiteLabel(streamer.youtube_url);
+  const profileImages = streamer.thumbnails?.length ? streamer.thumbnails : ["/promo/landing-oshi.png"];
 
   return (
     <div className="app-shell">
@@ -63,13 +76,13 @@ export default async function DetailPage({ params }: { params: { id: string } })
         <HeaderAuthStatus />
       </header>
       <main className="main grid-page">
+        <ViewerActivityTracker streamerId={streamer.id} />
         <section className="detail-hero">
-          <iframe
-            className="video-frame"
-            src={youtubeEmbedUrl(isPremium ? streamer.latest_video_id : undefined, streamer.youtube_url)}
-            title={`${streamer.name} YouTube`}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-            allowFullScreen
+          <DetailMediaGallery
+            images={profileImages}
+            name={streamer.name}
+            siteLabel={siteLabel}
+            siteUrl={youtubeSubscribeUrl(streamer.youtube_url)}
           />
 
           <aside className="side-panel">
@@ -87,21 +100,18 @@ export default async function DetailPage({ params }: { params: { id: string } })
                 ))}
               </div>
               <h2>{streamer.name}</h2>
-              {isPaidOrPremium ? (
-                <p>{streamer.description}</p>
-              ) : (
-                <p>無料プランのため、プロフィール情報は写真・名前・YouTubeチャンネルURLのみ表示しています。</p>
-              )}
+              <p>{streamer.description || "自己アピールは未入力です。"}</p>
             </div>
+            <DetailLikeButton streamerId={streamer.id} />
             <a className="primary-button" href={youtubeSubscribeUrl(streamer.youtube_url)} target="_blank" rel="noreferrer">
               <ExternalLink size={18} />
-              チャンネル登録へ
+              {siteLabel}を開く
             </a>
             <ProfileShareButton
               title={`${streamer.name} | Vtuberマッチ`}
               text={`${streamer.name}をVtuberマッチで見つけました`}
             />
-            {streamer.x_account && (
+            {canViewXAccount && streamer.x_account && (
               <a className="secondary-button" href={xProfileUrl(streamer.x_account)} target="_blank" rel="noreferrer">
                 Xを見る
               </a>
@@ -126,18 +136,22 @@ export default async function DetailPage({ params }: { params: { id: string } })
           </aside>
         </section>
 
-        {isPaidOrPremium && (
+        {(streamer.one_liner || streamer.stream_time || (isPaidOrPremium && streamer.tags.length > 0)) && (
           <section className="status-band">
             <h2>プロフィール情報</h2>
-            <div className="pill-row">
-              {streamer.tags.map((tag) => (
-                <span className="pill dark" key={tag}>#{tag}</span>
-              ))}
-            </div>
+            {isPaidOrPremium && streamer.tags.length > 0 && (
+              <div className="pill-row">
+                {streamer.tags.map((tag) => (
+                  <span className="pill dark" key={tag}>#{tag}</span>
+                ))}
+              </div>
+            )}
             {streamer.one_liner && <p style={{ marginTop: 12 }}>今日のひとこと: {streamer.one_liner}</p>}
-            <p style={{ marginTop: 12 }}>
-              <CalendarClock size={16} /> {streamer.stream_time || "配信時間帯は未設定"}
-            </p>
+            {streamer.stream_time && (
+              <p style={{ marginTop: 12 }}>
+                <CalendarClock size={16} /> {streamer.stream_time}
+              </p>
+            )}
             {isPremium && (
               <p>
                 <Radio size={16} /> おすすめアーカイブ更新日: {streamer.last_video_date ? new Date(streamer.last_video_date).toLocaleDateString("ja-JP") : "未取得"}
@@ -155,8 +169,10 @@ function xProfileUrl(account: string) {
   return `https://x.com/${encodeURIComponent(handle)}`;
 }
 
-function seoImage(value?: string) {
-  if (!value) return "/promo/landing-oshi.png";
-  if (value.startsWith("http://") || value.startsWith("https://") || value.startsWith("/")) return value;
-  return "/promo/landing-oshi.png";
+function seoImage(value: string | undefined, streamerId: string) {
+  if (!value) return absoluteUrl("/promo/landing-oshi.png");
+  if (value.startsWith("data:image/")) return absoluteUrl(`/api/streamer-image/${encodeURIComponent(streamerId)}?i=0`);
+  if (value.startsWith("/")) return absoluteUrl(value);
+  if (value.startsWith("http://") || value.startsWith("https://")) return value;
+  return absoluteUrl("/promo/landing-oshi.png");
 }

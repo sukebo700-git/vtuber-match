@@ -23,9 +23,9 @@ export default async function CheckoutPage({ searchParams }: { searchParams: { a
   const application = applicationId ? await getApplication(applicationId) : null;
   if (applicationId && (!application || application.desired_plan === "free")) notFound();
   if (!applicationId && !viewerId && (!streamerId || (upgradePlan !== "paid" && upgradePlan !== "boost"))) notFound();
-  if (viewerId && upgradePlan !== "viewer_paid") notFound();
+  if (viewerId) notFound();
 
-  const planType = application ? application.desired_plan as Exclude<PlanType, "free"> : upgradePlan as "paid" | "boost" | "viewer_paid";
+  const planType = application ? application.desired_plan as Exclude<PlanType, "free"> : upgradePlan as "paid" | "boost";
 
   return (
     <div className="app-shell">
@@ -33,6 +33,8 @@ export default async function CheckoutPage({ searchParams }: { searchParams: { a
         <a className="brand" href="/">Vtuberマッチ</a>
         <nav className="nav" aria-label="メイン">
           <a href="/creator">配信者用</a>
+          <a href="/diagnosis">タイプ診断</a>
+          <a href="https://www.youtube.com/@VtuberMatch" target="_blank" rel="noreferrer">公式YouTube</a>
           <a href="/help">ヘルプ</a>
         </nav>
         <HeaderAuthStatus />

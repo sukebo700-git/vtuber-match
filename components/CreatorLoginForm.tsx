@@ -27,9 +27,13 @@ export function CreatorLoginForm() {
     localStorage.setItem("vtuber-match-creator-application-id", data.application_id || "");
     localStorage.setItem("vtuber-match-creator-plan", data.plan_type || "free");
     if (data.streamer_id) localStorage.setItem("vtuber-match-creator-streamer-id", data.streamer_id);
+    if (data.profile) localStorage.setItem("vtuber-match-creator-profile-draft", JSON.stringify(data.profile));
+    if (Number(data.super_boost_count || 0) > 0) {
+      localStorage.setItem("vtuber-match-creator-super-boost-notice", String(data.super_boost_count));
+    }
     window.dispatchEvent(new Event("vtuber-match-auth-changed"));
-    setStatus("ログインしました。配信者用ページへ移動します。");
-    window.location.assign("/creator");
+    setStatus("ログインしました。通知設定へ移動します。");
+    window.location.assign("/creator?notify=1");
   }
 
   return (

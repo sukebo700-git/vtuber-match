@@ -8,11 +8,13 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function ViewerLoginPage() {
+export default function ViewerLoginPage({ searchParams }: { searchParams?: { mode?: string } }) {
+  const initialMode = searchParams?.mode === "register" ? "register" : "login";
+
   return (
     <div className="app-shell">
       <header className="topbar">
-        <a className="brand" href="/">Vtuberマッチ</a>
+        <a className="brand" href="/">VtuberMatch</a>
         <HeaderAuthStatus />
       </header>
 
@@ -23,30 +25,20 @@ export default function ViewerLoginPage() {
           fallback={
             <section className="status-band">
               <h2>視聴者としてログイン中です</h2>
-              <p>プロフィールの修正や視聴者ブーストプランの確認へ進めます。</p>
+              <p>プロフィール確認やVTuber探しに進めます。</p>
               <p className="inline-actions" style={{ marginTop: 12 }}>
-                <a className="primary-button" href="/viewer">視聴者プロフィールへ</a>
-                <a className="secondary-button" href="/viewer/upgrade">視聴者ブーストプラン</a>
+                <a className="primary-button" href="/viewer">視聴者用ページへ</a>
+                <a className="secondary-button" href="/swipe">VTuberを探す</a>
               </p>
             </section>
           }
         >
           <section className="status-band">
-            <h2>視聴者ログイン / 新規登録</h2>
-            <p>未登録なら新規登録、登録済みならログインします。先にメールアドレスとパスワードを入力してください。</p>
+            <h1>{initialMode === "register" ? "視聴者新規登録" : "視聴者ログイン"}</h1>
+            <p>無料登録またはログインすると、プロフィール保存やスーパーいいね履歴の確認ができます。</p>
           </section>
 
-          <ViewerLoginForm />
-
-          <section className="status-band">
-            <h2>視聴者ブーストプラン</h2>
-            <p>
-              月額330円で、マッチした配信者に名前、YouTube表示名、X / Twitter ID、一言メッセージを開示できます。
-            </p>
-            <p className="inline-actions" style={{ marginTop: 12 }}>
-              <a className="secondary-button" href="/viewer/upgrade">プランを見る</a>
-            </p>
-          </section>
+          <ViewerLoginForm initialMode={initialMode} />
         </AuthVisibility>
       </main>
     </div>

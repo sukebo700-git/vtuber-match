@@ -1,6 +1,6 @@
 "use client";
 
-import { Heart, HeartHandshake, Save } from "lucide-react";
+import { HeartHandshake, RotateCcw, Save } from "lucide-react";
 import { useEffect, useState } from "react";
 import { CATEGORIES } from "@/lib/constants";
 import type { ViewerProfile } from "@/lib/types";
@@ -8,6 +8,7 @@ import type { ViewerProfile } from "@/lib/types";
 const storageKey = "vtuber-match-viewer-profile";
 const idKey = "vtuber-match-viewer-id";
 const authKey = "vtuber-match-viewer-auth";
+const oneLinerLimit = 20;
 
 const emptyProfile: ViewerProfile = {
   id: "",
@@ -26,9 +27,23 @@ const emptyProfile: ViewerProfile = {
   streamer_like_count: 0,
 };
 
+type ImageEdit = {
+  scale: number;
+  x: number;
+  y: number;
+};
+
+const defaultImageEdit: ImageEdit = {
+  scale: 1,
+  x: 0,
+  y: 0,
+};
+
 export function ViewerProfileForm() {
   const [profile, setProfile] = useState<ViewerProfile>(emptyProfile);
   const [status, setStatus] = useState("");
+  const [sourceImage, setSourceImage] = useState("");
+  const [imageEdit, setImageEdit] = useState<ImageEdit>(defaultImageEdit);
 
   useEffect(() => {
     const id = localStorage.getItem(idKey) || crypto.randomUUID();
@@ -42,22 +57,32 @@ export function ViewerProfileForm() {
       id,
       email: auth?.email || stored.email || "",
       viewer_login_id: auth?.viewer_login_id || stored.viewer_login_id || "",
+      one_liner: (stored.one_liner || "").slice(0, oneLinerLimit),
     };
     setProfile(nextProfile);
+    setSourceImage(nextProfile.image || "");
 
     fetch(`/api/viewer-profile?id=${encodeURIComponent(id)}`)
       .then((response) => response.json())
       .then((data) => {
         if (data.profile) {
-          setProfile((current) => ({
-            ...current,
-            ...data.profile,
-            id,
-            email: data.profile.email || current.email || "",
-            viewer_login_id: data.profile.viewer_login_id || current.viewer_login_id || "",
-            match_count: data.profile.match_count || 0,
-            streamer_like_count: data.profile.streamer_like_count || 0,
-          }));
+          setProfile((current) => {
+            const next = {
+              ...current,
+              ...data.profile,
+              id,
+              email: data.profile.email || current.email || "",
+              viewer_login_id: data.profile.viewer_login_id || current.viewer_login_id || "",
+              viewer_plan: "free" as const,
+              one_liner: (data.profile.one_liner || current.one_liner || "").slice(0, oneLinerLimit),
+              match_count: data.profile.match_count || 0,
+              streamer_like_count: 0,
+              is_admin_viewer: data.profile.is_admin_viewer === true,
+            };
+            localStorage.setItem(storageKey, JSON.stringify(next));
+            setSourceImage(next.image || "");
+            return next;
+          });
         }
       })
       .catch(() => undefined);
@@ -69,15 +94,18 @@ export function ViewerProfileForm() {
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const isPaid = isPaidViewer(profile);
+    const editedImage = sourceImage ? await renderEditedImage(sourceImage, imageEdit) : profile.image;
     const cleanProfile: ViewerProfile = {
       ...profile,
-      one_liner: (profile.one_liner || "").slice(0, 30),
-      youtube_display_name: isPaid ? profile.youtube_display_name : "",
-      twitter_id: isPaid ? profile.twitter_id : "",
-      profile: isPaid ? profile.profile : "",
-      favorite_categories: isPaid ? profile.favorite_categories || [] : [],
-      visible_to_matched_streamers: isPaid ? profile.visible_to_matched_streamers : true,
+      viewer_plan: "free",
+      subscription_status: "canceled",
+      image: editedImage || profile.image,
+      one_liner: (profile.one_liner || "").slice(0, oneLinerLimit),
+      youtube_display_name: profile.youtube_display_name || "",
+      twitter_id: profile.twitter_id || "",
+      profile: profile.profile || "",
+      favorite_categories: profile.favorite_categories || [],
+      visible_to_matched_streamers: profile.visible_to_matched_streamers !== false,
     };
 
     localStorage.setItem(storageKey, JSON.stringify(cleanProfile));
@@ -101,6 +129,8 @@ export function ViewerProfileForm() {
       body: JSON.stringify(cleanProfile),
     });
     setProfile(cleanProfile);
+    setSourceImage(cleanProfile.image || "");
+    setImageEdit(defaultImageEdit);
     setStatus(response.ok ? "保存しました。" : "保存に失敗しました。時間をおいてもう一度お試しください。");
   }
 
@@ -108,8 +138,14 @@ export function ViewerProfileForm() {
     const file = event.target.files?.[0];
     if (!file) return;
     const image = await fileToDataUrl(file);
+    if (!image) {
+      setStatus("画像が大きすぎます。別の画像を選んでください。");
+      return;
+    }
+    setImageEdit(defaultImageEdit);
+    setSourceImage(image);
     update({ image });
-    if (!image) setStatus("画像が大きすぎます。別の画像を選んでください。");
+    setStatus("画像を差し替えました。");
   }
 
   function toggleCategory(category: string) {
@@ -121,27 +157,23 @@ export function ViewerProfileForm() {
     });
   }
 
-  const matchCount = profile.match_count || 0;
-  const streamerLikeCount = profile.streamer_like_count || 0;
-  const isPaid = isPaidViewer(profile);
+  const matchCount = profile.is_admin_viewer ? 0 : profile.match_count || 0;
+  const previewImage = sourceImage || profile.image;
 
   return (
     <form className="form compact-form" onSubmit={submit}>
+      {profile.payment_state === "past_due" && (
+        <div className="status-band warning-band">
+          <p>お支払いを確認できませんでした。カード情報をご確認ください。</p>
+        </div>
+      )}
+
       <div className="viewer-score-card">
         <HeartHandshake size={26} />
         <div>
           <span>マッチ数</span>
           <strong>{matchCount}</strong>
           <p>{fanAppeal(matchCount)}</p>
-        </div>
-      </div>
-
-      <div className="viewer-score-card">
-        <Heart size={26} />
-        <div>
-          <span>配信者からのいいね</span>
-          <strong>{streamerLikeCount}</strong>
-          <p>{streamerLikeCount ? "配信者から反応が届いています。" : "配信者からのいいねが届くとここに表示されます。"}</p>
         </div>
       </div>
 
@@ -156,7 +188,7 @@ export function ViewerProfileForm() {
         </div>
         <div>
           <dt>プラン</dt>
-          <dd>{isPaid ? "視聴者ブーストプラン" : "無料プラン"}</dd>
+          <dd>無料プラン</dd>
         </div>
       </dl>
 
@@ -171,11 +203,59 @@ export function ViewerProfileForm() {
       </div>
 
       <div className="field">
-        <label htmlFor="viewer_image">アイコン</label>
+        <label htmlFor="viewer_image">アイコン画像</label>
         <input id="viewer_image" type="file" accept="image/*" onChange={onFile} />
-        {profile.image && (
-          <div className="image-preview-row">
-            <img src={profile.image} alt="視聴者プロフィール画像" />
+        {!previewImage && <p className="help-text">選択されていません</p>}
+        {previewImage && (
+          <div className="image-editor">
+            <div className="image-editor-preview" aria-label="プロフィール画像プレビュー">
+              <img
+                src={previewImage}
+                alt="視聴者プロフィール画像"
+                style={{
+                  transform: `translate(${imageEdit.x}%, ${imageEdit.y}%) scale(${imageEdit.scale})`,
+                }}
+              />
+            </div>
+            <div className="image-editor-controls">
+              <label>
+                縮尺
+                <input
+                  type="range"
+                  min="1"
+                  max="2.5"
+                  step="0.05"
+                  value={imageEdit.scale}
+                  onChange={(event) => setImageEdit((current) => ({ ...current, scale: Number(event.target.value) }))}
+                />
+              </label>
+              <label>
+                横位置
+                <input
+                  type="range"
+                  min="-40"
+                  max="40"
+                  step="1"
+                  value={imageEdit.x}
+                  onChange={(event) => setImageEdit((current) => ({ ...current, x: Number(event.target.value) }))}
+                />
+              </label>
+              <label>
+                縦位置
+                <input
+                  type="range"
+                  min="-40"
+                  max="40"
+                  step="1"
+                  value={imageEdit.y}
+                  onChange={(event) => setImageEdit((current) => ({ ...current, y: Number(event.target.value) }))}
+                />
+              </label>
+              <button className="mini-button" type="button" onClick={() => setImageEdit(defaultImageEdit)}>
+                <RotateCcw size={15} />
+                全体表示に戻す
+              </button>
+            </div>
           </div>
         )}
       </div>
@@ -187,7 +267,6 @@ export function ViewerProfileForm() {
           value={profile.youtube_display_name || ""}
           onChange={(event) => update({ youtube_display_name: event.target.value })}
           placeholder="@name など"
-          disabled={!isPaid}
         />
       </div>
 
@@ -198,20 +277,19 @@ export function ViewerProfileForm() {
           value={profile.twitter_id || ""}
           onChange={(event) => update({ twitter_id: event.target.value })}
           placeholder="@vtubermatch など"
-          disabled={!isPaid}
         />
       </div>
 
       <div className="field">
-        <label htmlFor="viewer_one_liner">一言メッセージ 30文字まで</label>
+        <label htmlFor="viewer_one_liner">一言メッセージ {oneLinerLimit}文字まで</label>
         <input
           id="viewer_one_liner"
           value={profile.one_liner || ""}
-          onChange={(event) => update({ one_liner: event.target.value.slice(0, 30) })}
-          placeholder="例: 初見でもたくさん応援します"
-          disabled={!isPaid}
-          maxLength={30}
+          onChange={(event) => update({ one_liner: event.target.value.slice(0, oneLinerLimit) })}
+          placeholder="例: 初見でも応援します"
+          maxLength={oneLinerLimit}
         />
+        <p className="help-text">{(profile.one_liner || "").length}/{oneLinerLimit}</p>
       </div>
 
       <div className="field">
@@ -221,17 +299,8 @@ export function ViewerProfileForm() {
           value={profile.profile || ""}
           onChange={(event) => update({ profile: event.target.value })}
           placeholder="好きな配信ジャンルや応援スタイルなど"
-          disabled={!isPaid}
         />
       </div>
-
-      {!isPaid && (
-        <p className="notice-text">
-          無料プランは自身の名前とアイコンのみ登録できます。月額330円の視聴者ブーストプランにすると、マッチ時に名前、YouTube表示名、X / Twitter ID、一言メッセージを配信者へ開示できます。
-          <br />
-          <a href="/viewer/upgrade">視聴者ブーストプランを見る</a>
-        </p>
-      )}
 
       <div className="field">
         <label>好きなカテゴリ {profile.favorite_categories?.length || 0}/5</label>
@@ -242,7 +311,6 @@ export function ViewerProfileForm() {
                 type="checkbox"
                 checked={profile.favorite_categories?.includes(category) || false}
                 onChange={() => toggleCategory(category)}
-                disabled={!isPaid}
               />
               {category}
             </label>
@@ -255,25 +323,21 @@ export function ViewerProfileForm() {
           type="checkbox"
           checked={profile.visible_to_matched_streamers}
           onChange={(event) => update({ visible_to_matched_streamers: event.target.checked })}
-          disabled={!isPaid}
         />
-        マッチした配信者にプロフィールを開示する
+        いいねした配信者にプロフィールを表示する
       </label>
-      <p className="help-text">
-        開示をオンにすると、マッチした配信者があなたのプロフィールを確認できます。連絡先メールは公開されません。
-      </p>
+      <p className="help-text">メールアドレスは公開されません。</p>
 
       <button className="primary-button" type="submit">
         <Save size={18} />
         保存する
       </button>
+      <p className="inline-actions viewer-profile-actions">
+        <a className="primary-button" href="/swipe">VTuberを探す</a>
+      </p>
       {status && <p className="help-text">{status}</p>}
     </form>
   );
-}
-
-function isPaidViewer(profile: ViewerProfile) {
-  return profile.viewer_plan === "viewer_paid" || profile.subscription_status === "active";
 }
 
 function fanAppeal(matchCount: number) {
@@ -306,5 +370,70 @@ async function fileToDataUrl(file: File) {
     reader.onerror = () => reject(reader.error);
     reader.readAsDataURL(file);
   });
-  return dataUrl.length > 400000 ? "" : dataUrl;
+  return compressImageDataUrl(dataUrl, 620, 120_000);
+}
+
+async function renderEditedImage(src: string, edit: ImageEdit) {
+  const image = await loadImage(src);
+  const size = 480;
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const context = canvas.getContext("2d");
+  if (!context) return src;
+
+  context.fillStyle = "#ffffff";
+  context.fillRect(0, 0, size, size);
+
+  const baseScale = Math.min(size / image.naturalWidth, size / image.naturalHeight);
+  const drawWidth = image.naturalWidth * baseScale * edit.scale;
+  const drawHeight = image.naturalHeight * baseScale * edit.scale;
+  const maxOffsetX = Math.max(0, (drawWidth - size) / 2);
+  const maxOffsetY = Math.max(0, (drawHeight - size) / 2);
+  const offsetX = maxOffsetX * (edit.x / 40);
+  const offsetY = maxOffsetY * (edit.y / 40);
+
+  context.drawImage(
+    image,
+    (size - drawWidth) / 2 + offsetX,
+    (size - drawHeight) / 2 + offsetY,
+    drawWidth,
+    drawHeight,
+  );
+
+  return compressCanvas(canvas, 120_000);
+}
+
+function loadImage(src: string) {
+  return new Promise<HTMLImageElement>((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error("image load failed"));
+    image.src = src;
+  });
+}
+
+async function compressImageDataUrl(src: string, maxSide: number, targetLength: number) {
+  const image = await loadImage(src);
+  const canvas = document.createElement("canvas");
+  const context = canvas.getContext("2d");
+  if (!context) return "";
+
+  const scale = Math.min(1, maxSide / Math.max(image.naturalWidth, image.naturalHeight));
+  canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+  canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+  context.fillStyle = "#ffffff";
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  context.drawImage(image, 0, 0, canvas.width, canvas.height);
+  return compressCanvas(canvas, targetLength);
+}
+
+function compressCanvas(canvas: HTMLCanvasElement, targetLength: number) {
+  let best = "";
+  for (const quality of [0.78, 0.68, 0.58, 0.48, 0.38, 0.3, 0.24]) {
+    const encoded = canvas.toDataURL("image/jpeg", quality);
+    if (!best || encoded.length < best.length) best = encoded;
+    if (encoded.length <= targetLength) return encoded;
+  }
+  return best;
 }

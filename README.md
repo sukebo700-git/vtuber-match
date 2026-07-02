@@ -38,7 +38,7 @@ npm.cmd run dev
 - `/checkout`: 有料プラン決済
 - `/detail/[id]`: プロフィール詳細
 - `/terms`: ヘルプ
-- `/admin?key=...`: 運営管理画面
+- `/admin`: 運営管理画面
 
 ## プラン
 

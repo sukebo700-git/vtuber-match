@@ -23,11 +23,13 @@ export default async function SwipePage() {
         <nav className="nav" aria-label="メイン">
           <a href="/viewer">視聴者用</a>
           <a href="/creator">配信者用</a>
+          <a href="/diagnosis">タイプ診断</a>
+          <a href="https://www.youtube.com/@VtuberMatch" target="_blank" rel="noreferrer">公式YouTube</a>
           <a href="/help">ヘルプ</a>
         </nav>
         <HeaderAuthStatus />
       </header>
-      <main className="main">
+      <main className="main swipe-page-main">
         <SwipeClient initialStreamers={streamers} />
       </main>
     </div>

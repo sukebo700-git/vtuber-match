@@ -5,10 +5,24 @@ export default function robots(): MetadataRoute.Robots {
   return {
     rules: [
       {
+        userAgent: [
+          "GPTBot",
+          "ChatGPT-User",
+          "CCBot",
+          "ClaudeBot",
+          "anthropic-ai",
+          "PerplexityBot",
+          "Bytespider",
+          "Amazonbot",
+        ],
+        disallow: "/",
+      },
+      {
         userAgent: "*",
         allow: "/",
         disallow: [
           "/admin",
+          "/admin-login",
           "/api/",
           "/checkout",
           "/checkout/success",
@@ -17,7 +31,6 @@ export default function robots(): MetadataRoute.Robots {
           "/creator/login",
           "/creator/upgrade",
           "/viewer/register",
-          "/viewer/plan",
         ],
       },
     ],

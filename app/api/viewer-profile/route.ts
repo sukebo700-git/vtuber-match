@@ -19,20 +19,27 @@ export async function GET(request: Request) {
   }
 
   const profileDoc = await db.collection("viewer_profiles").doc(id).get();
-  const [likes, streamerLikes] = await Promise.all([
-    db.collection("likes").where("viewer_profile_id", "==", id).limit(1000).get(),
-    db.collection("creator_likes").where("viewer_profile_id", "==", id).limit(1000).get()
-  ]);
-  const matchCount = likes.size;
-  const streamerLikeCount = streamerLikes.size;
   const profile = profileDoc.exists ? profileDoc.data() : {};
+  if (profile?.is_admin_viewer === true) {
+    return NextResponse.json({
+      profile: sanitizeProfile({
+        id,
+        ...profile,
+        match_count: 0,
+        streamer_like_count: 0,
+        fan_level: "starter"
+      })
+    });
+  }
+  const likes = await db.collection("likes").where("viewer_profile_id", "==", id).limit(1000).get();
+  const matchCount = likes.size;
 
   return NextResponse.json({
     profile: sanitizeProfile({
       id,
       ...profile,
       match_count: matchCount,
-      streamer_like_count: streamerLikeCount,
+      streamer_like_count: 0,
       fan_level: fanLevel(matchCount)
     })
   });
@@ -47,25 +54,24 @@ export async function POST(request: Request) {
 
   const db = getAdminDb();
   const existing = db ? await readFirestoreViewerProfile(db, id) : await readLocalViewerProfile(id);
-  const viewerPlan = existing?.viewer_plan === "viewer_paid" || existing?.subscription_status === "active" ? "viewer_paid" : "free";
-  const isPaid = viewerPlan === "viewer_paid";
-
   const profile: ViewerProfile = {
     ...existing,
     id,
     email: clean(existing?.email || session.email || body.email, 120).toLowerCase(),
     viewer_login_id: clean(existing?.viewer_login_id || session.viewer_login_id || body.viewer_login_id, 80),
-    viewer_plan: viewerPlan,
-    subscription_status: existing?.subscription_status === "active" ? "active" : existing?.subscription_status === "canceled" ? "canceled" : undefined,
-    stripe_subscription_id: clean(existing?.stripe_subscription_id, 120),
+    viewer_plan: "free",
+    subscription_status: "canceled",
+    payment_state: "active",
+    stripe_subscription_id: "",
+    is_admin_viewer: existing?.is_admin_viewer === true,
     display_name: clean(body.display_name, 40),
-    youtube_display_name: isPaid ? clean(body.youtube_display_name, 60) : "",
-    twitter_id: isPaid ? clean(body.twitter_id, 40) : "",
-    one_liner: isPaid ? clean(body.one_liner, 30) : "",
+    youtube_display_name: clean(body.youtube_display_name, 60),
+    twitter_id: clean(body.twitter_id, 40),
+    one_liner: clean(body.one_liner, 20),
     image: clean(body.image, 400000),
-    profile: isPaid ? clean(body.profile, 400) : "",
-    favorite_categories: isPaid ? sanitizeArray(body.favorite_categories).slice(0, 5) : [],
-    visible_to_matched_streamers: isPaid ? body.visible_to_matched_streamers !== false : true
+    profile: clean(body.profile, 400),
+    favorite_categories: sanitizeArray(body.favorite_categories).slice(0, 5),
+    visible_to_matched_streamers: body.visible_to_matched_streamers !== false
   };
 
   if (!db) {
@@ -74,7 +80,8 @@ export async function POST(request: Request) {
   }
 
   await db.collection("viewer_profiles").doc(id).set({
-    ...profile,
+    ...stripUndefined(profile),
+    ...(existing ? {} : { created_at: FieldValue.serverTimestamp(), registered_at: FieldValue.serverTimestamp() }),
     updated_at: FieldValue.serverTimestamp()
   }, { merge: true });
 
@@ -108,4 +115,8 @@ function fanLevel(matchCount: number) {
 function sanitizeProfile<T extends Record<string, unknown>>(profile: T) {
   const { viewer_password_hash, ...safeProfile } = profile;
   return safeProfile;
+}
+
+function stripUndefined<T extends Record<string, unknown>>(value: T) {
+  return Object.fromEntries(Object.entries(value).filter(([, item]) => item !== undefined)) as T;
 }

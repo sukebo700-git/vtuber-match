@@ -1,7 +1,13 @@
 import { HeaderAuthStatus } from "@/components/HeaderAuthStatus";
 import { PushNotificationButton } from "@/components/PushNotificationButton";
 
-export default function CheckoutSuccessPage() {
+export default function CheckoutSuccessPage({ searchParams }: { searchParams?: { role?: string } }) {
+  const targetType = searchParams?.role === "viewer" ? "viewer" : "creator";
+  const destination = targetType === "viewer" ? "/viewer?notify=1" : "/creator?notify=1";
+  const message = targetType === "viewer"
+    ? "スーパーいいねの決済を反映しました。控えや重要なお知らせを見逃さないため、必要に応じて通知ONにしてください。"
+    : "プランを反映しました。視聴者からのいいねやスーパーいいねを見逃さないため、続けて通知ONにしてください。";
+
   return (
     <div className="app-shell">
       <header className="topbar">
@@ -15,13 +21,12 @@ export default function CheckoutSuccessPage() {
       <main className="main grid-page">
         <section className="status-band">
           <h2>決済を反映しました</h2>
-          <p>プランを反映しました。該当ページでプロフィール修正、通知設定、マッチ状況の確認ができます。</p>
+          <p>{message}</p>
           <div style={{ marginTop: 12 }}>
-            <PushNotificationButton targetType="creator" />
+            <PushNotificationButton targetType={targetType} intent="onboarding" />
           </div>
           <p className="inline-actions" style={{ marginTop: 12 }}>
-            <a className="primary-button" href="/creator">配信者ページへ</a>
-            <a className="secondary-button" href="/viewer">視聴者ページへ</a>
+            <a className="primary-button" href={destination}>{targetType === "viewer" ? "視聴者ページへ" : "配信者ページへ"}</a>
             <a className="secondary-button" href="/">トップへ戻る</a>
           </p>
         </section>

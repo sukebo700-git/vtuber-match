@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { FieldValue, getAdminDb } from "@/lib/firebaseAdmin";
+import { FieldValue, getAdminDb, stripUndefined } from "@/lib/firebaseAdmin";
 import { addLocalPasswordResetRequest } from "@/lib/localStore";
 import type { PasswordResetRequest } from "@/lib/types";
 
@@ -39,11 +39,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ request: resetRequest, source: "local" }, { status: 201 });
   }
 
-  const doc = await db.collection("password_reset_requests").add({
+  const doc = await db.collection("password_reset_requests").add(stripUndefined({
     ...input,
     status: "open",
     created_at: FieldValue.serverTimestamp()
-  });
+  }));
 
   return NextResponse.json({ id: doc.id, source: "firestore" }, { status: 201 });
 }

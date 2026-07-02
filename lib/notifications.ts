@@ -1,20 +1,27 @@
 import { FieldValue, getAdminApp, getAdminDb } from "./firebaseAdmin";
 
-export async function notifyStreamerLike(tokens: string[] | undefined, streamerName: string) {
+export const streamerLikeNotification = {
+  title: "新しいいいねが届きました",
+  body: "視聴者からいいねが届きました",
+};
+
+export async function notifyStreamerLike(tokens: string[] | undefined, sourceName?: string) {
   if (!tokens?.length) return;
   const app = getAdminApp();
   if (!app) return;
+  const notification = sourceName
+    ? {
+      title: "新しいいいねが届きました",
+      body: `${sourceName}さんからいいねが届きました`,
+    }
+    : streamerLikeNotification;
 
   await app.messaging().sendEachForMulticast({
     tokens,
-    notification: {
-      title: "新しいいいね",
-      body: `${streamerName}さんに視聴者からいいねが届きました`,
-    },
+    notification,
     webpush: {
       notification: {
-        title: "新しいいいね",
-        body: `${streamerName}さんに視聴者からいいねが届きました`,
+        ...notification,
         icon: "/icon.svg",
         badge: "/icon.svg",
       },
@@ -23,33 +30,6 @@ export async function notifyStreamerLike(tokens: string[] | undefined, streamerN
     data: {
       type: "LIKE_CREATED",
       url: "/creator",
-    },
-  });
-}
-
-export async function notifyViewerCreatorLike(tokens: string[] | undefined) {
-  if (!tokens?.length) return;
-  const app = getAdminApp();
-  if (!app) return;
-
-  await app.messaging().sendEachForMulticast({
-    tokens,
-    notification: {
-      title: "配信者からいいね",
-      body: "マッチした配信者からいいねが届きました",
-    },
-    webpush: {
-      notification: {
-        title: "配信者からいいね",
-        body: "マッチした配信者からいいねが届きました",
-        icon: "/icon.svg",
-        badge: "/icon.svg",
-      },
-      fcmOptions: { link: "/viewer" },
-    },
-    data: {
-      type: "CREATOR_LIKE_CREATED",
-      url: "/viewer",
     },
   });
 }

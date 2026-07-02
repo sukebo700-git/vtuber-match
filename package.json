@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "seed": "tsx scripts/seed.ts"
+    "seed": "tsx scripts/seed.ts",
+    "backfill:created-at": "tsx scripts/backfill-created-at.ts",
+    "build:analytics-totals": "tsx scripts/build-analytics-totals.ts"
   },
   "dependencies": {
     "firebase": "^10.14.1",

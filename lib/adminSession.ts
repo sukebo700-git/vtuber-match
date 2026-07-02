@@ -5,7 +5,7 @@ export const adminCookieName = "vtuber_match_admin";
 const sessionHours = 8;
 
 function secret() {
-  return process.env.ADMIN_ACCESS_KEY || (process.env.NODE_ENV === "production" ? "" : "kiya0110");
+  return process.env.ADMIN_ACCESS_KEY || (process.env.NODE_ENV === "production" ? "" : "vtuber-match-dev-admin");
 }
 
 function sign(value: string) {

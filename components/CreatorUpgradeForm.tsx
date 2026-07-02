@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { PLAN_FEATURES } from "@/lib/constants";
+import { LofiPlanBenefits } from "@/components/LofiPlanBenefits";
 
 export function CreatorUpgradeForm() {
   const [form, setForm] = useState({
@@ -31,7 +32,12 @@ export function CreatorUpgradeForm() {
     const verifyResponse = await fetch("/api/creator-upgrade", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
+      body: JSON.stringify({
+        ...form,
+        application_id: localStorage.getItem("vtuber-match-creator-application-id") || "",
+        streamer_id: localStorage.getItem("vtuber-match-creator-streamer-id") || "",
+        creator_login_id: localStorage.getItem("vtuber-match-creator-login-id") || "",
+      }),
     });
     const verified = await verifyResponse.json().catch(() => ({}));
     if (!verifyResponse.ok) {
@@ -70,28 +76,31 @@ export function CreatorUpgradeForm() {
           <article className="plan-card">
             <strong>無料プラン</strong>
             <span className="plan-price">0円</span>
-            <p>写真、名前、YouTube URLだけで掲載できます。</p>
+            <p>まず掲載を始めたい方向け。基本プロフィールを登録できます。</p>
             <ul>
               {PLAN_FEATURES.free.map((feature) => <li key={feature}>{feature}</li>)}
             </ul>
+            <LofiPlanBenefits planId="registered" />
           </article>
 
           <article className={`plan-card ${form.plan_type === "paid" ? "selected" : ""}`} onClick={() => update("plan_type", "paid")}>
             <strong>ベーシックプラン</strong>
             <span className="plan-price">月額500円</span>
-            <p>公式バッジと上位表示で、視聴者に見つけてもらいやすくなります。</p>
+            <p>無料プランより上位に表示され、公式チャンネルでの紹介枠も強化されます。</p>
             <ul>
               {PLAN_FEATURES.paid.map((feature) => <li key={feature}>{feature}</li>)}
             </ul>
+            <LofiPlanBenefits planId="paid" />
           </article>
 
           <article className={`plan-card ${form.plan_type === "boost" ? "selected" : ""}`} onClick={() => update("plan_type", "boost")}>
             <strong>プレミアムプラン</strong>
             <span className="plan-price">月額980円</span>
-            <p>最優先表示、目立つフレーム、おすすめアーカイブ、視聴者へのいいね機能が使えます。</p>
+            <p>常時優先表示、プレミアムフレーム、Lo-Fi配信での優先紹介が使えます。</p>
             <ul>
               {PLAN_FEATURES.boost.map((feature) => <li key={feature}>{feature}</li>)}
             </ul>
+            <LofiPlanBenefits planId="boost" />
           </article>
         </div>
       </section>

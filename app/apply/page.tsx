@@ -7,14 +7,17 @@ export default function ApplyPage() {
   return (
     <div className="app-shell">
       <header className="topbar">
-        <a className="brand" href="/">Vtuberマッチ</a>
+        <a className="brand" href="/">VtuberMatch</a>
         <nav className="nav" aria-label="メイン">
           <a href="/viewer">視聴者用</a>
           <a href="/creator">配信者用</a>
+          <a href="/diagnosis">タイプ診断</a>
+          <a href="https://www.youtube.com/@VtuberMatch" target="_blank" rel="noreferrer">公式YouTube</a>
           <a href="/help">ヘルプ</a>
         </nav>
         <HeaderAuthStatus />
       </header>
+
       <main className="main grid-page">
         <AuthVisibility
           role="creator"
@@ -22,7 +25,7 @@ export default function ApplyPage() {
           fallback={
             <section className="status-band">
               <h2>すでに配信者としてログイン中です</h2>
-              <p>申し込み画面は未ログインの方だけに表示されます。掲載内容の変更はプロフィール修正から行えます。</p>
+              <p>掲載内容の変更は、プロフィール修正画面から行えます。</p>
               <p style={{ marginTop: 12 }}>
                 <a className="primary-button" href="/creator/edit">プロフィールを修正する</a>
               </p>
@@ -30,8 +33,16 @@ export default function ApplyPage() {
           }
         >
           <section className="status-band">
-            <h2>掲載を申し込む</h2>
-            <p>プロフィール画像、自己アピール、カテゴリ、タグを登録できます。無料プランは申し込み後すぐ掲載され、ベーシックプランとプレミアムプランは決済完了後に反映されます。</p>
+            <h1>VTuberとして掲載を申し込む</h1>
+            <p>
+              無料プランは申し込み後すぐ掲載できます。画像、名前、配信サイトURL、自己アピール、カテゴリ、タグを登録できます。
+              ベーシックプランとプレミアムプランは決済完了後に反映され、上位表示やLo-Fi配信での紹介特典が強化されます。
+            </p>
+            <ul className="feature-list">
+              <li>無料プラン: 紹介ショート動画制作無料</li>
+              <li>ベーシックプラン: ショート動画制作無料 + 24時間Lo-Fi配信での宣伝無料</li>
+              <li>プレミアムプラン: 夕方から深夜の時間帯を優先して紹介</li>
+            </ul>
           </section>
           <ApplicationForm categories={CATEGORIES} tags={TAGS} />
         </AuthVisibility>

@@ -114,6 +114,7 @@ export function HeaderAuthStatus() {
   const menuItems = useMemo(() => {
     if (login?.type === "creator") {
       return [
+        { href: "/creator", label: "配信者用ページ" },
         { href: "/creator/edit", label: "プロフィール" },
         { href: "/creator/upgrade", label: "アップグレード" },
       ];
@@ -121,8 +122,8 @@ export function HeaderAuthStatus() {
 
     if (login?.type === "viewer") {
       return [
+        { href: "/viewer", label: "視聴者用ページ" },
         { href: "/viewer", label: "プロフィール" },
-        { href: "/viewer/upgrade", label: "アップグレード" },
       ];
     }
 
@@ -136,6 +137,7 @@ export function HeaderAuthStatus() {
     setMenuOpen(false);
     setLoginOpen(false);
     window.dispatchEvent(new Event("vtuber-match-auth-changed"));
+    window.location.assign("/");
   };
 
   return (
@@ -196,12 +198,12 @@ export function HeaderAuthStatus() {
           <div className="header-menu-panel" role="menu">
             {menuItems.length ? (
               menuItems.map((item) => (
-                <a key={item.href} href={item.href} role="menuitem">
+                <a key={`${item.href}-${item.label}`} href={item.href} role="menuitem">
                   {item.label}
                 </a>
               ))
             ) : (
-              <span className="header-menu-empty">ログイン後に利用できます</span>
+              <span className="header-menu-empty">ログイン後利用可能</span>
             )}
           </div>
         ) : null}

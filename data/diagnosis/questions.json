@@ -1,0 +1,1068 @@
+﻿{
+  "QUESTIONS_VT_30": [
+    {
+      "id": "vt_f_1",
+      "axis": "f",
+      "is_reverse": false,
+      "text": "配信中、気づいたら声が大きくなっていることが多い"
+    },
+    {
+      "id": "vt_f_2",
+      "axis": "f",
+      "is_reverse": false,
+      "text": "リアクションは大きめにとってリスナーを盛り上げたい"
+    },
+    {
+      "id": "vt_f_3",
+      "axis": "f",
+      "is_reverse": false,
+      "text": "面白い場面では全力で笑い、全力で叫ぶ"
+    },
+    {
+      "id": "vt_f_4",
+      "axis": "f",
+      "is_reverse": true,
+      "text": "落ち着いたトーンで淡々と話す配信が自分らしい"
+    },
+    {
+      "id": "vt_f_5",
+      "axis": "f",
+      "is_reverse": true,
+      "text": "しっとりした空気感の配信のほうが心地よい"
+    },
+    {
+      "id": "vt_t_1",
+      "axis": "t",
+      "is_reverse": false,
+      "text": "コメントはできる限り拾って返したい"
+    },
+    {
+      "id": "vt_t_2",
+      "axis": "t",
+      "is_reverse": false,
+      "text": "配信の流れがコメント次第で変わるのは大歓迎だ"
+    },
+    {
+      "id": "vt_t_3",
+      "axis": "t",
+      "is_reverse": false,
+      "text": "リスナーに質問を投げかけて反応をもらうのが好きだ"
+    },
+    {
+      "id": "vt_t_4",
+      "axis": "t",
+      "is_reverse": true,
+      "text": "コメントを読むよりプレイや歌に集中したいときが多い"
+    },
+    {
+      "id": "vt_t_5",
+      "axis": "t",
+      "is_reverse": true,
+      "text": "「今日見せたいもの」を最後まで届けることを優先する"
+    },
+    {
+      "id": "vt_a_1",
+      "axis": "a",
+      "is_reverse": false,
+      "text": "新しい企画やゲームを思いつくとすぐ試したくなる"
+    },
+    {
+      "id": "vt_a_2",
+      "axis": "a",
+      "is_reverse": false,
+      "text": "失敗してもネタになるならやってみる派だ"
+    },
+    {
+      "id": "vt_a_3",
+      "axis": "a",
+      "is_reverse": false,
+      "text": "うまくいくか分からない企画ほどワクワクする"
+    },
+    {
+      "id": "vt_a_4",
+      "axis": "a",
+      "is_reverse": true,
+      "text": "同じゲームやシリーズを深く長く続けるのが好きだ"
+    },
+    {
+      "id": "vt_a_5",
+      "axis": "a",
+      "is_reverse": true,
+      "text": "毎回同じ時間・同じ流れで配信することに安心感がある"
+    },
+    {
+      "id": "vt_n_1",
+      "axis": "n",
+      "is_reverse": false,
+      "text": "配信では普段の自分に近い、素の姿を見せている"
+    },
+    {
+      "id": "vt_n_2",
+      "axis": "n",
+      "is_reverse": false,
+      "text": "日常の出来事や本音をそのまま話すことが多い"
+    },
+    {
+      "id": "vt_n_3",
+      "axis": "n",
+      "is_reverse": false,
+      "text": "配信中の自分と普段の自分はほとんど同じだ"
+    },
+    {
+      "id": "vt_n_4",
+      "axis": "n",
+      "is_reverse": true,
+      "text": "キャラ設定や世界観は自分の配信の核として大切にしている"
+    },
+    {
+      "id": "vt_n_5",
+      "axis": "n",
+      "is_reverse": true,
+      "text": "「中の人」を感じさせない見せ方を意識している"
+    },
+    {
+      "id": "vt_v_1",
+      "axis": "v",
+      "is_reverse": false,
+      "text": "配信の主役はゲームや歌よりも「自分のトーク」だと思う"
+    },
+    {
+      "id": "vt_v_2",
+      "axis": "v",
+      "is_reverse": false,
+      "text": "雑談だけで何時間でも配信できる"
+    },
+    {
+      "id": "vt_v_3",
+      "axis": "v",
+      "is_reverse": false,
+      "text": "フリートークの引き出しには自信がある"
+    },
+    {
+      "id": "vt_v_4",
+      "axis": "v",
+      "is_reverse": true,
+      "text": "トークよりプレイ・歌・制作などの「中身」で勝負したい"
+    },
+    {
+      "id": "vt_v_5",
+      "axis": "v",
+      "is_reverse": true,
+      "text": "一つのジャンルやスキルを極めた配信者でありたい"
+    },
+    {
+      "id": "vt_d_1",
+      "axis": "d",
+      "is_reverse": false,
+      "text": "毎回来てくれる常連リスナーとの関係を深めていきたい"
+    },
+    {
+      "id": "vt_d_2",
+      "axis": "d",
+      "is_reverse": false,
+      "text": "リスナーの名前を覚えて呼びかけることが多い"
+    },
+    {
+      "id": "vt_d_3",
+      "axis": "d",
+      "is_reverse": false,
+      "text": "リスナー一人ひとりと「個別の関係」がある感覚が好きだ"
+    },
+    {
+      "id": "vt_d_4",
+      "axis": "d",
+      "is_reverse": true,
+      "text": "初見さんがふらっと来ても気軽に楽しめる配信にしたい"
+    },
+    {
+      "id": "vt_d_5",
+      "axis": "d",
+      "is_reverse": true,
+      "text": "リスナーにはそれぞれのペースで自由に楽しんでほしい"
+    }
+  ],
+  "QUESTIONS_VW_30": [
+    {
+      "id": "vw_f_1",
+      "axis": "f",
+      "is_reverse": false,
+      "text": "テンション高めの賑やかな配信を見るとワクワクする"
+    },
+    {
+      "id": "vw_f_2",
+      "axis": "f",
+      "is_reverse": false,
+      "text": "配信者の大きなリアクションを見るのが好きだ"
+    },
+    {
+      "id": "vw_f_3",
+      "axis": "f",
+      "is_reverse": false,
+      "text": "ハイテンションな実況や絶叫リアクションを見ると元気が出る"
+    },
+    {
+      "id": "vw_f_4",
+      "axis": "f",
+      "is_reverse": true,
+      "text": "落ち着いた声でゆったり話す配信が心地よい"
+    },
+    {
+      "id": "vw_f_5",
+      "axis": "f",
+      "is_reverse": true,
+      "text": "作業や寝る前のお供になる静かな配信をよく見る"
+    },
+    {
+      "id": "vw_t_1",
+      "axis": "t",
+      "is_reverse": false,
+      "text": "自分のコメントが読まれるととても嬉しい"
+    },
+    {
+      "id": "vw_t_2",
+      "axis": "t",
+      "is_reverse": false,
+      "text": "コメントで配信の展開が変わる瞬間が好きだ"
+    },
+    {
+      "id": "vw_t_3",
+      "axis": "t",
+      "is_reverse": false,
+      "text": "リスナー参加型の企画(アンケート・凸・一緒にプレイ)が好きだ"
+    },
+    {
+      "id": "vw_t_4",
+      "axis": "t",
+      "is_reverse": true,
+      "text": "コメントが読まれなくても、内容が良ければ十分満足だ"
+    },
+    {
+      "id": "vw_t_5",
+      "axis": "t",
+      "is_reverse": true,
+      "text": "配信者には見せたいものに集中していてほしい"
+    },
+    {
+      "id": "vw_a_1",
+      "axis": "a",
+      "is_reverse": false,
+      "text": "新しい企画や変わった挑戦をする配信者に惹かれる"
+    },
+    {
+      "id": "vw_a_2",
+      "axis": "a",
+      "is_reverse": false,
+      "text": "ハプニングや体当たり企画も含めて楽しみたい"
+    },
+    {
+      "id": "vw_a_3",
+      "axis": "a",
+      "is_reverse": false,
+      "text": "「今日は何をやるんだろう」というサプライズ感が好きだ"
+    },
+    {
+      "id": "vw_a_4",
+      "axis": "a",
+      "is_reverse": true,
+      "text": "同じシリーズを毎回安定して追える配信が好きだ"
+    },
+    {
+      "id": "vw_a_5",
+      "axis": "a",
+      "is_reverse": true,
+      "text": "いつもの時間にいつもの配信があると安心する"
+    },
+    {
+      "id": "vw_n_1",
+      "axis": "n",
+      "is_reverse": false,
+      "text": "配信者の素の人柄や日常トークに親しみを感じる"
+    },
+    {
+      "id": "vw_n_2",
+      "axis": "n",
+      "is_reverse": false,
+      "text": "等身大の本音を話す配信者を応援したくなる"
+    },
+    {
+      "id": "vw_n_3",
+      "axis": "n",
+      "is_reverse": false,
+      "text": "飾らない自然体の配信がいちばん好きだ"
+    },
+    {
+      "id": "vw_n_4",
+      "axis": "n",
+      "is_reverse": true,
+      "text": "作り込まれたキャラクターや世界観に浸りたい"
+    },
+    {
+      "id": "vw_n_5",
+      "axis": "n",
+      "is_reverse": true,
+      "text": "「中の人」を感じさせない徹底した演出が好きだ"
+    },
+    {
+      "id": "vw_v_1",
+      "axis": "v",
+      "is_reverse": false,
+      "text": "結局その人のトークが聞きたくて配信を見ている"
+    },
+    {
+      "id": "vw_v_2",
+      "axis": "v",
+      "is_reverse": false,
+      "text": "雑談配信だけでも何時間でも楽しめる"
+    },
+    {
+      "id": "vw_v_3",
+      "axis": "v",
+      "is_reverse": false,
+      "text": "上手い下手よりも、その人らしい実況やリアクションを楽しんでいる"
+    },
+    {
+      "id": "vw_v_4",
+      "axis": "v",
+      "is_reverse": true,
+      "text": "うまいプレイや歌声など「中身」で配信を選ぶことが多い"
+    },
+    {
+      "id": "vw_v_5",
+      "axis": "v",
+      "is_reverse": true,
+      "text": "一つのジャンルを極めている配信者に惹かれる"
+    },
+    {
+      "id": "vw_d_1",
+      "axis": "d",
+      "is_reverse": false,
+      "text": "推しと決めたら配信はなるべく毎回見たい"
+    },
+    {
+      "id": "vw_d_2",
+      "axis": "d",
+      "is_reverse": false,
+      "text": "コメントやメンバーシップで深く応援したいタイプだ"
+    },
+    {
+      "id": "vw_d_3",
+      "axis": "d",
+      "is_reverse": false,
+      "text": "配信者に名前を覚えてもらえたら嬉しい"
+    },
+    {
+      "id": "vw_d_4",
+      "axis": "d",
+      "is_reverse": true,
+      "text": "時間が合うときにふらっと見るくらいがちょうどいい"
+    },
+    {
+      "id": "vw_d_5",
+      "axis": "d",
+      "is_reverse": true,
+      "text": "特定の推しに絞らず、いろんな配信者を気軽に見たい"
+    }
+  ],
+  "QUESTIONS_VT_100": [
+    {
+      "id": "vt100_f_1_1",
+      "axis": "f",
+      "facet": "f_1",
+      "is_reverse": false,
+      "text": "配信中、気づいたら声が大きくなっていることが多い"
+    },
+    {
+      "id": "vt100_f_1_2",
+      "axis": "f",
+      "facet": "f_1",
+      "is_reverse": false,
+      "text": "リアクションは大きめにとってリスナーを盛り上げたい"
+    },
+    {
+      "id": "vt100_f_1_3",
+      "axis": "f",
+      "facet": "f_1",
+      "is_reverse": false,
+      "text": "面白い場面では全力で笑い、全力で叫ぶ"
+    },
+    {
+      "id": "vt100_f_1_4",
+      "axis": "f",
+      "facet": "f_1",
+      "is_reverse": true,
+      "text": "落ち着いたトーンで淡々と話す配信が自分らしい"
+    },
+    {
+      "id": "vt100_f_2_1",
+      "axis": "f",
+      "facet": "f_2",
+      "is_reverse": false,
+      "text": "自分の配信はお祭りのように賑やかであってほしい"
+    },
+    {
+      "id": "vt100_f_2_2",
+      "axis": "f",
+      "facet": "f_2",
+      "is_reverse": false,
+      "text": "配信の開幕からテンションを上げて入ることが多い"
+    },
+    {
+      "id": "vt100_f_2_3",
+      "axis": "f",
+      "facet": "f_2",
+      "is_reverse": true,
+      "text": "しっとりした空気感の配信のほうが心地よい"
+    },
+    {
+      "id": "vt100_f_2_4",
+      "axis": "f",
+      "facet": "f_2",
+      "is_reverse": true,
+      "text": "配信全体をゆったりしたテンポで進めたい"
+    },
+    {
+      "id": "vt100_f_3_1",
+      "axis": "f",
+      "facet": "f_3",
+      "is_reverse": false,
+      "text": "コメントやハプニングに全力のノリで乗っかるのが得意だ"
+    },
+    {
+      "id": "vt100_f_3_2",
+      "axis": "f",
+      "facet": "f_3",
+      "is_reverse": false,
+      "text": "盛り上がる流れが来たら、予定を捨ててでも乗る"
+    },
+    {
+      "id": "vt100_f_3_3",
+      "axis": "f",
+      "facet": "f_3",
+      "is_reverse": false,
+      "text": "急なテンションの上げ下げで笑いを取ることがある"
+    },
+    {
+      "id": "vt100_f_3_4",
+      "axis": "f",
+      "facet": "f_3",
+      "is_reverse": true,
+      "text": "突発的な盛り上がりより、一定のペースを保ちたい"
+    },
+    {
+      "id": "vt100_f_4_1",
+      "axis": "f",
+      "facet": "f_4",
+      "is_reverse": false,
+      "text": "配信中に「静かな時間」があると間が持たない気がする"
+    },
+    {
+      "id": "vt100_f_4_2",
+      "axis": "f",
+      "facet": "f_4",
+      "is_reverse": false,
+      "text": "BGMや効果音は賑やかめを選びがちだ"
+    },
+    {
+      "id": "vt100_f_4_3",
+      "axis": "f",
+      "facet": "f_4",
+      "is_reverse": true,
+      "text": "無言の作業時間や沈黙も配信の心地よさだと思う"
+    },
+    {
+      "id": "vt100_f_4_4",
+      "axis": "f",
+      "facet": "f_4",
+      "is_reverse": true,
+      "text": "声を張らなくても楽しさが伝わる配信を目指している"
+    },
+    {
+      "id": "vt100_t_1_1",
+      "axis": "t",
+      "facet": "t_1",
+      "is_reverse": false,
+      "text": "コメントはできる限り拾って返したい"
+    },
+    {
+      "id": "vt100_t_1_2",
+      "axis": "t",
+      "facet": "t_1",
+      "is_reverse": false,
+      "text": "コメントが流れて拾えないと申し訳なく感じる"
+    },
+    {
+      "id": "vt100_t_1_3",
+      "axis": "t",
+      "facet": "t_1",
+      "is_reverse": true,
+      "text": "コメントを読むよりプレイや歌に集中したいときが多い"
+    },
+    {
+      "id": "vt100_t_1_4",
+      "axis": "t",
+      "facet": "t_1",
+      "is_reverse": true,
+      "text": "コメントは要所だけ読めば十分だと思う"
+    },
+    {
+      "id": "vt100_t_2_1",
+      "axis": "t",
+      "facet": "t_2",
+      "is_reverse": false,
+      "text": "リスナー参加型の企画(凸待ち・アンケート・一緒にプレイ)が好きだ"
+    },
+    {
+      "id": "vt100_t_2_2",
+      "axis": "t",
+      "facet": "t_2",
+      "is_reverse": false,
+      "text": "リスナーに質問を投げかけて反応をもらうのが好きだ"
+    },
+    {
+      "id": "vt100_t_2_3",
+      "axis": "t",
+      "facet": "t_2",
+      "is_reverse": false,
+      "text": "配信の内容をリスナーと一緒に決めることがある"
+    },
+    {
+      "id": "vt100_t_2_4",
+      "axis": "t",
+      "facet": "t_2",
+      "is_reverse": true,
+      "text": "企画はリスナー参加型より「自分が見せる」形式が多い"
+    },
+    {
+      "id": "vt100_check_1",
+      "axis": "check",
+      "is_reverse": false,
+      "text": "この質問には「ややあてはまる」を選んでください",
+      "check_expect": 4
+    },
+    {
+      "id": "vt100_t_3_1",
+      "axis": "t",
+      "facet": "t_3",
+      "is_reverse": false,
+      "text": "配信の流れがコメント次第で変わるのは大歓迎だ"
+    },
+    {
+      "id": "vt100_t_3_2",
+      "axis": "t",
+      "facet": "t_3",
+      "is_reverse": false,
+      "text": "コメントから話が脱線して、それが一番面白くなることがある"
+    },
+    {
+      "id": "vt100_t_3_3",
+      "axis": "t",
+      "facet": "t_3",
+      "is_reverse": true,
+      "text": "決めた進行は最後までやり切りたい"
+    },
+    {
+      "id": "vt100_t_3_4",
+      "axis": "t",
+      "facet": "t_3",
+      "is_reverse": true,
+      "text": "「今日見せたいもの」を最後まで届けることを優先する"
+    },
+    {
+      "id": "vt100_t_4_1",
+      "axis": "t",
+      "facet": "t_4",
+      "is_reverse": false,
+      "text": "リスナーとの掛け合いがない配信は物足りない"
+    },
+    {
+      "id": "vt100_t_4_2",
+      "axis": "t",
+      "facet": "t_4",
+      "is_reverse": false,
+      "text": "自分にとって配信の主役は「リスナーとの空気」だ"
+    },
+    {
+      "id": "vt100_t_4_3",
+      "axis": "t",
+      "facet": "t_4",
+      "is_reverse": true,
+      "text": "配信は「作品を見せる場」だと思っている"
+    },
+    {
+      "id": "vt100_t_4_4",
+      "axis": "t",
+      "facet": "t_4",
+      "is_reverse": true,
+      "text": "没入して無言になってしまうことがよくある"
+    },
+    {
+      "id": "vt100_a_1_1",
+      "axis": "a",
+      "facet": "a_1",
+      "is_reverse": false,
+      "text": "新しい企画やゲームを思いつくとすぐ試したくなる"
+    },
+    {
+      "id": "vt100_a_1_2",
+      "axis": "a",
+      "facet": "a_1",
+      "is_reverse": false,
+      "text": "流行りのゲームやネタはすぐ取り入れたい"
+    },
+    {
+      "id": "vt100_a_1_3",
+      "axis": "a",
+      "facet": "a_1",
+      "is_reverse": true,
+      "text": "同じゲームやシリーズを深く長く続けるのが好きだ"
+    },
+    {
+      "id": "vt100_a_1_4",
+      "axis": "a",
+      "facet": "a_1",
+      "is_reverse": true,
+      "text": "新しいことを始めるより、今の配信を磨きたい"
+    },
+    {
+      "id": "vt100_a_2_1",
+      "axis": "a",
+      "facet": "a_2",
+      "is_reverse": false,
+      "text": "失敗してもネタになるならやってみる派だ"
+    },
+    {
+      "id": "vt100_a_2_2",
+      "axis": "a",
+      "facet": "a_2",
+      "is_reverse": false,
+      "text": "うまくいくか分からない企画ほどワクワクする"
+    },
+    {
+      "id": "vt100_a_2_3",
+      "axis": "a",
+      "facet": "a_2",
+      "is_reverse": false,
+      "text": "グダグダになっても、それも配信の味だと思える"
+    },
+    {
+      "id": "vt100_a_2_4",
+      "axis": "a",
+      "facet": "a_2",
+      "is_reverse": true,
+      "text": "準備が整っていない企画はやりたくない"
+    },
+    {
+      "id": "vt100_a_3_1",
+      "axis": "a",
+      "facet": "a_3",
+      "is_reverse": false,
+      "text": "配信の形式やレイアウトをよく変えたくなる"
+    },
+    {
+      "id": "vt100_a_3_2",
+      "axis": "a",
+      "facet": "a_3",
+      "is_reverse": false,
+      "text": "「いつもと違うこと」を定期的にやらないと飽きてしまう"
+    },
+    {
+      "id": "vt100_a_3_3",
+      "axis": "a",
+      "facet": "a_3",
+      "is_reverse": true,
+      "text": "配信のフォーマットは一度決めたら長く使い続ける"
+    },
+    {
+      "id": "vt100_a_3_4",
+      "axis": "a",
+      "facet": "a_3",
+      "is_reverse": true,
+      "text": "毎回同じ時間・同じ流れで配信することに安心感がある"
+    },
+    {
+      "id": "vt100_a_4_1",
+      "axis": "a",
+      "facet": "a_4",
+      "is_reverse": false,
+      "text": "配信はざっくりした構想だけで始めることが多い"
+    },
+    {
+      "id": "vt100_a_4_2",
+      "axis": "a",
+      "facet": "a_4",
+      "is_reverse": false,
+      "text": "その場の思いつきで配信内容を変えることがある"
+    },
+    {
+      "id": "vt100_a_4_3",
+      "axis": "a",
+      "facet": "a_4",
+      "is_reverse": true,
+      "text": "配信前に流れをしっかり決めておきたい"
+    },
+    {
+      "id": "vt100_a_4_4",
+      "axis": "a",
+      "facet": "a_4",
+      "is_reverse": true,
+      "text": "台本や進行メモがあるほうが安心して配信できる"
+    },
+    {
+      "id": "vt100_check_2",
+      "axis": "check",
+      "is_reverse": false,
+      "text": "私はこれまで配信について考えたことが一度もない",
+      "check_expect": 1
+    },
+    {
+      "id": "vt100_n_1_1",
+      "axis": "n",
+      "facet": "n_1",
+      "is_reverse": false,
+      "text": "日常の出来事や本音をそのまま話すことが多い"
+    },
+    {
+      "id": "vt100_n_1_2",
+      "axis": "n",
+      "facet": "n_1",
+      "is_reverse": false,
+      "text": "嬉しかったことも落ち込んだことも、わりと正直に共有する"
+    },
+    {
+      "id": "vt100_n_1_3",
+      "axis": "n",
+      "facet": "n_1",
+      "is_reverse": true,
+      "text": "プライベートな話題は配信ではほとんど出さない"
+    },
+    {
+      "id": "vt100_n_1_4",
+      "axis": "n",
+      "facet": "n_1",
+      "is_reverse": true,
+      "text": "自分の感情よりキャラクターとしての振る舞いを優先する"
+    },
+    {
+      "id": "vt100_n_2_1",
+      "axis": "n",
+      "facet": "n_2",
+      "is_reverse": false,
+      "text": "配信では普段の自分に近い、素の姿を見せている"
+    },
+    {
+      "id": "vt100_n_2_2",
+      "axis": "n",
+      "facet": "n_2",
+      "is_reverse": false,
+      "text": "配信中の自分と普段の自分はほとんど同じだ"
+    },
+    {
+      "id": "vt100_n_2_3",
+      "axis": "n",
+      "facet": "n_2",
+      "is_reverse": false,
+      "text": "友達と話すときと近いテンションで配信している"
+    },
+    {
+      "id": "vt100_n_2_4",
+      "axis": "n",
+      "facet": "n_2",
+      "is_reverse": true,
+      "text": "配信を始めると「スイッチが入って」別人格になる"
+    },
+    {
+      "id": "vt100_n_3_1",
+      "axis": "n",
+      "facet": "n_3",
+      "is_reverse": true,
+      "text": "キャラ設定や世界観は自分の配信の核として大切にしている"
+    },
+    {
+      "id": "vt100_n_3_2",
+      "axis": "n",
+      "facet": "n_3",
+      "is_reverse": true,
+      "text": "自分のキャラには出身や物語などの設定があり、大切にしている"
+    },
+    {
+      "id": "vt100_n_3_3",
+      "axis": "n",
+      "facet": "n_3",
+      "is_reverse": true,
+      "text": "配信の演出や言葉選びは世界観に合わせている"
+    },
+    {
+      "id": "vt100_n_3_4",
+      "axis": "n",
+      "facet": "n_3",
+      "is_reverse": false,
+      "text": "設定よりも「自分そのもの」を見てもらいたい"
+    },
+    {
+      "id": "vt100_n_4_1",
+      "axis": "n",
+      "facet": "n_4",
+      "is_reverse": true,
+      "text": "「中の人」を感じさせない見せ方を意識している"
+    },
+    {
+      "id": "vt100_n_4_2",
+      "axis": "n",
+      "facet": "n_4",
+      "is_reverse": true,
+      "text": "キャラ設定が崩れそうな話題は避けるようにしている"
+    },
+    {
+      "id": "vt100_n_4_3",
+      "axis": "n",
+      "facet": "n_4",
+      "is_reverse": true,
+      "text": "ロールプレイを最後まで貫くことに美学を感じる"
+    },
+    {
+      "id": "vt100_n_4_4",
+      "axis": "n",
+      "facet": "n_4",
+      "is_reverse": false,
+      "text": "設定が崩れる瞬間(いわゆる「素が出る」)も魅力だと思う"
+    },
+    {
+      "id": "vt100_v_1_1",
+      "axis": "v",
+      "facet": "v_1",
+      "is_reverse": false,
+      "text": "配信の主役はゲームや歌よりも「自分のトーク」だと思う"
+    },
+    {
+      "id": "vt100_v_1_2",
+      "axis": "v",
+      "facet": "v_1",
+      "is_reverse": false,
+      "text": "雑談だけで何時間でも配信できる"
+    },
+    {
+      "id": "vt100_v_1_3",
+      "axis": "v",
+      "facet": "v_1",
+      "is_reverse": false,
+      "text": "フリートークの引き出しには自信がある"
+    },
+    {
+      "id": "vt100_v_1_4",
+      "axis": "v",
+      "facet": "v_1",
+      "is_reverse": true,
+      "text": "トークよりプレイ・歌・制作などの「中身」で勝負したい"
+    },
+    {
+      "id": "vt100_v_2_1",
+      "axis": "v",
+      "facet": "v_2",
+      "is_reverse": false,
+      "text": "ゲームをしていても、実況やリアクションが本体だと思う"
+    },
+    {
+      "id": "vt100_v_2_2",
+      "axis": "v",
+      "facet": "v_2",
+      "is_reverse": false,
+      "text": "何をやるかより「自分がどう話すか」が配信の価値だと思う"
+    },
+    {
+      "id": "vt100_v_2_3",
+      "axis": "v",
+      "facet": "v_2",
+      "is_reverse": true,
+      "text": "自分の配信は、トークがなくても成立すると思う"
+    },
+    {
+      "id": "vt100_v_2_4",
+      "axis": "v",
+      "facet": "v_2",
+      "is_reverse": true,
+      "text": "話すことよりも、見せている内容の質を上げたい"
+    },
+    {
+      "id": "vt100_check_3",
+      "axis": "check",
+      "is_reverse": false,
+      "text": "この質問には「あてはまらない」を選んでください",
+      "check_expect": 1
+    },
+    {
+      "id": "vt100_v_3_1",
+      "axis": "v",
+      "facet": "v_3",
+      "is_reverse": true,
+      "text": "うまいプレイや歌など、技術で感動させたい"
+    },
+    {
+      "id": "vt100_v_3_2",
+      "axis": "v",
+      "facet": "v_3",
+      "is_reverse": true,
+      "text": "練習や研究の成果を配信で披露するのが好きだ"
+    },
+    {
+      "id": "vt100_v_3_3",
+      "axis": "v",
+      "facet": "v_3",
+      "is_reverse": true,
+      "text": "ランクやスコアなど、客観的な実力を追求したい"
+    },
+    {
+      "id": "vt100_v_3_4",
+      "axis": "v",
+      "facet": "v_3",
+      "is_reverse": false,
+      "text": "結果よりも、その場のワイワイ感を大事にしたい"
+    },
+    {
+      "id": "vt100_v_4_1",
+      "axis": "v",
+      "facet": "v_4",
+      "is_reverse": true,
+      "text": "一つのジャンルやスキルを極めた配信者でありたい"
+    },
+    {
+      "id": "vt100_v_4_2",
+      "axis": "v",
+      "facet": "v_4",
+      "is_reverse": true,
+      "text": "「この分野ならこの人」と呼ばれる存在になりたい"
+    },
+    {
+      "id": "vt100_v_4_3",
+      "axis": "v",
+      "facet": "v_4",
+      "is_reverse": false,
+      "text": "いろんなジャンルをつまみ食いする配信が性に合う"
+    },
+    {
+      "id": "vt100_v_4_4",
+      "axis": "v",
+      "facet": "v_4",
+      "is_reverse": false,
+      "text": "専門性よりも「なんでもあり感」が自分の持ち味だ"
+    },
+    {
+      "id": "vt100_d_1_1",
+      "axis": "d",
+      "facet": "d_1",
+      "is_reverse": false,
+      "text": "毎回来てくれる常連リスナーとの関係を深めていきたい"
+    },
+    {
+      "id": "vt100_d_1_2",
+      "axis": "d",
+      "facet": "d_1",
+      "is_reverse": false,
+      "text": "リスナーの名前を覚えて呼びかけることが多い"
+    },
+    {
+      "id": "vt100_d_1_3",
+      "axis": "d",
+      "facet": "d_1",
+      "is_reverse": false,
+      "text": "常連さんの近況を覚えていて、話題にすることがある"
+    },
+    {
+      "id": "vt100_d_1_4",
+      "axis": "d",
+      "facet": "d_1",
+      "is_reverse": true,
+      "text": "特定のリスナーと距離が近くなりすぎないよう意識している"
+    },
+    {
+      "id": "vt100_d_2_1",
+      "axis": "d",
+      "facet": "d_2",
+      "is_reverse": false,
+      "text": "メンバーシップやファンコミュニティを大切に育てたい"
+    },
+    {
+      "id": "vt100_d_2_2",
+      "axis": "d",
+      "facet": "d_2",
+      "is_reverse": false,
+      "text": "リスナー同士が仲良くなれる場を作りたい"
+    },
+    {
+      "id": "vt100_d_2_3",
+      "axis": "d",
+      "facet": "d_2",
+      "is_reverse": false,
+      "text": "配信外(SNSなど)でもリスナーとの交流を大事にしている"
+    },
+    {
+      "id": "vt100_d_2_4",
+      "axis": "d",
+      "facet": "d_2",
+      "is_reverse": true,
+      "text": "コミュニティ運営よりも、配信そのものに集中したい"
+    },
+    {
+      "id": "vt100_d_3_1",
+      "axis": "d",
+      "facet": "d_3",
+      "is_reverse": false,
+      "text": "リスナー一人ひとりと「個別の関係」がある感覚が好きだ"
+    },
+    {
+      "id": "vt100_d_3_2",
+      "axis": "d",
+      "facet": "d_3",
+      "is_reverse": false,
+      "text": "スパチャやコメントには、なるべく個別にしっかり反応したい"
+    },
+    {
+      "id": "vt100_d_3_3",
+      "axis": "d",
+      "facet": "d_3",
+      "is_reverse": true,
+      "text": "リスナーとは「演者とお客さん」くらいの距離感が心地よい"
+    },
+    {
+      "id": "vt100_d_3_4",
+      "axis": "d",
+      "facet": "d_3",
+      "is_reverse": true,
+      "text": "全員に平等に、広く浅く接したい"
+    },
+    {
+      "id": "vt100_d_4_1",
+      "axis": "d",
+      "facet": "d_4",
+      "is_reverse": true,
+      "text": "初見さんがふらっと来ても気軽に楽しめる配信にしたい"
+    },
+    {
+      "id": "vt100_d_4_2",
+      "axis": "d",
+      "facet": "d_4",
+      "is_reverse": true,
+      "text": "「毎回見なくても楽しめる配信」でありたい"
+    },
+    {
+      "id": "vt100_d_4_3",
+      "axis": "d",
+      "facet": "d_4",
+      "is_reverse": true,
+      "text": "リスナーにはそれぞれのペースで自由に楽しんでほしい"
+    },
+    {
+      "id": "vt100_d_4_4",
+      "axis": "d",
+      "facet": "d_4",
+      "is_reverse": false,
+      "text": "「ここに通っている」と感じてもらえる配信にしたい"
+    },
+    {
+      "id": "vt100_check_4",
+      "axis": "check",
+      "is_reverse": false,
+      "text": "ここまでの質問に正直に答えた",
+      "check_expect": 5
+    }
+  ]
+}

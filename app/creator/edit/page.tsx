@@ -12,6 +12,7 @@ export default function CreatorEditPage() {
         <nav className="nav" aria-label="メイン">
           <a href="/viewer">視聴者用</a>
           <a href="/creator">配信者用</a>
+          <a href="https://www.youtube.com/@VtuberMatch" target="_blank" rel="noreferrer">公式YouTube</a>
           <a href="/help">ヘルプ</a>
         </nav>
         <HeaderAuthStatus />

@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-label="Vtuberマッチ サービス開始記念 視聴者も配信者も登録無料">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff3f9"/>
+      <stop offset="0.52" stop-color="#eef6ff"/>
+      <stop offset="1" stop-color="#fff8d9"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f23878"/>
+      <stop offset="1" stop-color="#2f7de1"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <circle cx="1040" cy="115" r="150" fill="#2f7de1" opacity="0.14"/>
+  <circle cx="120" cy="540" r="170" fill="#f23878" opacity="0.16"/>
+  <rect x="84" y="78" width="1032" height="474" rx="44" fill="#ffffff" opacity="0.84" stroke="#f23878" stroke-opacity="0.22" stroke-width="4"/>
+  <rect x="126" y="120" width="258" height="58" rx="29" fill="url(#accent)"/>
+  <text x="255" y="158" fill="#ffffff" text-anchor="middle" font-size="28" font-weight="900" font-family="Arial, 'Yu Gothic', sans-serif">サービス開始記念</text>
+  <text x="126" y="270" fill="#263247" font-size="72" font-weight="900" font-family="Arial, 'Yu Gothic', sans-serif">Vtuberマッチ</text>
+  <text x="126" y="356" fill="#263247" font-size="50" font-weight="900" font-family="Arial, 'Yu Gothic', sans-serif">視聴者も配信者も登録無料</text>
+  <text x="128" y="424" fill="#64728a" font-size="30" font-weight="700" font-family="Arial, 'Yu Gothic', sans-serif">スワイプで新しい推しと、新しい視聴者に出会う</text>
+  <g transform="translate(806 130) rotate(3)">
+    <rect width="216" height="352" rx="34" fill="#263247"/>
+    <rect x="16" y="18" width="184" height="316" rx="26" fill="url(#accent)"/>
+    <circle cx="108" cy="147" r="64" fill="#ffffff" opacity="0.92"/>
+    <text x="108" y="156" fill="#f23878" text-anchor="middle" font-size="42" font-weight="900" font-family="Arial, sans-serif">推し</text>
+    <rect x="44" y="236" width="128" height="20" rx="10" fill="#ffffff" opacity="0.88"/>
+    <rect x="60" y="270" width="88" height="20" rx="10" fill="#ffd85d" opacity="0.94"/>
+  </g>
+</svg>

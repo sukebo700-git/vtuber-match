@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 import { absoluteUrl, publicRoutes } from "@/lib/seo";
-import { getStreamersForSwipe } from "@/lib/streamers";
+import { getPublicStreamersForSeo, publicStreamerPath } from "@/lib/streamers";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
@@ -12,10 +12,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: priorityFor(route),
   }));
 
-  const streamers = await getStreamersForSwipe().catch(() => []);
+  const streamers = await getPublicStreamersForSeo().catch(() => []);
   const detailRoutes = streamers.map((streamer) => ({
-    url: absoluteUrl(`/detail/${streamer.id}`),
-    lastModified: now,
+    url: absoluteUrl(publicStreamerPath(streamer)),
+    lastModified: streamer.updated_at ? new Date(streamer.updated_at) : now,
     changeFrequency: "weekly" as const,
     priority: streamer.plan_type === "boost" ? 0.82 : streamer.plan_type === "paid" ? 0.76 : 0.68,
   }));

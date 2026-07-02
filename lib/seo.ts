@@ -1,7 +1,7 @@
-export const siteName = "Vtuberマッチ";
+export const siteName = "VtuberMatch";
 
 export const siteDescription =
-  "Vtuber配信者と新しい推しを探したい視聴者をつなぐ、登録無料のスワイプ型マッチングサービス。";
+  "Vtuber配信者と新しい推しを探したい視聴者をつなぐ、登録無料のスワイプ型マッチングサービスです。";
 
 export const siteKeywords = [
   "Vtuber",
@@ -12,7 +12,7 @@ export const siteKeywords = [
   "配信者",
   "YouTube配信",
   "新人Vtuber",
-  "Vtuber 探す",
+  "Vtuber 探し",
   "Vtuber 宣伝",
   "Vtuber 掲載無料",
 ];
@@ -25,14 +25,15 @@ export const publicRoutes = [
   "/creator/apply",
   "/viewer",
   "/viewer/login",
-  "/viewer/upgrade",
   "/help",
   "/terms",
   "/commercial-disclosure",
 ];
 
 export function getSiteUrl() {
-  return trimTrailingSlash(process.env.NEXT_PUBLIC_APP_URL || "https://vtuber-match.vercel.app");
+  const configuredUrl = trimTrailingSlash(process.env.NEXT_PUBLIC_APP_URL || "");
+  if (!configuredUrl || configuredUrl.includes("vercel.app")) return "https://www.vtubermatch.com";
+  return configuredUrl;
 }
 
 export function absoluteUrl(path = "") {

@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/adminAuth";
-import { FieldValue, getAdminDb } from "@/lib/firebaseAdmin";
-import { addLocalApplication, autoApproveLocalApplication, readLocalApplications } from "@/lib/localStore";
+import { FieldValue, getAdminDb, stripUndefined } from "@/lib/firebaseAdmin";
+import { addLocalApplication, addLocalStreamer, findLocalStreamer, readLocalApplications, updateLocalApplication } from "@/lib/localStore";
 import { notifyAdminNewApplication } from "@/lib/notifications";
 import { hashPassword, makeCreatorLoginId } from "@/lib/password";
 import { createUserSession, creatorSessionCookie, userSessionCookieOptions } from "@/lib/userSession";
 import type { PlanType } from "@/lib/types";
+
+const maxImagePayloadSize = 820_000;
 
 export async function GET(request: Request) {
   const unauthorized = requireAdmin(request);
@@ -14,74 +16,111 @@ export async function GET(request: Request) {
   const db = getAdminDb();
   if (!db) return NextResponse.json({ applications: await readLocalApplications(), source: "local" });
 
-  const snapshot = await db.collection("applications").orderBy("created_at", "desc").limit(80).get();
+  // Avoid fetching thumbnails/description on the application list. Legacy docs may miss updated_at, so sort after a lightweight read.
+  const snapshot = await db.collection("applications")
+    .select(
+      "name",
+      "email",
+      "youtube_url",
+      "youtube_channel_id",
+      "x_account",
+      "categories",
+      "tags",
+      "one_liner",
+      "stream_time",
+      "desired_plan",
+      "payment_status",
+      "status",
+      "admin_note",
+      "created_at",
+      "updated_at",
+      "reviewed_at",
+      "paid_at",
+      "subscription_status",
+      "stripe_subscription_id",
+      "withdrawal_status",
+      "withdrawal_requested_at",
+      "streamer_id",
+      "creator_login_id",
+      "creator_password_hash",
+    )
+    .limit(160)
+    .get();
   return NextResponse.json({
-    applications: snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })),
-    source: "firestore"
+    applications: snapshot.docs
+      .map((doc): Record<string, unknown> & { id: string } => ({ id: doc.id, ...doc.data(), thumbnails: [], description: "" }))
+      .sort((a, b) => sortTime(b.created_at ?? b.updated_at) - sortTime(a.created_at ?? a.updated_at))
+      .slice(0, 80),
+    source: "firestore",
   });
 }
 
 export async function POST(request: Request) {
-  const body = await request.json();
+  let body: Record<string, unknown>;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "登録内容を読み取れませんでした。画像容量が大きすぎる可能性があります。" }, { status: 400 });
+  }
+
   const error = validate(body);
   if (error) return NextResponse.json({ error }, { status: 400 });
 
+  const desiredPlan = normalizePlan(String(body.desired_plan || "free"));
   const payload = {
     name: String(body.name).trim(),
     email: String(body.email).trim().toLowerCase(),
     youtube_url: String(body.youtube_url).trim(),
     youtube_channel_id: String(body.youtube_channel_id || "").trim(),
     x_account: normalizeXAccount(body.x_account),
-    thumbnails: normalizeThumbnails(sanitizeArray(body.thumbnails)),
-    categories: sanitizeArray(body.categories),
-    tags: sanitizeArray(body.tags).slice(0, 5),
-    description: String(body.description || "").trim(),
-    one_liner: String(body.one_liner || body.description || "").trim().slice(0, 80),
-    stream_time: String(body.stream_time || "").trim(),
-    desired_plan: (body.desired_plan || "free") as PlanType,
+    thumbnails: normalizeThumbnails(sanitizeArray(body.thumbnails), desiredPlan),
+    categories: sanitizeArray(body.categories).slice(0, 3),
+    tags: sanitizeArray(body.tags).slice(0, 3),
+    description: String(body.description || "").trim().slice(0, desiredPlan === "free" ? 100 : 500),
+    one_liner: String(body.one_liner || "").trim().slice(0, 20),
+    stream_time: String(body.stream_time || "").trim().slice(0, 50),
+    desired_plan: desiredPlan,
     creator_login_id: makeCreatorLoginId(),
     creator_password_hash: hashPassword(String(body.creator_password || "")),
-    admin_note: ""
+    admin_note: "",
   };
+
+  const imagePayloadSize = payload.thumbnails.reduce((sum, image) => sum + image.length, 0);
+  if (imagePayloadSize > maxImagePayloadSize) {
+    return NextResponse.json({
+      error: "画像容量が大きすぎます。画像を少し小さくするか、登録枚数を減らしてもう一度お試しください。",
+      reason: "image_payload_too_large",
+    }, { status: 413 });
+  }
 
   const db = getAdminDb();
   if (!db) {
+    const hasWithdrawalHistory = await hasLocalWithdrawalHistory(payload.email);
+    const activeExisting = hasWithdrawalHistory ? null : await findActiveLocalExistingApplication(payload.email);
+    if (activeExisting) {
+      const existingStreamer = activeExisting.streamer_id ? await findLocalStreamer(activeExisting.streamer_id) : null;
+      const response = NextResponse.json({
+        application: activeExisting,
+        streamer: existingStreamer,
+        streamer_id: existingStreamer?.id || activeExisting.streamer_id || "",
+        creator_login_id: activeExisting.creator_login_id,
+        auto_approved: activeExisting.status === "approved",
+        already_registered: true,
+        source: "local",
+      }, { status: existingStreamer ? 200 : 409 });
+      response.cookies.set(creatorSessionCookie, createUserSession({
+        application_id: activeExisting.id,
+        streamer_id: existingStreamer?.id || activeExisting.streamer_id || "",
+        creator_login_id: activeExisting.creator_login_id || "",
+        email: payload.email,
+      }), userSessionCookieOptions());
+      return response;
+    }
+
     const application = await addLocalApplication(payload);
-    const streamer = payload.desired_plan === "free" ? await autoApproveLocalApplication(application.id) : null;
-    const response = NextResponse.json({
-      application: { ...application, status: streamer ? "approved" : application.status },
-      streamer,
-      streamer_id: streamer?.id || "",
-      creator_login_id: application.creator_login_id,
-      auto_approved: Boolean(streamer),
-      source: "local"
-    }, { status: 201 });
-    response.cookies.set(creatorSessionCookie, createUserSession({
-      application_id: application.id,
-      streamer_id: streamer?.id || "",
-      creator_login_id: application.creator_login_id || "",
-      email: payload.email,
-    }), userSessionCookieOptions());
-    return response;
-  }
-
-  const applicationData = {
-    ...payload,
-    payment_status: payload.desired_plan === "free" ? "not_required" : "pending",
-    status: payload.desired_plan === "free" ? "approved" : "pending",
-    created_at: FieldValue.serverTimestamp()
-  };
-  const doc = await db.collection("applications").add(applicationData);
-  await notifyAdminNewApplication({
-    applicationId: doc.id,
-    streamerName: payload.name,
-    desiredPlan: payload.desired_plan,
-  }).catch((error) => console.error("Failed to notify admin about new application", error));
-
-  let streamerId = "";
-  if (payload.desired_plan === "free") {
-    const streamerRef = await db.collection("streamers").add({
+    const streamer = await addLocalStreamer({
       name: payload.name,
+      creator_email: payload.email,
       youtube_url: payload.youtube_url,
       youtube_channel_id: payload.youtube_channel_id,
       x_account: payload.x_account,
@@ -93,25 +132,139 @@ export async function POST(request: Request) {
       stream_time: payload.stream_time,
       plan_type: payload.desired_plan,
       is_initial_scout: false,
-      is_visible: true,
-      impressions: 0,
-      likes: 0,
-      source_application_id: doc.id,
-      created_at: FieldValue.serverTimestamp()
+      is_visible: payload.desired_plan === "free",
+      withdrawal_status: "none",
+      is_deleted: false,
+      source_application_id: application.id
     });
-    streamerId = streamerRef.id;
-    await db.collection("applications").doc(doc.id).set({
-      reviewed_at: FieldValue.serverTimestamp(),
-      streamer_id: streamerId
-    }, { merge: true });
+    await updateLocalApplication(application.id, {
+      streamer_id: streamer.id,
+      status: payload.desired_plan === "free" ? "approved" : "pending",
+      reviewed_at: payload.desired_plan === "free" ? new Date().toISOString() : undefined
+    });
+    const response = NextResponse.json({
+      application: { ...application, status: payload.desired_plan === "free" ? "approved" : application.status, streamer_id: streamer.id },
+      streamer,
+      streamer_id: streamer.id,
+      creator_login_id: application.creator_login_id,
+      auto_approved: payload.desired_plan === "free",
+      source: "local",
+    }, { status: 201 });
+    response.cookies.set(creatorSessionCookie, createUserSession({
+      application_id: application.id,
+      streamer_id: streamer.id,
+      creator_login_id: application.creator_login_id || "",
+      email: payload.email,
+    }), userSessionCookieOptions());
+    return response;
   }
+
+  const existingSnapshot = await db.collection("applications").where("email", "==", payload.email).limit(10).get();
+  const streamerByEmailSnapshot = await db.collection("streamers").where("creator_email", "==", payload.email).limit(20).get();
+  const hasWithdrawalHistory = existingSnapshot.docs.some((doc) => isInactiveData(doc.data())) ||
+    streamerByEmailSnapshot.docs.some((doc) => isInactiveData(doc.data()));
+  const activeExistingApplications = existingSnapshot.docs
+    .map((existingDoc) => ({ id: existingDoc.id, data: existingDoc.data(), ref: existingDoc.ref }))
+    .filter((item) => isActiveData(item.data));
+  const usableExistingApplications = [];
+  if (!hasWithdrawalHistory) {
+    for (const item of activeExistingApplications) {
+      const streamerId = String(item.data.streamer_id || "");
+      if (!streamerId) {
+        usableExistingApplications.push(item);
+        continue;
+      }
+      const streamerDoc = await db.collection("streamers").doc(streamerId).get();
+      if (!streamerDoc.exists || isActiveData(streamerDoc.data())) usableExistingApplications.push(item);
+    }
+  }
+  const existingApproved = usableExistingApplications.find((item) => item.data.status === "approved" || item.data.streamer_id);
+  if (existingApproved) {
+    const existingStreamerId = String(existingApproved.data.streamer_id || "");
+    let streamerId = existingStreamerId;
+    if (!streamerId) {
+      const streamerSnapshot = await db.collection("streamers")
+        .where("source_application_id", "==", existingApproved.id)
+        .limit(10)
+        .get();
+      streamerId = streamerSnapshot.docs.find((doc) => isActiveData(doc.data()))?.id || "";
+    }
+    const response = NextResponse.json({
+      id: existingApproved.id,
+      streamer_id: streamerId,
+      creator_login_id: existingApproved.data.creator_login_id || "",
+      auto_approved: true,
+      already_registered: true,
+      source: "firestore",
+    }, { status: 200 });
+    response.cookies.set(creatorSessionCookie, createUserSession({
+      application_id: existingApproved.id,
+      streamer_id: streamerId,
+      creator_login_id: existingApproved.data.creator_login_id || "",
+      email: payload.email,
+    }), userSessionCookieOptions());
+    return response;
+  }
+
+  if (usableExistingApplications.length > 0) {
+    return NextResponse.json({
+      error: "このメールアドレスではすでに登録申請があります。ログイン、またはプロフィール修正をご利用ください。",
+      already_registered: true,
+      source: "firestore",
+    }, { status: 409 });
+  }
+
+  const applicationData = {
+    ...payload,
+    payment_status: payload.desired_plan === "free" ? "not_required" : "pending",
+    status: payload.desired_plan === "free" ? "approved" : "pending",
+    withdrawal_status: "none",
+    created_at: FieldValue.serverTimestamp(),
+  };
+  const doc = await db.collection("applications").add(stripUndefined(applicationData));
+  await notifyAdminNewApplication({
+    applicationId: doc.id,
+    streamerName: payload.name,
+    desiredPlan: payload.desired_plan,
+  }).catch((notifyError) => console.error("Failed to notify admin about new application", notifyError));
+
+  const streamerRef = await db.collection("streamers").add(stripUndefined({
+    name: payload.name,
+    creator_email: payload.email,
+    youtube_url: payload.youtube_url,
+    youtube_channel_id: payload.youtube_channel_id,
+    x_account: payload.x_account,
+    thumbnails: payload.thumbnails,
+    categories: payload.categories,
+    tags: payload.tags,
+    description: payload.description,
+    one_liner: payload.one_liner,
+    stream_time: payload.stream_time,
+    plan_type: payload.desired_plan,
+    is_initial_scout: false,
+    is_visible: payload.desired_plan === "free",
+    is_deleted: false,
+    withdrawal_status: "none",
+    impressions: 0,
+    likes: 0,
+    source_application_id: doc.id,
+    registered_at: FieldValue.serverTimestamp(),
+    created_at: FieldValue.serverTimestamp(),
+    updated_at: FieldValue.serverTimestamp(),
+  }));
+  const streamerId = streamerRef.id;
+  await db.collection("applications").doc(doc.id).set(stripUndefined({
+    ...(payload.desired_plan === "free" ? { reviewed_at: FieldValue.serverTimestamp() } : {}),
+    streamer_id: streamerId,
+    updated_at: FieldValue.serverTimestamp(),
+  }), { merge: true });
 
   const response = NextResponse.json({
     id: doc.id,
     streamer_id: streamerId,
     creator_login_id: payload.creator_login_id,
     auto_approved: payload.desired_plan === "free",
-    source: "firestore"
+    source: "firestore",
   }, { status: 201 });
   response.cookies.set(creatorSessionCookie, createUserSession({
     application_id: doc.id,
@@ -123,26 +276,69 @@ export async function POST(request: Request) {
 }
 
 function normalizeXAccount(value: unknown) {
-  return String(value || "").trim().replace(/^https?:\/\/(www\.)?(x|twitter)\.com\//i, "@").replace(/^([^@])/, "@$1").slice(0, 40);
+  const account = String(value || "").trim();
+  if (!account) return "";
+  return account.replace(/^https?:\/\/(www\.)?(x|twitter)\.com\//i, "@").replace(/^([^@])/, "@$1").slice(0, 40);
+}
+
+function normalizePlan(plan: string): PlanType {
+  if (plan === "paid" || plan === "boost") return plan;
+  return "free";
+}
+
+function sortTime(value: unknown) {
+  const iso = typeof value === "string" ? value : value && typeof value === "object" && "toDate" in value && typeof value.toDate === "function" ? value.toDate().toISOString() : "";
+  const time = Date.parse(iso);
+  return Number.isFinite(time) ? time : 0;
+}
+
+async function findActiveLocalExistingApplication(email: string) {
+  const applications = await readLocalApplications();
+  for (const application of applications) {
+    if (application.email.toLowerCase() !== email || !isActiveData(application)) continue;
+    if (!application.streamer_id) return application;
+    const streamer = await findLocalStreamer(application.streamer_id);
+    if (!streamer || isActiveData(streamer)) return application;
+  }
+  return null;
+}
+
+async function hasLocalWithdrawalHistory(email: string) {
+  const applications = await readLocalApplications();
+  if (applications.some((application) => application.email.toLowerCase() === email && isInactiveData(application))) return true;
+  for (const application of applications) {
+    if (application.email.toLowerCase() !== email || !application.streamer_id) continue;
+    const streamer = await findLocalStreamer(application.streamer_id);
+    if (isInactiveData(streamer)) return true;
+  }
+  return false;
+}
+
+function isActiveData(data?: { withdrawal_status?: string; is_deleted?: boolean } | null) {
+  return data?.withdrawal_status !== "requested" && data?.is_deleted !== true;
+}
+
+function isInactiveData(data?: { withdrawal_status?: string; is_deleted?: boolean } | null) {
+  return data?.withdrawal_status === "requested" || data?.is_deleted === true;
 }
 
 function validate(body: Record<string, unknown>) {
-  const plan = String(body.desired_plan || "free");
+  const plan = normalizePlan(String(body.desired_plan || "free"));
   const categoryCount = sanitizeArray(body.categories).length;
   const tagCount = sanitizeArray(body.tags).length;
-  if (!body.name) return "name is required";
-  if (!body.email) return "email is required";
-  if (!body.youtube_url) return "youtube_url is required";
+  const thumbnailCount = sanitizeArray(body.thumbnails).length;
+  if (!body.name) return "配信者名を入力してください。";
+  if (!body.email) return "メールアドレスを入力してください。";
+  if (!body.youtube_url) return "動画・配信サイトURLを入力してください。";
+  if (thumbnailCount < 1) return "画像を1枚以上登録してください。";
+  if (String(body.description || "").length > (plan === "free" ? 100 : 500)) return plan === "free" ? "無料プランの自己アピールは100文字までです。" : "自己アピールは500文字までです。";
   if (plan !== "free" && !body.description) return "ベーシックプラン以上では自己アピールを入力してください。";
   if (plan !== "free" && !body.one_liner) return "ベーシックプラン以上では今日のひとことを入力してください。";
-  if (String(body.creator_password || "").length < 8) return "creator password must be at least 8 characters";
-  if (sanitizeArray(body.thumbnails).length > 3) return "thumbnails max is 3";
-  if (plan === "free" && categoryCount > 0) return "無料プランではカテゴリは登録されません。";
-  if (plan === "free" && tagCount > 0) return "無料プランではタグは登録されません。";
-  if (plan !== "free" && categoryCount > 3) return "paid plan category max is 3";
-  if (plan !== "free" && tagCount > 5) return "paid plan tag max is 5";
-  if (plan !== "free" && categoryCount < 1) return "ベーシックプラン以上ではカテゴリを1件以上選択してください。";
-  if (plan !== "free" && tagCount < 1) return "ベーシックプラン以上ではタグを1件以上選択してください。";
+  if (String(body.creator_password || "").length < 8) return "パスワードは8文字以上で入力してください。";
+  if (plan === "free" && thumbnailCount > 1) return "無料プランの画像登録は1枚までです。";
+  if (thumbnailCount > 3) return "画像は最大3枚までです。";
+  if (categoryCount > 3) return "カテゴリは最大3件までです。";
+  if (tagCount > 3) return "タグは最大3件までです。";
   return null;
 }
 
@@ -150,7 +346,6 @@ function sanitizeArray(value: unknown) {
   return Array.isArray(value) ? value.map(String).filter(Boolean) : [];
 }
 
-function normalizeThumbnails(values: string[]) {
-  const thumbnails = values.slice(0, 3);
-  return thumbnails.length ? thumbnails : ["https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&w=900&q=82"];
+function normalizeThumbnails(values: string[], plan: PlanType) {
+  return values.slice(0, plan === "free" ? 1 : 3);
 }
