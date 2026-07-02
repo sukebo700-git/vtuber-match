@@ -25,7 +25,10 @@ export async function GET(request: Request) {
       "plan_type",
       "is_visible",
       "is_deleted",
-      "withdrawal_status"
+      "withdrawal_status",
+      "description",
+      "one_liner",
+      "yomi"
     )
     .limit(300)
     .get();
@@ -41,6 +44,9 @@ export async function GET(request: Request) {
         plan:          d.plan_type === "boost" ? "premium" : "standard",
         email:         String(d.creator_email || ""),
         avatar_url:    absoluteUrl(`/api/streamer-image/${encodeURIComponent(doc.id)}?i=0`),
+        description:   String(d.description || ""),
+        one_liner:     String(d.one_liner || ""),
+        yomi:          String(d.yomi || ""),
         _visible:      d.is_visible !== false,
         _deleted:      d.is_deleted === true,
         _withdrawal:   String(d.withdrawal_status || ""),
