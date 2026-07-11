@@ -7432,3 +7432,15 @@ body::after {
 .application-form .plan-table {
   gap: 16px;
 }
+
+/* 申込ページ: プラン比較を画像で表示 */
+.apply-plan-comparison {
+  padding: 0;
+  overflow: hidden;
+}
+
+.apply-plan-comparison img {
+  display: block;
+  width: 100%;
+  height: auto;
+}

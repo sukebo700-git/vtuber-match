@@ -32,19 +32,18 @@ export default function ApplyPage() {
             </section>
           }
         >
-          <section className="status-band">
-            <h1>Lo-Fi配信とショート動画で、あなたを宣伝します</h1>
-            <p>
-              無料プランに申し込むと、次の3つをまとめて利用できます。むずかしい手続きはなく、申し込み後すぐに掲載が始まります。
-            </p>
-            <ul className="feature-list">
-              <li>Lo-Fi 24時間配信への掲載(20秒CMとして紹介)</li>
-              <li>紹介ショート動画での宣伝(YouTube Shortsに無料掲載)</li>
-              <li>あなた専用の無料掲載ページを作成</li>
-            </ul>
-            <p>
-              ベーシックプラン・プレミアムプランでは、1〜3分のCM配信、ナレーション付きShorts、優先表示などで宣伝効果がさらに広がります。
-            </p>
+          <section className="status-band apply-plan-comparison">
+            <h1 style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0 0 0 0)", whiteSpace: "nowrap" }}>
+              Lo-Fi配信とショート動画で、あなたを宣伝します
+            </h1>
+            <picture>
+              <source srcSet="/promo/plan-comparison/plan-comparison.webp" type="image/webp" />
+              <img
+                src="/promo/plan-comparison/plan-comparison.png"
+                alt="プランの違い: 無料プランはLo-Fi 24時間配信への掲載・YouTube Shortsでの宣伝・VtuberMatch宣伝ページ掲載がまとめて0円。ベーシックプラン月額500円は写真3枚・Xアカウント表示・カテゴリタグ設定・紹介動画で上位表示。プレミアムプラン月額980円は写真5枚・常時優先表示・プレミアムフレームで宣伝効果を最大化。"
+                loading="eager"
+              />
+            </picture>
           </section>
           <ApplicationForm categories={CATEGORIES} tags={TAGS} />
         </AuthVisibility>
