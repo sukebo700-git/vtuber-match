@@ -25,7 +25,7 @@ export default function CommercialDisclosurePage() {
       <main className="main grid-page">
         <section className="status-band legal-hero">
           <h1>特定商取引法に基づく表示</h1>
-          <p>VtuberMatchで提供するベーシックプラン、プレミアムプラン、スーパーいいねに関する表示です。</p>
+          <p>VtuberMatchのベーシックプラン、プレミアムプラン、スーパーいいねに関する表示です。</p>
         </section>
 
         <section className="legal-table">
@@ -35,8 +35,8 @@ export default function CommercialDisclosurePage() {
           <DisclosureRow title="電話番号">{phone}</DisclosureRow>
           <DisclosureRow title="メールアドレス">{supportEmail}</DisclosureRow>
           <DisclosureRow title="商品・サービス内容">
-            VTuber配信者のプロフィール、画像、動画・配信サイトリンク等をVtuberMatch内に掲載し、視聴者がスワイプ形式で発見できるようにするサービスです。
-            スーパーいいねでは、対象配信者の表示を一定期間目立たせる効果を提供します。
+            VTuber配信者のプロフィール、画像、動画・配信サイトリンク等をVtuberMatch内に掲載し、視聴者がスワイプ形式で見つけられるようにするサービスです。
+            スーパーいいねでは、対象配信者の表示を一定期間目立たせる機能を提供します。
           </DisclosureRow>
           <DisclosureRow title="販売価格">
             無料プラン: 0円、ベーシックプラン: 月額500円、プレミアムプラン: 月額980円、スーパーいいね: 1回220円。表示価格は税込です。
@@ -44,7 +44,7 @@ export default function CommercialDisclosurePage() {
           <DisclosureRow title="商品代金以外の必要料金">インターネット接続料金、通信料金等は利用者の負担となります。</DisclosureRow>
           <DisclosureRow title="支払方法">クレジットカード決済。決済処理はStripeが提供する安全な決済ページで行われます。</DisclosureRow>
           <DisclosureRow title="支払時期">申込み時に初回決済が行われ、以後は選択した月額プランに応じて毎月自動で決済されます。</DisclosureRow>
-          <DisclosureRow title="サービス提供時期">決済完了後、通常即時から数営業日以内に掲載またはプラン反映を行います。</DisclosureRow>
+          <DisclosureRow title="サービス提供時期">決済完了後、通常は即時から数営業日以内に掲載またはプラン反映を行います。</DisclosureRow>
           <DisclosureRow title="キャンセル・解約">月額プランはいつでも解約できます。解約後、次回更新日以降の請求は発生しません。</DisclosureRow>
           <DisclosureRow title="返品・返金">デジタル掲載サービスの性質上、決済完了後の返金は原則受け付けていません。ただし、サービス不具合により提供されなかった場合は個別に確認します。</DisclosureRow>
           <DisclosureRow title="動作環境">最新のChrome、Safari、Edgeなどの主要ブラウザを推奨します。</DisclosureRow>

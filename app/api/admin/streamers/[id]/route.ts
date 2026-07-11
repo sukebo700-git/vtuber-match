@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/adminAuth";
 import { FieldValue, getAdminDb, stripUndefined } from "@/lib/firebaseAdmin";
 import { adminCookieName, getCookieValue } from "@/lib/adminSession";
 import { deleteLocalStreamer, findLocalStreamer, hasLocalPaymentHistory, updateLocalStreamer } from "@/lib/localStore";
-import { normalizeStreamer } from "@/lib/streamers";
+import { invalidateStreamerCaches, normalizeStreamer, publicStreamerPath } from "@/lib/streamers";
 import type { AdminPlacement, PlanType, Streamer } from "@/lib/types";
 
 export async function GET(request: Request, { params }: { params: { id: string } }) {
@@ -60,16 +61,22 @@ export async function PATCH(request: Request, { params }: { params: { id: string
 
   const db = getAdminDb();
   if (!db) {
-    const streamer = await updateLocalStreamer(params.id, { ...patch, ...(needsAdminGrantSource(patch) ? { grant_source: "admin" as const } : {}) });
+    const beforeStreamer = await findLocalStreamer(params.id);
+    const streamer = await updateLocalStreamer(params.id, { ...patch, updated_at: new Date().toISOString(), ...(needsAdminGrantSource(patch) ? { grant_source: "admin" as const } : {}) });
     if (!streamer) return NextResponse.json({ error: "streamer not found" }, { status: 404 });
+    invalidateStreamerCaches();
+    revalidateStreamerPaths(beforeStreamer, streamer);
     return NextResponse.json({ streamer, source: "local" });
   }
 
   const ref = db.collection("streamers").doc(params.id);
   const beforeDoc = await ref.get();
   if (!beforeDoc.exists || beforeDoc.data()?.is_deleted === true) return NextResponse.json({ error: "streamer not found" }, { status: 404 });
-  const nextPatch = stripUndefined({ ...patch, ...(needsAdminGrantSource(patch) ? { grant_source: "admin" as const } : {}) });
+  const beforeStreamer = normalizeStreamer(beforeDoc.id, beforeDoc.data() || {});
+  const nextPatch = stripUndefined({ ...patch, updated_at: FieldValue.serverTimestamp(), ...(needsAdminGrantSource(patch) ? { grant_source: "admin" as const } : {}) });
   await ref.update(nextPatch);
+  invalidateStreamerCaches();
+  revalidateStreamerPaths(beforeStreamer, normalizeStreamer(params.id, { ...(beforeDoc.data() || {}), ...patch, updated_at: new Date().toISOString() }));
   await writeAuditLog(db, request, {
     action: auditActionForPatch(patch),
     target_type: "streamer",
@@ -88,6 +95,15 @@ function sanitizeArray(value: unknown) {
   return Array.isArray(value) ? value.map(String).map((item) => item.trim()).filter(Boolean) : [];
 }
 
+function revalidateStreamerPaths(...streamers: Array<Streamer | null | undefined>) {
+  const paths = new Set(
+    streamers
+      .filter((streamer): streamer is Streamer => Boolean(streamer?.id))
+      .map((streamer) => publicStreamerPath(streamer))
+  );
+  paths.forEach((path) => revalidatePath(path));
+}
+
 export async function DELETE(request: Request, { params }: { params: { id: string } }) {
   const unauthorized = requireAdmin(request);
   if (unauthorized) return unauthorized;
@@ -97,8 +113,11 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
     if (await hasLocalPaymentHistory("streamer_id", params.id)) {
       return NextResponse.json({ error: "課金履歴がある配信者は削除できません。", code: "HAS_PAYMENT_HISTORY" }, { status: 409 });
     }
+    const beforeStreamer = await findLocalStreamer(params.id);
     const streamer = await deleteLocalStreamer(params.id);
     if (!streamer) return NextResponse.json({ error: "visible streamer cannot be deleted" }, { status: 400 });
+    invalidateStreamerCaches();
+    revalidateStreamerPaths(beforeStreamer, streamer);
     return NextResponse.json({ deleted: true, source: "local" });
   }
 
@@ -118,6 +137,8 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
     is_visible: false,
     deleted_at: FieldValue.serverTimestamp()
   }), { merge: true });
+  invalidateStreamerCaches();
+  revalidateStreamerPaths(normalizeStreamer(snapshot.id, snapshot.data() || {}));
   await writeAuditLog(db, request, {
     action: "delete",
     target_type: "streamer",

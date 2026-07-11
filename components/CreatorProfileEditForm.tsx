@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { RotateCcw, Save } from "lucide-react";
-import { PushNotificationButton } from "@/components/PushNotificationButton";
 import { CATEGORIES, TAGS } from "@/lib/constants";
+import { diagnosisTypes } from "@/lib/diagnosis";
+import { creatorVtypeStorageKey, type VtypeProfileFields } from "@/lib/diagnosisProfile";
 
-type CreatorDraft = {
+type CreatorDraft = VtypeProfileFields & {
   name?: string;
   youtube_url?: string;
   x_account?: string;
@@ -56,6 +57,7 @@ export function CreatorProfileEditForm() {
   const [sourceImages, setSourceImages] = useState<string[]>(makeImageSlots());
   const [imageEdits, setImageEdits] = useState<ImageEdit[]>(makeImageEdits());
   const [planType, setPlanType] = useState("free");
+  const [vtypeProfile, setVtypeProfile] = useState<VtypeProfileFields | null>(null);
   const [status, setStatus] = useState("");
   const visibleImages = planType === "free" ? images.slice(0, 1) : images;
 
@@ -76,6 +78,7 @@ export function CreatorProfileEditForm() {
     setImageEdits(makeImageEdits());
     setCategories(Array.isArray(draft?.categories) ? draft.categories : []);
     setTags(Array.isArray(draft?.tags) ? draft.tags : []);
+    setVtypeProfile(draft?.vtype_id ? draft : readStoredVtypeProfile());
 
     fetch("/api/profile-edits")
       .then((response) => response.ok ? response.json() : null)
@@ -94,6 +97,7 @@ export function CreatorProfileEditForm() {
         setImageEdits(makeImageEdits());
         setCategories(Array.isArray(profile.categories) ? profile.categories : []);
         setTags(Array.isArray(profile.tags) ? profile.tags : []);
+        setVtypeProfile(profile.vtype_id ? profile : readStoredVtypeProfile());
         const nextPlan = profile.plan_type || localStorage.getItem("vtuber-match-creator-plan") || storedPlan;
         setPlanType(nextPlan);
         localStorage.setItem("vtuber-match-creator-plan", nextPlan);
@@ -130,6 +134,7 @@ export function CreatorProfileEditForm() {
         thumbnails,
         categories,
         tags,
+        ...vtypePayload(vtypeProfile),
       }),
     });
 
@@ -150,6 +155,7 @@ export function CreatorProfileEditForm() {
       images: thumbnails,
       categories,
       tags,
+      ...vtypePayload(vtypeProfile),
     };
 
     localStorage.setItem("vtuber-match-creator-name", nextDraft.name);
@@ -197,7 +203,7 @@ export function CreatorProfileEditForm() {
     <form className="form compact-form" onSubmit={submit}>
       <section className="status-band soft">
         <h2>プロフィール修正</h2>
-        <p>配信者ログイン中のアカウントでプロフィールを修正できます。</p>
+        <p>ログイン中の配信者アカウントで、掲載プロフィールを修正できます。</p>
       </section>
 
       <div className="field">
@@ -229,12 +235,27 @@ export function CreatorProfileEditForm() {
       <div className="field">
         <label htmlFor="edit_description">自己アピール</label>
         <textarea id="edit_description" name="description" value={description} maxLength={planType === "free" ? 100 : 500} onChange={(event) => setDescription(event.target.value.slice(0, planType === "free" ? 100 : 500))} />
-        <p className="help-text">{planType === "free" ? `${description.length}/100` : "プロフィール画面に表示されます。"}</p>
+        <p className="help-text">{planType === "free" ? `${description.length}/100` : "プロフィール画面に掲載されます。"}</p>
       </div>
 
       <div className="field">
         <label htmlFor="edit_stream_time">配信時間帯</label>
         <input id="edit_stream_time" name="stream_time" value={streamTime} maxLength={50} onChange={(event) => setStreamTime(event.target.value.slice(0, 50))} placeholder="例: 平日22時から24時" />
+      </div>
+
+      <div className="field">
+        <label htmlFor="edit_vtype_id">VTYPE診断タイプ</label>
+        <select
+          id="edit_vtype_id"
+          value={vtypeProfile?.vtype_id ? String(vtypeProfile.vtype_id) : ""}
+          onChange={(event) => setVtypeProfile(vtypeProfileFromId(event.target.value))}
+        >
+          <option value="">選択しない</option>
+          {diagnosisTypes.map((type) => (
+            <option value={type.id} key={type.id}>{type.code} {type.name}</option>
+          ))}
+        </select>
+        <p className="help-text">診断済みの場合は自動で入ります。近いタイプの視聴者におすすめされやすくなります。</p>
       </div>
 
       <div className="field">
@@ -308,7 +329,7 @@ export function CreatorProfileEditForm() {
                     </div>
                   </>
                 ) : (
-                  <p className="image-slot-empty">1か所につき1枚ずつ登録できます。</p>
+                  <p className="image-slot-empty">1枠につき1枚登録できます。</p>
                 )}
               </div>
             );
@@ -345,9 +366,6 @@ export function CreatorProfileEditForm() {
         プロフィールを更新する
       </button>
       <div className="profile-edit-after-actions">
-        <div className="status-band push-onboarding-card">
-          <PushNotificationButton targetType="creator" intent="onboarding" />
-        </div>
         <a className="primary-button" href="/creator">配信者用ページへ</a>
       </div>
       {status && <p className="notice-text">{status}</p>}
@@ -362,6 +380,40 @@ function safeParseDraft(value: string | null): CreatorDraft | null {
   } catch {
     return null;
   }
+}
+
+function readStoredVtypeProfile() {
+  try {
+    const raw = localStorage.getItem(creatorVtypeStorageKey);
+    return raw ? (JSON.parse(raw) as VtypeProfileFields) : null;
+  } catch {
+    return null;
+  }
+}
+
+function vtypeProfileFromId(value: string): VtypeProfileFields | null {
+  const type = diagnosisTypes.find((item) => item.id === Number(value));
+  if (!type) return null;
+  return {
+    vtype_id: type.id,
+    vtype_code: type.code,
+    vtype_name: type.name,
+    vtype_mode: "light",
+    vtype_updated_at: new Date().toISOString(),
+  };
+}
+
+function vtypePayload(profile: VtypeProfileFields | null) {
+  const type = diagnosisTypes.find((item) => item.id === Number(profile?.vtype_id));
+  if (!type) return {};
+  return {
+    ...profile,
+    vtype_id: type.id,
+    vtype_code: type.code,
+    vtype_name: type.name,
+    vtype_mode: profile?.vtype_mode || "light",
+    vtype_updated_at: profile?.vtype_updated_at || new Date().toISOString(),
+  };
 }
 
 async function fileToDataUrl(file: File) {

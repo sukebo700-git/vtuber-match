@@ -1,12 +1,13 @@
 import { HeaderAuthStatus } from "@/components/HeaderAuthStatus";
-import { PushNotificationButton } from "@/components/PushNotificationButton";
+
+const lofiChannelFormUrl = "https://forms.gle/BFn6Wti8aCBUHV41A";
 
 export default function CheckoutSuccessPage({ searchParams }: { searchParams?: { role?: string } }) {
   const targetType = searchParams?.role === "viewer" ? "viewer" : "creator";
-  const destination = targetType === "viewer" ? "/viewer?notify=1" : "/creator?notify=1";
+  const destination = targetType === "viewer" ? "/viewer" : "/creator";
   const message = targetType === "viewer"
-    ? "スーパーいいねの決済を反映しました。控えや重要なお知らせを見逃さないため、必要に応じて通知ONにしてください。"
-    : "プランを反映しました。視聴者からのいいねやスーパーいいねを見逃さないため、続けて通知ONにしてください。";
+    ? "スーパーいいねの決済が完了しました。"
+    : "プランを反映しました。";
 
   return (
     <div className="app-shell">
@@ -22,9 +23,14 @@ export default function CheckoutSuccessPage({ searchParams }: { searchParams?: {
         <section className="status-band">
           <h2>決済を反映しました</h2>
           <p>{message}</p>
-          <div style={{ marginTop: 12 }}>
-            <PushNotificationButton targetType={targetType} intent="onboarding" />
-          </div>
+          {targetType === "creator" && (
+            <>
+              <p style={{ marginTop: 10 }}><strong>Lo-Fiチャンネル掲載希望の方はこちらの登録もお願いします。</strong></p>
+              <p className="inline-actions" style={{ marginTop: 12 }}>
+                <a className="primary-button" href={lofiChannelFormUrl} target="_blank" rel="noreferrer">Lo-Fi掲載フォームを開く</a>
+              </p>
+            </>
+          )}
           <p className="inline-actions" style={{ marginTop: 12 }}>
             <a className="primary-button" href={destination}>{targetType === "viewer" ? "視聴者ページへ" : "配信者ページへ"}</a>
             <a className="secondary-button" href="/">トップへ戻る</a>

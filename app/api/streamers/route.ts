@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/adminAuth";
 import { FieldValue, getAdminDb } from "@/lib/firebaseAdmin";
 import { addLocalStreamer, readLocalStreamers } from "@/lib/localStore";
-import { normalizeStreamer } from "@/lib/streamers";
+import { invalidateStreamerCaches, normalizeStreamer, publicStreamerPath, streamerImagePath } from "@/lib/streamers";
 import type { PlanType } from "@/lib/types";
 
 export async function GET() {
@@ -35,6 +36,7 @@ export async function GET() {
       "likes",
       "weekly_impressions",
       "latest_video_id",
+      "updated_at",
     )
     .limit(100)
     .get();
@@ -51,10 +53,16 @@ export async function POST(request: Request) {
   const unauthorized = requireAdmin(request);
   if (unauthorized) return unauthorized;
 
-  const body = await request.json();
+  let body: Record<string, unknown>;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "送信データを読み取れませんでした。画像が大きすぎる可能性があります。" }, { status: 400 });
+  }
   const validationError = validate(body);
   if (validationError) return NextResponse.json({ error: validationError }, { status: 400 });
 
+  const now = new Date().toISOString();
   const payload = {
     name: String(body.name).trim(),
     youtube_url: String(body.youtube_url).trim(),
@@ -69,24 +77,63 @@ export async function POST(request: Request) {
     plan_type: (body.plan_type || "free") as PlanType,
     is_initial_scout: Boolean(body.is_initial_scout),
     is_visible: body.is_visible !== false,
+    yomi: String(body.yomi || "").trim().slice(0, 80),
+    publication_consent: body.publication_consent === true,
+    publication_source: body.publication_source === "admin_public_import" ? "admin_public_import" : "",
+    publication_consent_recorded_at: now,
     impressions: 0,
     likes: 0,
-    registered_at: new Date().toISOString(),
+    registered_at: now,
+    updated_at: now,
   };
 
+  try {
   const db = getAdminDb();
   if (!db) {
+    const duplicate = (await readLocalStreamers()).find((streamer) => (
+      streamer.youtube_url.trim() === payload.youtube_url && streamer.is_deleted !== true
+    ));
+    if (duplicate) return NextResponse.json({ error: "同じYouTube URLの配信者はすでに登録されています。" }, { status: 409 });
     const streamer = await addLocalStreamer(payload);
-    return NextResponse.json({ streamer, source: "local" }, { status: 201 });
+    const publicPath = publicStreamerPath(streamer);
+    invalidateStreamerCaches();
+    revalidatePath(publicPath);
+    return NextResponse.json({
+      streamer,
+      public_path: publicPath,
+      source: "local"
+    }, { status: 201 });
+  }
+
+  const duplicate = await db.collection("streamers")
+    .where("youtube_url", "==", payload.youtube_url)
+    .limit(1)
+    .get();
+  if (duplicate.docs.some((doc) => doc.data().is_deleted !== true)) {
+    return NextResponse.json({ error: "同じYouTube URLの配信者はすでに登録されています。" }, { status: 409 });
   }
 
   const doc = await db.collection("streamers").add({
     ...payload,
     registered_at: FieldValue.serverTimestamp(),
-    created_at: FieldValue.serverTimestamp()
+    created_at: FieldValue.serverTimestamp(),
+    updated_at: FieldValue.serverTimestamp(),
+    publication_consent_recorded_at: FieldValue.serverTimestamp(),
   });
+  invalidateStreamerCaches();
+  const publicPath = publicStreamerPath({ id: doc.id, name: payload.name });
+  revalidatePath(publicPath);
 
-  return NextResponse.json({ id: doc.id, source: "firestore" }, { status: 201 });
+  return NextResponse.json({
+    id: doc.id,
+    streamer: normalizeStreamer(doc.id, { ...payload, created_at: now }),
+    public_path: publicPath,
+    source: "firestore"
+  }, { status: 201 });
+  } catch (error) {
+    console.error("Failed to create public streamer:", error instanceof Error ? error.message : String(error));
+    return NextResponse.json({ error: "公開ページの保存に失敗しました。画像を小さくしてもう一度試してください。" }, { status: 500 });
+  }
 }
 
 function validate(body: Record<string, unknown>) {
@@ -95,9 +142,11 @@ function validate(body: Record<string, unknown>) {
   const tagCount = sanitizeArray(body.tags).length;
   if (!body.name) return "name is required";
   if (!body.youtube_url) return "youtube_url is required";
+  if (body.is_initial_scout === true && body.publication_consent !== true) return "publication consent is required";
   if (String(body.description || "").length > (plan === "free" ? 100 : 500)) return "description is too long";
   if (plan !== "free" && !body.description) return "profile appeal is required";
   if (sanitizeArray(body.thumbnails).length > 3) return "thumbnails max is 3";
+  if (totalTextLength(sanitizeArray(body.thumbnails)) > 900_000) return "画像サイズが大きすぎます。画像を小さくしてもう一度試してください。";
   if (plan === "free" && categoryCount > 0) return "free plan cannot set categories";
   if (plan === "free" && tagCount > 0) return "free plan cannot set tags";
   if (plan !== "free" && categoryCount > 3) return "paid plan category max is 3";
@@ -110,8 +159,11 @@ function sanitizeArray(value: unknown) {
 }
 
 function normalizeThumbnails(values: string[]) {
-  const thumbnails = values.slice(0, 3);
-  return thumbnails.length ? thumbnails : ["https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&w=900&q=82"];
+  return values.slice(0, 3);
+}
+
+function totalTextLength(values: string[]) {
+  return values.reduce((total, value) => total + value.length, 0);
 }
 
 function normalizeXAccount(value: unknown) {
@@ -123,7 +175,7 @@ function normalizeXAccount(value: unknown) {
 function lightweightStreamer(streamer: ReturnType<typeof normalizeStreamer>) {
   return {
     ...streamer,
-    thumbnails: [`/api/streamer-image/${encodeURIComponent(streamer.id)}?i=0`],
+    thumbnails: [streamerImagePath(streamer)],
     description: "",
   };
 }

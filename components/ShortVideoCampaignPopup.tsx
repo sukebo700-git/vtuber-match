@@ -11,10 +11,8 @@ type CreatorAuth = {
 };
 
 const popupVersion = "20260702-top-restore";
-const popupSessionCountKey = `vtuber-match-short-video-campaign-count-${popupVersion}`;
-const popupSessionLastShownKey = `vtuber-match-short-video-campaign-last-shown-${popupVersion}`;
-const maxPopupShowsPerSession = 3;
-const popupCooldownMs = 3 * 60 * 1000;
+const popupDismissedUntilKey = `vtuber-match-short-video-campaign-dismissed-until-${popupVersion}`;
+const popupDismissDaysMs = 7 * 24 * 60 * 60 * 1000;
 const shortVideoFormUrl = process.env.NEXT_PUBLIC_SHORT_VIDEO_FORM_URL || "https://t.co/RvMn6IQife";
 
 export function ShortVideoCampaignPopup() {
@@ -25,24 +23,15 @@ export function ShortVideoCampaignPopup() {
 
   useEffect(() => {
     try {
-      const shownCount = Number(sessionStorage.getItem(popupSessionCountKey) || "0");
-      const lastShown = Number(sessionStorage.getItem(popupSessionLastShownKey) || "0");
-      if (shownCount >= maxPopupShowsPerSession) return;
-      if (lastShown && Date.now() - lastShown < popupCooldownMs) return;
+      const dismissedUntil = Number(localStorage.getItem(popupDismissedUntilKey) || "0");
+      if (dismissedUntil && Date.now() < dismissedUntil) return;
     } catch {
       // Keep the campaign usable even when storage is blocked.
     }
     setCreator(readCreatorAuth());
     const timer = window.setTimeout(() => {
       setOpen(true);
-      try {
-        const shownCount = Number(sessionStorage.getItem(popupSessionCountKey) || "0");
-        sessionStorage.setItem(popupSessionCountKey, String(shownCount + 1));
-        sessionStorage.setItem(popupSessionLastShownKey, String(Date.now()));
-      } catch {
-        // Ignore storage failures.
-      }
-    }, 650);
+    }, 1400);
     return () => window.clearTimeout(timer);
   }, []);
 
@@ -50,6 +39,15 @@ export function ShortVideoCampaignPopup() {
   const creatorLabel = useMemo(() => creator?.name || creator?.email || creator?.id || "登録済み配信者", [creator]);
 
   if (!open) return null;
+
+  function dismissPopup() {
+    try {
+      localStorage.setItem(popupDismissedUntilKey, String(Date.now() + popupDismissDaysMs));
+    } catch {
+      // Ignore storage failures.
+    }
+    setOpen(false);
+  }
 
   async function requestShortVideo() {
     if (busy) return;
@@ -59,10 +57,10 @@ export function ShortVideoCampaignPopup() {
       const response = await fetch("/api/short-video-requests", { method: "POST" });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
-        setMessage(data.error || "希望を送信できませんでした。配信者ログイン状態を確認してください。");
+        setMessage(data.error || "リクエストを送信できませんでした。配信者としてログインしているか確認してください。");
         return;
       }
-      setMessage("希望を受け付けました。紹介ショート動画の作成に必要な情報をフォームにご記入ください。");
+      setMessage("リクエストを受け付けました。紹介ショート動画に必要な情報をフォームに入力してください。");
       window.open(shortVideoFormUrl, "_blank", "noopener,noreferrer");
     } catch {
       setMessage("通信に失敗しました。時間をおいてもう一度お試しください。");
@@ -72,44 +70,44 @@ export function ShortVideoCampaignPopup() {
   }
 
   return (
-    <div className="campaign-popup-backdrop" role="dialog" aria-modal="true" aria-labelledby="short-video-campaign-title">
+    <div className="campaign-popup-backdrop" role="dialog" aria-modal="false" aria-labelledby="short-video-campaign-title">
       <div className="campaign-popup-modal">
-        <button className="campaign-popup-close" type="button" aria-label="閉じる" onClick={() => setOpen(false)}>
-          x
+        <button className="campaign-popup-close" type="button" aria-label="閉じる" onClick={dismissPopup}>
+          ×
         </button>
-        <div className="campaign-popup-ribbon">VTuberの方必見</div>
+        <div className="campaign-popup-ribbon">掲載VTuber向け</div>
         <p className="campaign-popup-kicker">期間限定キャンペーン</p>
         <h2 id="short-video-campaign-title">
           紹介ショート動画
           <br />
-          作成無料！
+          無料で作成します
         </h2>
         <p className="campaign-popup-lead">
-          VtuberMatch公式YouTubeチャンネルであなたを紹介します。
+          VtuberMatch公式YouTubeチャンネルで、あなたの活動を紹介します。
         </p>
 
         <div className="campaign-popup-actions">
-          <a className="primary-button" href="/creator/apply">配信者登録へ</a>
-          <a className="secondary-button" href="/creator">詳しくはこちら</a>
+          <a className="primary-button" href="/creator/apply">無料掲載を申し込む</a>
+          <a className="secondary-button" href="/creator">内容を見る</a>
         </div>
 
         {isCreator ? (
           <section className="campaign-popup-creator">
             <span>登録済み配信者向け</span>
             <strong>{creatorLabel}</strong>
-            <p>紹介ショート動画の作成に必要な情報をフォームにご記入ください。</p>
+            <p>紹介ショート動画に必要な情報をフォームに入力してください。</p>
             <a className="campaign-form-link" href={shortVideoFormUrl} target="_blank" rel="noreferrer">
-              必要事項をフォームに記入する
+              フォームを開く
             </a>
             <button className="primary-button" type="button" disabled={busy} onClick={requestShortVideo}>
-              {busy ? "送信中..." : "無料ショート動画を希望する"}
+              {busy ? "送信中..." : "作成を依頼する"}
             </button>
             {message ? <p className="campaign-popup-note">{message}</p> : null}
           </section>
         ) : (
           <section className="campaign-popup-creator muted">
             <span>配信者登録済みの方限定</span>
-            <p>登録後に無料ショート動画の希望フォームを送れます。</p>
+            <p>配信者として登録すると、紹介ショート動画を依頼できます。</p>
           </section>
         )}
       </div>

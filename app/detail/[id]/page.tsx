@@ -6,7 +6,7 @@ import { ProfileShareButton } from "@/components/ProfileShareButton";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { BadgeCheck, CalendarClock, ExternalLink, Radio } from "lucide-react";
-import { getStreamerById, publicStreamerPath } from "@/lib/streamers";
+import { getStreamerById, publicStreamerPath, streamerImagePath } from "@/lib/streamers";
 import { PLAN_LABELS } from "@/lib/constants";
 import { videoSiteLabel, youtubeSubscribeUrl, youtubeWatchUrl } from "@/lib/youtube";
 import { absoluteUrl, siteName } from "@/lib/seo";
@@ -24,8 +24,8 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
     };
   }
 
-  const description = streamer.description || `${streamer.name}を${siteName}で発見。配信サイトを確認できます。`;
-  const image = seoImage(streamer.thumbnails?.[0], streamer.id);
+  const description = streamer.description || `${streamer.name}を${siteName}で発見。配信サイトへ移動できます。`;
+  const image = seoImage(streamer.thumbnails?.[0], streamer);
 
   return {
     title: `${streamer.name}のプロフィール`,
@@ -95,6 +95,9 @@ export default async function DetailPage({ params }: { params: { id: string } })
                   </span>
                 )}
                 <span className="pill dark">{PLAN_LABELS[streamer.plan_type]}</span>
+                {streamer.vtype_name && (
+                  <span className="pill dark">VTYPE {streamer.vtype_code} {streamer.vtype_name}</span>
+                )}
                 {isPaidOrPremium && streamer.categories.map((category) => (
                   <span className="pill dark" key={category}>{category}</span>
                 ))}
@@ -136,9 +139,10 @@ export default async function DetailPage({ params }: { params: { id: string } })
           </aside>
         </section>
 
-        {(streamer.one_liner || streamer.stream_time || (isPaidOrPremium && streamer.tags.length > 0)) && (
+        {(streamer.one_liner || streamer.stream_time || streamer.vtype_name || (isPaidOrPremium && streamer.tags.length > 0)) && (
           <section className="status-band">
             <h2>プロフィール情報</h2>
+            {streamer.vtype_name && <p>VTYPE診断: {streamer.vtype_code} {streamer.vtype_name}</p>}
             {isPaidOrPremium && streamer.tags.length > 0 && (
               <div className="pill-row">
                 {streamer.tags.map((tag) => (
@@ -169,9 +173,9 @@ function xProfileUrl(account: string) {
   return `https://x.com/${encodeURIComponent(handle)}`;
 }
 
-function seoImage(value: string | undefined, streamerId: string) {
+function seoImage(value: string | undefined, streamer: { id: string; updated_at?: string }) {
   if (!value) return absoluteUrl("/promo/landing-oshi.png");
-  if (value.startsWith("data:image/")) return absoluteUrl(`/api/streamer-image/${encodeURIComponent(streamerId)}?i=0`);
+  if (value.startsWith("data:image/")) return absoluteUrl(streamerImagePath(streamer));
   if (value.startsWith("/")) return absoluteUrl(value);
   if (value.startsWith("http://") || value.startsWith("https://")) return value;
   return absoluteUrl("/promo/landing-oshi.png");

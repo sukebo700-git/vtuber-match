@@ -45,7 +45,7 @@ const mobileCriticalCss = `
     justify-content: flex-end !important;
   }
   .main {
-    padding: 10px !important;
+    padding: 5px !important;
   }
   .landing-hero, .swipe-stage, .detail-hero, .diagnosis-hero, .diagnosis-share-assets, .diagnosis-result-grid, .diagnosis-advanced-card, .diagnosis-match-main, .diagnosis-radar-insight-grid, .diagnosis-detail-grid, .diagnosis-deep-grid, .diagnosis-deep-grid.listener {
     display: grid !important;
@@ -62,15 +62,15 @@ const mobileCriticalCss = `
     width: 100% !important;
   }
   .landing-phone {
-    width: min(100%, 320px) !important;
-    height: auto !important;
+    width: min(94vw, 420px) !important;
+    height: clamp(390px, min(60dvh, calc(100dvh - 230px)), 620px) !important;
     max-height: none !important;
     transform: none !important;
-    padding: 10px !important;
+    padding: 6px !important;
     justify-self: center !important;
   }
   .landing-card {
-    padding: 10px !important;
+    padding: 5px !important;
     gap: 6px !important;
   }
   .landing-oshi-image {
@@ -122,7 +122,7 @@ const mobileCriticalCss = `
 export const metadata: Metadata = {
   metadataBase: new URL(getSiteUrl()),
   title: {
-    default: "VtuberMatch | 登録無料で推しVTuberを探せるスワイプ型マッチング",
+    default: "VtuberMatch | 気になるVTuberを直感で探せるスワイプ型マッチング",
     template: `%s | ${siteName}`,
   },
   description: siteDescription,
@@ -159,7 +159,7 @@ export const metadata: Metadata = {
     locale: "ja_JP",
     url: "/",
     siteName,
-    title: "VtuberMatch | 新しい推しと視聴者をつなぐ",
+    title: "VtuberMatch | 新しい推しと出会える",
     description: siteDescription,
     images: [
       {
@@ -173,7 +173,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "VtuberMatch | 新しい推しと視聴者をつなぐ",
+    title: "VtuberMatch | 新しい推しと出会える",
     description: siteDescription,
     images: [ogImage],
   },
@@ -210,7 +210,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     audience: [
       {
         "@type": "Audience",
-        audienceType: "Vtuber配信者",
+        audienceType: "VTuber配信者",
       },
       {
         "@type": "Audience",

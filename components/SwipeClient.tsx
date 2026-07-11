@@ -3,11 +3,16 @@
 import { BadgeCheck, ChevronDown, ExternalLink, Heart, Info, Search, Sparkles, Star, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { CATEGORIES } from "@/lib/constants";
+import { diagnosisTypes } from "@/lib/diagnosis";
+import { viewerVtypeStorageKey, type VtypeProfileFields } from "@/lib/diagnosisProfile";
 import { ensureAnonymousUser } from "@/lib/firebase";
 import { isBasicPremiumTrialActive } from "@/lib/ranking";
 import { anonymousViewerProfile, getViewerIdentity } from "@/lib/viewerIdentity";
 import { videoSiteLabel, youtubeSubscribeUrl } from "@/lib/youtube";
 import type { Streamer, ViewerProfile } from "@/lib/types";
+import { UiBadge } from "@/components/ui/UiBadge";
+import { UiButton } from "@/components/ui/UiButton";
+import { UiPanel } from "@/components/ui/UiPanel";
 
 type SwipeClientProps = {
   initialStreamers: Streamer[];
@@ -36,17 +41,30 @@ export function SwipeClient({ initialStreamers }: SwipeClientProps) {
   const [swipeNotice, setSwipeNotice] = useState("");
   const [moreOpen, setMoreOpen] = useState(false);
   const [adminViewerMode, setAdminViewerMode] = useState(false);
+  const [viewerVtypeId, setViewerVtypeId] = useState<number | null>(null);
 
   const streamers = useMemo(
-    () => shuffleEqualPriorityGroups(
-      categoryFilter ? initialStreamers.filter((streamer) => streamer.categories.includes(categoryFilter)) : initialStreamers,
-      shuffleSeed,
+    () => prioritizeSameVtype(
+      shuffleEqualPriorityGroups(
+        categoryFilter ? initialStreamers.filter((streamer) => streamer.categories.includes(categoryFilter)) : initialStreamers,
+        shuffleSeed,
+      ),
+      viewerVtypeId,
     ),
-    [categoryFilter, initialStreamers, shuffleSeed],
+    [categoryFilter, initialStreamers, shuffleSeed, viewerVtypeId],
   );
   const current = streamers.length ? streamers[index % streamers.length] : undefined;
   const next = streamers.length ? streamers[(index + 1) % streamers.length] : undefined;
   const isLooping = loopCount > 0;
+  const viewerVtype = diagnosisTypes.find((type) => type.id === viewerVtypeId) || null;
+  const recommendedStreamers = useMemo(
+    () => viewerVtypeId
+      ? initialStreamers
+        .filter((streamer) => streamer.vtype_id === viewerVtypeId && streamer.id !== current?.id)
+        .slice(0, 3)
+      : [],
+    [current?.id, initialStreamers, viewerVtypeId],
+  );
 
   const visibleThumbnail = useMemo(() => {
     if (!current?.thumbnails.length) return "";
@@ -80,8 +98,9 @@ export function SwipeClient({ initialStreamers }: SwipeClientProps) {
 
   useEffect(() => {
     const identity = getViewerIdentity();
-    if (!identity.registered) return;
     const storedProfile = readViewerProfile();
+    setViewerVtypeId(resolveVtypeId(storedProfile) || readStoredViewerVtypeId());
+    if (!identity.registered) return;
     if (storedProfile?.is_admin_viewer === true) {
       setAdminViewerMode(true);
       return;
@@ -91,6 +110,7 @@ export function SwipeClient({ initialStreamers }: SwipeClientProps) {
       .then((data) => {
         if (!data?.profile) return;
         localStorage.setItem(viewerProfileKey, JSON.stringify(data.profile));
+        setViewerVtypeId(resolveVtypeId(data.profile) || readStoredViewerVtypeId());
         if (data.profile.is_admin_viewer === true) setAdminViewerMode(true);
       })
       .catch(() => undefined);
@@ -189,21 +209,21 @@ export function SwipeClient({ initialStreamers }: SwipeClientProps) {
 
   if (!initialStreamers.length) {
     return (
-      <div className="status-band empty-swipe-state">
+      <UiPanel as="div" className="empty-swipe-state">
         <h2>ただいまスワイプデータを準備中です</h2>
         <p>アクセス集中や一時的な読み込み制限により、カードを表示できない場合があります。少し時間をおいて再読み込みしてください。</p>
         <div className="empty-swipe-actions">
-          <button className="primary-button" type="button" onClick={() => window.location.reload()}>
+          <UiButton type="button" onClick={() => window.location.reload()}>
             再読み込み
-          </button>
-          <a className="secondary-button" href="/">
+          </UiButton>
+          <UiButton variant="secondary" href="/">
             TOPへ戻る
-          </a>
-          <a className="secondary-button" href="/creator/apply">
-            Vtuberとして登録
-          </a>
+          </UiButton>
+          <UiButton variant="secondary" href="/creator/apply">
+            VTuberとして登録
+          </UiButton>
         </div>
-      </div>
+      </UiPanel>
     );
   }
 
@@ -297,8 +317,26 @@ export function SwipeClient({ initialStreamers }: SwipeClientProps) {
           )}
           <div className="status-band next-find-panel">
             <h2>{isLooping ? "再表示中" : "次の推しを見つける"}</h2>
-            <p>右でいいね、左でスキップ。中央ボタンでプロフィールを確認できます。</p>
+            <p>右でいいね、左でスキップ。中央ボタンからプロフィールを見られます。</p>
           </div>
+          {viewerVtype && (
+            <div className="status-band vtype-recommend-panel">
+              <h2>おすすめ</h2>
+              <p>{viewerVtype.code} {viewerVtype.name} と同じタイプのVTuberです。</p>
+              {recommendedStreamers.length ? (
+                <div className="vtype-recommend-list">
+                  {recommendedStreamers.map((streamer) => (
+                    <a href={`/detail/${streamer.id}`} key={streamer.id}>
+                      <span>{streamer.name}</span>
+                      <small>{streamer.one_liner || streamer.categories.slice(0, 2).join(" / ")}</small>
+                    </a>
+                  ))}
+                </div>
+              ) : (
+                <p className="help-text">同じタイプのVTuberは準備中です。診断タイプが登録されるとここに表示されます。</p>
+              )}
+            </div>
+          )}
         </div>
       </aside>
 
@@ -329,7 +367,7 @@ export function SwipeClient({ initialStreamers }: SwipeClientProps) {
         <div className="like-choice-backdrop" role="dialog" aria-modal="true">
           <div className="like-choice-modal">
             <h2>無料登録でスワイプ無制限</h2>
-            <p>未登録では1日{guestSwipeLimit}件までお試しできます。無料登録するとスワイプ無制限になり、プロフィール閲覧と配信リンクへの移動も使えます。</p>
+            <p>未登録では1日{guestSwipeLimit}件まで試せます。無料登録すると、スワイプを制限なく使えて、プロフィール閲覧や配信リンクへの移動もできます。</p>
             <div className="like-choice-actions">
               <button className="secondary-button" type="button" onClick={() => setLimitReached(false)}>閉じる</button>
               <a className="primary-button" href="/viewer/register">無料登録する</a>
@@ -383,7 +421,7 @@ function SuperBoostModal({ streamer, onClose }: { streamer: Streamer; onClose: (
       <div className="like-choice-modal super-boost-modal">
         <div className="like-choice-icon"><Star size={28} fill="currentColor" /></div>
         <h2>スーパーいいね</h2>
-        <p>{streamer.name}さんを72時間、見つけてもらいやすくします。</p>
+        <p>{streamer.name}さんを72時間、いつもより目立つ表示にします。</p>
         <p className="help-text">どのエフェクトでも表示順位への効果は同じです。</p>
         <div className="effect-choice-grid">
           {[["shine", "キラ"], ["shake", "揺れ"]].map(([value, label]) => (
@@ -437,7 +475,7 @@ function SuperBoostModalV2({ streamer, onClose }: { streamer: Streamer; onClose:
       <div className="like-choice-modal super-boost-modal">
         <div className="like-choice-icon"><Star size={28} fill="currentColor" /></div>
         <h2>{streamer.name}さんへスーパーいいね</h2>
-        <p>72時間、見つけてもらいやすくします。</p>
+        <p>72時間、いつもより目立つ表示にします。</p>
         <p className="help-text">どのエフェクトでも表示順位への効果は同じです。購入完了後すぐに発動します。</p>
         <div className="effect-choice-grid">
           {[["shine", "キラ"], ["shake", "揺れ"]].map(([value, label]) => (
@@ -567,14 +605,14 @@ function readPendingImpressions() {
 
 function canGuestSwipe() {
   const identity = getViewerIdentity();
-  if (identity.registered) return true;
+  if (identity.registered || readCreatorSwipeProfile()) return true;
   resetGuestSwipeCountIfNeeded();
   return Number(localStorage.getItem(guestSwipeCountKey) || "0") < guestSwipeLimit;
 }
 
 function incrementGuestSwipeCount() {
   const identity = getViewerIdentity();
-  if (identity.registered) return;
+  if (identity.registered || readCreatorSwipeProfile()) return;
   resetGuestSwipeCountIfNeeded();
   const count = Number(localStorage.getItem(guestSwipeCountKey) || "0") + 1;
   localStorage.setItem(guestSwipeCountKey, String(count));
@@ -639,6 +677,8 @@ function SwipeCard({
   const superEffect = isActiveSuperBoost(streamer.super_boost_until) ? streamer.super_boost_effect || "shine" : "";
   const premiumVisual = streamer.plan_type === "boost" || (streamer.plan_type === "paid" && isBasicPremiumTrialActive(streamer.basic_premium_trial_until));
   const visualPlan = premiumVisual ? "boost" : streamer.plan_type;
+  const showTopPills = streamer.plan_type !== "free" || streamer.categories.length > 0 || streamer.tags.length > 0;
+  const vtypeLabel = streamer.vtype_name ? `VTYPE ${streamer.vtype_code ? `${streamer.vtype_code} ` : ""}${streamer.vtype_name}` : "";
 
   useEffect(() => {
     return () => {
@@ -720,26 +760,26 @@ function SwipeCard({
       ) : null}
       <img src={thumbnail} alt={`${streamer.name} image`} loading="eager" decoding="async" fetchPriority="high" />
       <div className="card-overlay">
-        {streamer.plan_type !== "free" && (
+        {showTopPills && (
           <div className="pill-row">
-            <span className="official-badge">
-              <BadgeCheck size={15} />
-              公式
-            </span>
+            {streamer.plan_type !== "free" && (
+              <UiBadge variant="official">
+                <BadgeCheck size={15} />
+                公式
+              </UiBadge>
+            )}
             {streamer.categories.slice(0, 1).map((category) => (
-              <span className="pill" key={category}>{category}</span>
+              <UiBadge key={category}>{category}</UiBadge>
             ))}
             {streamer.tags.slice(0, 3).map((tag) => (
-              <span className="pill" key={tag}>#{tag}</span>
+              <UiBadge key={tag}>#{tag}</UiBadge>
             ))}
           </div>
         )}
         <h1>{streamer.name}</h1>
-        {!!streamer.tags.length && (
+        {vtypeLabel && (
           <div className="card-tag-row">
-            {streamer.tags.slice(0, 4).map((tag) => (
-              <span key={tag}>#{tag}</span>
-            ))}
+            <span>{vtypeLabel}</span>
           </div>
         )}
       </div>
@@ -807,6 +847,20 @@ function readViewerProfile() {
   }
 }
 
+function readStoredViewerVtypeId() {
+  try {
+    const raw = localStorage.getItem(viewerVtypeStorageKey);
+    return resolveVtypeId(raw ? JSON.parse(raw) as VtypeProfileFields : undefined);
+  } catch {
+    return null;
+  }
+}
+
+function resolveVtypeId(profile: Partial<ViewerProfile> | VtypeProfileFields | undefined) {
+  const id = Number(profile?.vtype_id);
+  return diagnosisTypes.some((type) => type.id === id) ? id : null;
+}
+
 function isAdminViewerProfile() {
   return getViewerIdentity().registered && readViewerProfile()?.is_admin_viewer === true;
 }
@@ -850,6 +904,14 @@ function shuffleEqualPriorityGroups(streamers: Streamer[], seed: string) {
       return a.originalIndex - b.originalIndex;
     })
     .map((item) => item.streamer);
+}
+
+function prioritizeSameVtype(streamers: Streamer[], viewerVtypeId: number | null) {
+  if (!viewerVtypeId) return streamers;
+  const sameType = streamers.filter((streamer) => streamer.vtype_id === viewerVtypeId);
+  if (!sameType.length) return streamers;
+  const others = streamers.filter((streamer) => streamer.vtype_id !== viewerVtypeId);
+  return [...sameType, ...others];
 }
 
 function swipePriorityScore(streamer: Streamer) {

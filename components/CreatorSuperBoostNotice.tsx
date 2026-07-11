@@ -19,7 +19,7 @@ export function CreatorSuperBoostNotice() {
       <div className="like-choice-modal">
         <div className="like-choice-icon"><Star size={28} fill="currentColor" /></div>
         <h2>視聴者さんからスーパーいいねが届きました！</h2>
-        <p>あなたのプロフィールが一定期間、より見つけてもらいやすくなっています。</p>
+        <p>あなたのプロフィールが一定期間、いつもより目立つ表示になります。</p>
         <button
           className="primary-button"
           type="button"

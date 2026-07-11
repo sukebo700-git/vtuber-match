@@ -23,7 +23,7 @@ export function PushNotificationButton({ targetType, intent = "default" }: PushN
   const cardRef = useRef<HTMLElement | null>(null);
 
   const label = useMemo(() => {
-    if (enabled) return "通知ON";
+  if (enabled) return "通知オン";
     if (targetType === "admin") return "新規登録通知を受け取る";
     if (targetType === "creator") return "いいね通知を受け取る";
     return "視聴者向け通知を受け取る";
@@ -31,8 +31,8 @@ export function PushNotificationButton({ targetType, intent = "default" }: PushN
 
   const description = useMemo(() => {
     if (targetType === "admin") return "新規配信者登録を管理者だけに通知します。";
-    if (targetType === "creator") return "視聴者からいいねが来た時にすぐ確認できます。";
-    return "スーパーいいねの控えや重要なお知らせを見逃しにくくします。";
+  if (targetType === "creator") return "視聴者からいいねが届いた時に、すぐ気づけます。";
+  return "スーパーいいねの控えや大切なお知らせに気づきやすくなります。";
   }, [targetType]);
 
   const title = useMemo(() => {
@@ -42,7 +42,7 @@ export function PushNotificationButton({ targetType, intent = "default" }: PushN
   }, [targetType]);
 
   useEffect(() => {
-    if (typeof window === "undefined" || Notification.permission !== "granted") return;
+    if (typeof window === "undefined" || !("Notification" in window) || Notification.permission !== "granted") return;
     setEnabled(localStorage.getItem(tokenStorageKey(targetType)) === "saved");
   }, [targetType]);
 
@@ -71,7 +71,7 @@ export function PushNotificationButton({ targetType, intent = "default" }: PushN
         const title = payload.notification?.title || "Vtuberマッチ";
         const body = payload.notification?.body || "新しい通知があります。";
         setStatus(`${title}: ${body}`);
-        if (Notification.permission === "granted") {
+        if ("Notification" in window && Notification.permission === "granted") {
           navigator.serviceWorker.ready
             .then((registration) => registration.showNotification(title, {
               body,
@@ -217,7 +217,7 @@ export function PushNotificationButton({ targetType, intent = "default" }: PushN
         <h2>{title}</h2>
         <p>{description}</p>
         {intent === "onboarding" && !enabled && (
-          <p className="help-text">このあと届く反応を見逃さないため、ここで通知ONにしておくのがおすすめです。</p>
+          <p className="help-text">このあと届く反応に気づけるよう、ここで通知をオンにしておくのがおすすめです。</p>
         )}
       </div>
       <div className="inline-actions">
@@ -254,7 +254,7 @@ export function PushNotificationButton({ targetType, intent = "default" }: PushN
             <div className="like-choice-actions">
               <button className="secondary-button" type="button" onClick={() => setPromptOpen(false)}>あとで</button>
               <button className="primary-button" type="button" onClick={enablePush} disabled={busy}>
-                {busy ? "設定中..." : "通知ONにする"}
+              {busy ? "設定中..." : "通知をオンにする"}
               </button>
             </div>
             {status && <p className="help-text">{status}</p>}

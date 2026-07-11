@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
+import { randomBytes } from "crypto";
 import { requireAdmin } from "@/lib/adminAuth";
+import { diagnosisTypes } from "@/lib/diagnosis";
 import { FieldValue, getAdminDb, stripUndefined } from "@/lib/firebaseAdmin";
-import { addLocalApplication, addLocalStreamer, findLocalStreamer, readLocalApplications, updateLocalApplication } from "@/lib/localStore";
+import { addLocalApplication, addLocalStreamer, findLocalStreamer, readLocalApplications, readLocalStreamers, updateLocalApplication } from "@/lib/localStore";
 import { notifyAdminNewApplication } from "@/lib/notifications";
 import { hashPassword, makeCreatorLoginId } from "@/lib/password";
 import { createUserSession, creatorSessionCookie, userSessionCookieOptions } from "@/lib/userSession";
@@ -70,7 +72,7 @@ export async function POST(request: Request) {
   const payload = {
     name: String(body.name).trim(),
     email: String(body.email).trim().toLowerCase(),
-    youtube_url: String(body.youtube_url).trim(),
+    youtube_url: normalizePublicUrl(String(body.youtube_url)),
     youtube_channel_id: String(body.youtube_channel_id || "").trim(),
     x_account: normalizeXAccount(body.x_account),
     thumbnails: normalizeThumbnails(sanitizeArray(body.thumbnails), desiredPlan),
@@ -83,6 +85,7 @@ export async function POST(request: Request) {
     creator_login_id: makeCreatorLoginId(),
     creator_password_hash: hashPassword(String(body.creator_password || "")),
     admin_note: "",
+    ...buildVtypePatch(body),
   };
 
   const imagePayloadSize = payload.thumbnails.reduce((sum, image) => sum + image.length, 0);
@@ -95,6 +98,31 @@ export async function POST(request: Request) {
 
   const db = getAdminDb();
   if (!db) {
+    const claimTarget = findClaimTarget(await readLocalStreamers(), payload.youtube_url, payload.x_account);
+    if (claimTarget) {
+      const existingClaim = (await readLocalApplications()).find((application) => (
+        application.claim_status === "pending" &&
+        application.claim_target_streamer_id === claimTarget.id &&
+        Date.parse(String(application.claim_expires_at || "")) > Date.now()
+      ));
+      if (existingClaim) {
+        return NextResponse.json({ error: "このページには確認待ちの引き継ぎ申請があります。公式XのDMで運営へお問い合わせください。" }, { status: 409 });
+      }
+      const claim = buildClaimFields(claimTarget.id, payload.x_account);
+      const application = await addLocalApplication({
+        ...payload,
+        desired_plan: claimTarget.plan_type || "free",
+        ...claim,
+      });
+      return NextResponse.json({
+        application: safeClaimApplication(application),
+        claim_pending: true,
+        claim_verification_code: claim.claim_verification_code,
+        claim_x_account: claimTarget.x_account || "",
+        source: "local",
+      }, { status: 202 });
+    }
+
     const hasWithdrawalHistory = await hasLocalWithdrawalHistory(payload.email);
     const activeExisting = hasWithdrawalHistory ? null : await findActiveLocalExistingApplication(payload.email);
     if (activeExisting) {
@@ -130,6 +158,13 @@ export async function POST(request: Request) {
       description: payload.description,
       one_liner: payload.one_liner,
       stream_time: payload.stream_time,
+      vtype_id: payload.vtype_id,
+      vtype_code: payload.vtype_code,
+      vtype_name: payload.vtype_name,
+      vtype_scores: payload.vtype_scores,
+      vtype_mode: payload.vtype_mode,
+      vtype_result_id: payload.vtype_result_id,
+      vtype_updated_at: payload.vtype_updated_at,
       plan_type: payload.desired_plan,
       is_initial_scout: false,
       is_visible: payload.desired_plan === "free",
@@ -157,6 +192,44 @@ export async function POST(request: Request) {
       email: payload.email,
     }), userSessionCookieOptions());
     return response;
+  }
+
+  const claimTarget = await findFirestoreClaimTarget(db, payload.youtube_url, payload.x_account);
+  if (claimTarget) {
+    const existingClaimSnapshot = await db.collection("applications")
+      .where("claim_target_streamer_id", "==", claimTarget.id)
+      .limit(10)
+      .get();
+    const hasActiveClaim = existingClaimSnapshot.docs.some((doc) => {
+      const data = doc.data();
+      return data.claim_status === "pending" && Date.parse(String(data.claim_expires_at || "")) > Date.now();
+    });
+    if (hasActiveClaim) {
+      return NextResponse.json({ error: "このページには確認待ちの引き継ぎ申請があります。公式XのDMで運営へお問い合わせください。" }, { status: 409 });
+    }
+    const claim = buildClaimFields(claimTarget.id, payload.x_account);
+    const applicationRef = await db.collection("applications").add(stripUndefined({
+      ...payload,
+      desired_plan: normalizePlan(String(claimTarget.data().plan_type || "free")),
+      ...claim,
+      payment_status: "not_required",
+      status: "pending",
+      withdrawal_status: "none",
+      created_at: FieldValue.serverTimestamp(),
+      updated_at: FieldValue.serverTimestamp(),
+    }));
+    await notifyAdminNewApplication({
+      applicationId: applicationRef.id,
+      streamerName: payload.name,
+      desiredPlan: payload.desired_plan,
+    }).catch((notifyError) => console.error("Failed to notify admin about claim request", notifyError));
+    return NextResponse.json({
+      application: { id: applicationRef.id, name: payload.name, status: "pending" },
+      claim_pending: true,
+      claim_verification_code: claim.claim_verification_code,
+      claim_x_account: String(claimTarget.data().x_account || ""),
+      source: "firestore",
+    }, { status: 202 });
   }
 
   const existingSnapshot = await db.collection("applications").where("email", "==", payload.email).limit(10).get();
@@ -240,6 +313,13 @@ export async function POST(request: Request) {
     description: payload.description,
     one_liner: payload.one_liner,
     stream_time: payload.stream_time,
+    vtype_id: payload.vtype_id,
+    vtype_code: payload.vtype_code,
+    vtype_name: payload.vtype_name,
+    vtype_scores: payload.vtype_scores,
+    vtype_mode: payload.vtype_mode,
+    vtype_result_id: payload.vtype_result_id,
+    vtype_updated_at: payload.vtype_updated_at,
     plan_type: payload.desired_plan,
     is_initial_scout: false,
     is_visible: payload.desired_plan === "free",
@@ -281,9 +361,89 @@ function normalizeXAccount(value: unknown) {
   return account.replace(/^https?:\/\/(www\.)?(x|twitter)\.com\//i, "@").replace(/^([^@])/, "@$1").slice(0, 40);
 }
 
+function normalizePublicUrl(value: string) {
+  return value.trim().replace(/\/+$/, "");
+}
+
+function normalizeXForMatch(value: unknown) {
+  return normalizeXAccount(value).toLowerCase();
+}
+
+function findClaimTarget(
+  streamers: Array<{ id: string; youtube_url: string; x_account?: string; plan_type?: PlanType; is_initial_scout?: boolean; is_deleted?: boolean; withdrawal_status?: string }>,
+  youtubeUrl: string,
+  xAccount: string,
+) {
+  const normalizedX = normalizeXForMatch(xAccount);
+  return streamers.find((streamer) => (
+    streamer.is_initial_scout === true &&
+    streamer.is_deleted !== true &&
+    streamer.withdrawal_status !== "requested" &&
+    (
+      normalizePublicUrl(streamer.youtube_url) === youtubeUrl ||
+      (normalizedX && normalizeXForMatch(streamer.x_account) === normalizedX)
+    )
+  ));
+}
+
+async function findFirestoreClaimTarget(db: FirebaseFirestore.Firestore, youtubeUrl: string, xAccount: string) {
+  const matches = new Map<string, FirebaseFirestore.QueryDocumentSnapshot>();
+  const youtubeSnapshot = await db.collection("streamers").where("youtube_url", "==", youtubeUrl).limit(10).get();
+  youtubeSnapshot.docs.forEach((doc) => matches.set(doc.id, doc));
+  const normalizedX = normalizeXAccount(xAccount);
+  if (normalizedX) {
+    const xSnapshot = await db.collection("streamers").where("x_account", "==", normalizedX).limit(10).get();
+    xSnapshot.docs.forEach((doc) => matches.set(doc.id, doc));
+  }
+  return Array.from(matches.values()).find((doc) => {
+    const data = doc.data();
+    return data.is_initial_scout === true && data.is_deleted !== true && data.withdrawal_status !== "requested";
+  });
+}
+
+function buildClaimFields(targetStreamerId: string, xAccount: string) {
+  const now = new Date();
+  const expiresAt = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+  const token = randomBytes(4).toString("hex").toUpperCase();
+  return {
+    claim_status: "pending" as const,
+    claim_target_streamer_id: targetStreamerId,
+    claim_verification_code: `VM-${token.slice(0, 4)}-${token.slice(4)}`,
+    claim_x_account: normalizeXAccount(xAccount),
+    claim_requested_at: now.toISOString(),
+    claim_expires_at: expiresAt.toISOString(),
+  };
+}
+
+function safeClaimApplication(application: { id: string; name: string; status: string }) {
+  return { id: application.id, name: application.name, status: application.status };
+}
+
 function normalizePlan(plan: string): PlanType {
   if (plan === "paid" || plan === "boost") return plan;
   return "free";
+}
+
+function buildVtypePatch(body: Record<string, unknown>) {
+  const type = diagnosisTypes.find((item) => item.id === Number(body.vtype_id));
+  if (!type) return {};
+  return {
+    vtype_id: type.id,
+    vtype_code: type.code,
+    vtype_name: type.name,
+    vtype_scores: normalizeScoreMap(body.vtype_scores),
+    vtype_mode: String(body.vtype_mode || "light").trim().slice(0, 20),
+    vtype_result_id: String(body.vtype_result_id || "").trim().slice(0, 120),
+    vtype_updated_at: String(body.vtype_updated_at || new Date().toISOString()).trim().slice(0, 50),
+  };
+}
+
+function normalizeScoreMap(value: unknown) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
+  const entries = Object.entries(value as Record<string, unknown>)
+    .map(([key, score]) => [key, Math.max(0, Math.min(100, Math.round(Number(score))))] as const)
+    .filter(([, score]) => Number.isFinite(score));
+  return entries.length ? Object.fromEntries(entries) : undefined;
 }
 
 function sortTime(value: unknown) {

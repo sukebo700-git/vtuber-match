@@ -13,8 +13,10 @@ type CachedStreamerImage =
   | null;
 
 export async function GET(request: Request, { params }: { params: { id: string } }) {
-  const index = clampIndex(new URL(request.url).searchParams.get("i"));
-  const image = await readCachedStreamerImage(params.id, index);
+  const searchParams = new URL(request.url).searchParams;
+  const index = clampIndex(searchParams.get("i"));
+  const version = String(searchParams.get("v") || "unversioned").slice(0, 120);
+  const image = await readCachedStreamerImage(params.id, index, version);
 
   if (!image) {
     return new Response("not found", {
@@ -42,7 +44,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
 }
 
 const readCachedStreamerImage = unstable_cache(
-  async (id: string, index: number): Promise<CachedStreamerImage> => {
+  async (id: string, index: number, _version: string): Promise<CachedStreamerImage> => {
     const db = getAdminDb();
     if (!db) {
       const streamer = await findLocalStreamer(id).catch(() => null);

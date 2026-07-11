@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import type { Firestore } from "firebase-admin/firestore";
 import { FieldValue, getAdminDb, stripUndefined } from "@/lib/firebaseAdmin";
+import { diagnosisTypes } from "@/lib/diagnosis";
 import { autoApproveLocalApplication, readLocalApplications, readLocalStreamers, updateLocalStreamer } from "@/lib/localStore";
 import { hashPassword } from "@/lib/password";
+import { invalidateStreamerCaches, publicStreamerPath } from "@/lib/streamers";
 import { creatorSessionCookie, readUserSession } from "@/lib/userSession";
 import type { PlanType, Streamer, StreamerApplication } from "@/lib/types";
 
@@ -94,13 +96,17 @@ export async function POST(request: Request) {
     }
     const thumbnailError = validateThumbnailCount(body, match.data.desired_plan);
     if (thumbnailError) return thumbnailError;
-    const patch = buildStreamerPatch(body, match.data.desired_plan);
+    const patch = {
+      ...buildStreamerPatch(body, match.data.desired_plan),
+      updated_at: new Date().toISOString(),
+    };
     const resolvedStreamerId = await resolveLocalStreamerId(match);
     if (!resolvedStreamerId) {
       return NextResponse.json({ error: "掲載データの準備中です。無料プランは少し時間をおいて再度お試しください。有料プランは決済完了後にプロフィール修正できます。" }, { status: 409 });
     }
 
     const streamer = await updateLocalStreamer(resolvedStreamerId, patch);
+    invalidateStreamerCaches();
     return NextResponse.json({ streamer, source: "local" });
   }
 
@@ -127,11 +133,13 @@ export async function POST(request: Request) {
     updated_at: FieldValue.serverTimestamp(),
   }), { merge: true });
 
+  invalidateStreamerCaches();
   const streamerDoc = await db.collection("streamers").doc(resolvedStreamerId).get();
   return NextResponse.json({ id: resolvedStreamerId, streamer: { id: resolvedStreamerId, ...streamerDoc.data() }, source: "firestore" });
 }
 
 async function resolveLocalStreamerId(match: ApplicationMatch) {
+  if (match.data.claim_status === "pending") return "";
   const streamers = await readLocalStreamers();
   if (match.data.streamer_id) {
     const linked = streamers.find((streamer) => streamer.id === match.data.streamer_id);
@@ -148,6 +156,7 @@ async function resolveLocalStreamerId(match: ApplicationMatch) {
 }
 
 async function resolveFirestoreStreamerId(db: Firestore, match: ApplicationMatch) {
+  if (match.data.claim_status === "pending") return "";
   if (match.data.streamer_id) {
     const linked = await db.collection("streamers").doc(String(match.data.streamer_id)).get();
     if (linked.exists && isActiveStreamer(linked.data())) return String(match.data.streamer_id);
@@ -280,6 +289,7 @@ function buildStreamerPatch(body: Record<string, unknown>, plan: PlanType): Part
   const patch: Partial<Streamer> = {
     categories: sanitizeArray(body.categories).slice(0, maxCategories),
     tags: sanitizeArray(body.tags).slice(0, maxTags),
+    ...buildVtypePatch(body),
   };
 
   setIfPresent(patch, "name", clean(body.name, 80));
@@ -288,7 +298,7 @@ function buildStreamerPatch(body: Record<string, unknown>, plan: PlanType): Part
   setIfPresent(patch, "description", clean(body.description, plan === "free" ? 100 : 800));
   setIfPresent(patch, "one_liner", clean(body.one_liner, 20));
   setIfPresent(patch, "stream_time", clean(body.stream_time, 50));
-  if (thumbnails.length) patch.thumbnails = thumbnails;
+  if ("thumbnails" in body || "image" in body) patch.thumbnails = thumbnails;
 
   return patch;
 }
@@ -300,6 +310,7 @@ function buildApplicationPatch(body: Record<string, unknown>, plan: PlanType) {
   const patch: Record<string, unknown> = {
     categories: sanitizeArray(body.categories).slice(0, maxCategories),
     tags: sanitizeArray(body.tags).slice(0, maxTags),
+    ...buildVtypePatch(body),
   };
 
   setIfPresent(patch, "name", clean(body.name, 80));
@@ -308,7 +319,7 @@ function buildApplicationPatch(body: Record<string, unknown>, plan: PlanType) {
   setIfPresent(patch, "description", clean(body.description, plan === "free" ? 100 : 800));
   setIfPresent(patch, "one_liner", clean(body.one_liner, 20));
   setIfPresent(patch, "stream_time", clean(body.stream_time, 50));
-  if (thumbnails.length) patch.thumbnails = thumbnails;
+  if ("thumbnails" in body || "image" in body) patch.thumbnails = thumbnails;
 
   return patch;
 }
@@ -375,9 +386,35 @@ function normalizeXAccount(value: unknown) {
   return input.replace(/^https?:\/\/(www\.)?(x|twitter)\.com\//i, "@").replace(/^([^@])/, "@$1").slice(0, 40);
 }
 
-function buildProfileResponse(streamer?: Partial<Streamer>, application?: Partial<StreamerApplication>) {
+function buildVtypePatch(body: Record<string, unknown>) {
+  const type = diagnosisTypes.find((item) => item.id === Number(body.vtype_id));
+  if (!type) return {};
   return {
-    name: streamer?.name || application?.name || "",
+    vtype_id: type.id,
+    vtype_code: type.code,
+    vtype_name: type.name,
+    vtype_scores: normalizeScoreMap(body.vtype_scores),
+    vtype_mode: clean(body.vtype_mode, 20) || "light",
+    vtype_result_id: clean(body.vtype_result_id, 120),
+    vtype_updated_at: clean(body.vtype_updated_at, 50) || new Date().toISOString(),
+  };
+}
+
+function normalizeScoreMap(value: unknown) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
+  const entries = Object.entries(value as Record<string, unknown>)
+    .map(([key, score]) => [key, Math.max(0, Math.min(100, Math.round(Number(score))))] as const)
+    .filter(([, score]) => Number.isFinite(score));
+  return entries.length ? Object.fromEntries(entries) : undefined;
+}
+
+function buildProfileResponse(streamer?: Partial<Streamer>, application?: Partial<StreamerApplication>) {
+  const streamerId = streamer?.id || application?.streamer_id || "";
+  const name = streamer?.name || application?.name || "";
+  return {
+    streamer_id: streamerId,
+    public_path: streamerId ? publicStreamerPath({ id: streamerId, name }) : "",
+    name,
     youtube_url: streamer?.youtube_url || application?.youtube_url || "",
     youtube_channel_id: streamer?.youtube_channel_id || application?.youtube_channel_id || "",
     x_account: streamer?.x_account || application?.x_account || "",
@@ -388,6 +425,13 @@ function buildProfileResponse(streamer?: Partial<Streamer>, application?: Partia
     image: streamer?.thumbnails?.[0] || application?.thumbnails?.[0] || "",
     images: streamer?.thumbnails || application?.thumbnails || [],
     categories: streamer?.categories || application?.categories || [],
-    tags: streamer?.tags || application?.tags || []
+    tags: streamer?.tags || application?.tags || [],
+    vtype_id: streamer?.vtype_id || application?.vtype_id,
+    vtype_code: streamer?.vtype_code || application?.vtype_code || "",
+    vtype_name: streamer?.vtype_name || application?.vtype_name || "",
+    vtype_scores: streamer?.vtype_scores || application?.vtype_scores,
+    vtype_mode: streamer?.vtype_mode || application?.vtype_mode || "",
+    vtype_result_id: streamer?.vtype_result_id || application?.vtype_result_id || "",
+    vtype_updated_at: streamer?.vtype_updated_at || application?.vtype_updated_at || "",
   };
 }

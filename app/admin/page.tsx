@@ -6,7 +6,6 @@ import { PasswordResetAdminPanel } from "@/components/PasswordResetAdminPanel";
 import { VisitStatsPanel } from "@/components/VisitStatsPanel";
 import { AdminAnalyticsPanel } from "@/components/AdminAnalyticsPanel";
 import { AdminImportantNotifications, type AdminImportantNotification } from "@/components/AdminImportantNotifications";
-import { PushNotificationButton } from "@/components/PushNotificationButton";
 import { emptyAdminAnalyticsSummary, type AdminAnalyticsSummary } from "@/lib/analytics";
 import { adminCookieName, verifyAdminSession } from "@/lib/adminSession";
 import { getAdminDb } from "@/lib/firebaseAdmin";
@@ -87,7 +86,6 @@ export default async function AdminPage({ searchParams }: { searchParams?: Admin
         <HeaderAuthStatus />
       </header>
       <main className="main admin-main grid-page">
-        <PushNotificationButton targetType="admin" />
         <AdminImportantNotifications notifications={importantNotifications} />
         <nav className="admin-filter-row" aria-label="管理画面タブ">
           {adminTabs.map((tab) => (
@@ -493,6 +491,13 @@ async function readFirestoreApplications(): Promise<StreamerApplication[]> {
       "streamer_id",
       "creator_login_id",
       "creator_password_hash",
+      "claim_status",
+      "claim_target_streamer_id",
+      "claim_verification_code",
+      "claim_x_account",
+      "claim_requested_at",
+      "claim_expires_at",
+      "claim_verified_at",
     )
     .limit(160)
     .get();
@@ -524,7 +529,14 @@ async function readFirestoreApplications(): Promise<StreamerApplication[]> {
       withdrawal_requested_at: timestampToIso(data.withdrawal_requested_at),
       streamer_id: data.streamer_id,
       creator_login_id: data.creator_login_id,
-      creator_password_hash: data.creator_password_hash
+      creator_password_hash: data.creator_password_hash,
+      claim_status: data.claim_status,
+      claim_target_streamer_id: data.claim_target_streamer_id,
+      claim_verification_code: data.claim_verification_code,
+      claim_x_account: data.claim_x_account,
+      claim_requested_at: timestampToIso(data.claim_requested_at),
+      claim_expires_at: timestampToIso(data.claim_expires_at),
+      claim_verified_at: timestampToIso(data.claim_verified_at),
     };
   }).sort(sortByCreatedDesc).slice(0, 80);
 }

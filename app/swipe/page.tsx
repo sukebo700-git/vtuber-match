@@ -6,8 +6,8 @@ import type { Metadata } from "next";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Vtuberをスワイプで探す",
-  description: "登録なしでVtuberをスワイプ。気になる配信者を直感で見つけてYouTubeチャンネルへ移動できます。",
+  title: "VTuberをスワイプで探す",
+  description: "登録なしでVTuberをスワイプ。気になる配信者を直感で見つけて、YouTubeチャンネルへ移動できます。",
   alternates: {
     canonical: "/swipe",
   },

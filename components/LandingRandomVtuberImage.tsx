@@ -3,27 +3,30 @@
 import { useEffect, useState } from "react";
 
 const landingImages = [
-  "/promo/landing-random/1.webp?v=20260701-alpha",
-  "/promo/landing-random/2.webp?v=20260701-alpha",
-  "/promo/landing-random/3.webp?v=20260701-alpha",
-  "/promo/landing-random/4.webp?v=20260701-alpha",
-  "/promo/landing-random/5.webp?v=20260701-alpha",
+  "/promo/landing-random/vtubermatch-hero-1.png?v=20260708",
+  "/promo/landing-random/vtubermatch-hero-2.png?v=20260708",
+  "/promo/landing-random/vtubermatch-hero-3.png?v=20260708",
+  "/promo/landing-random/vtubermatch-hero-4.png?v=20260709-1",
+  "/promo/landing-random/vtubermatch-hero-5.png?v=20260708",
+  "/promo/landing-random/vtubermatch-hero-6.png?v=20260708",
 ];
 
 const landingNames = [
-  "\u767d\u97f3\u30df\u30e9\u30a4",
-  "\u6843\u661f\u30ad\u30e9\u30e9",
-  "\u6708\u4e43\u30a2\u30ea\u30b9",
-  "\u9ed2\u7fbd\u30eb\u30ab",
-  "\u7fe0\u732b\u30a2\u30f3\u30ca",
+  "\u30df\u30e9\u30a4",
+  "\u30ca\u30ca",
+  "\u30ea\u30ea\u30a2",
+  "\u30a2\u30aa\u30a4",
+  "\u30b7\u30a2",
+  "\u30eb\u30ca",
 ];
 
 type LandingRandomVtuberImageProps = {
   fixedIndex?: number;
   randomize?: boolean;
+  variant?: "card" | "hero";
 };
 
-export function LandingRandomVtuberImage({ fixedIndex = 0, randomize = false }: LandingRandomVtuberImageProps) {
+export function LandingRandomVtuberImage({ fixedIndex = 0, randomize = false, variant = "card" }: LandingRandomVtuberImageProps) {
   const preferredIndex = clampImageIndex(fixedIndex);
   const [imageIndex, setImageIndex] = useState<number | null>(randomize ? null : preferredIndex);
 
@@ -40,7 +43,7 @@ export function LandingRandomVtuberImage({ fixedIndex = 0, randomize = false }: 
 
   return (
     <>
-      <div className={`landing-oshi-frame landing-oshi-gradient-${frameIndex}`}>
+      <div className={`landing-oshi-frame landing-oshi-${variant} landing-oshi-gradient-${frameIndex}`}>
         {imageIndex !== null && (
           <img
             className="landing-oshi-image"

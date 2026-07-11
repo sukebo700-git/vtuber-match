@@ -19,8 +19,8 @@ export function ViewerProfileGate() {
   if (!loggedIn) {
     return (
       <section className="status-band">
-        <h2>無料登録でプロフィールを使えます</h2>
-        <p>プロフィール登録、画像登録、スーパーいいね履歴は無料登録後に使えます。</p>
+        <h2>無料登録でプロフィールを保存できます</h2>
+        <p>プロフィールや画像、スーパーいいね履歴は無料登録後に利用できます。</p>
         <p style={{ marginTop: 12 }}>
           <a className="primary-button" href="/viewer/register">無料登録する</a>
         </p>

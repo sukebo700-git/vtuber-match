@@ -7,8 +7,8 @@ export function ViewerSuperBoostWallet() {
     <section className="status-band viewer-super-wallet">
       <h2><Star size={20} fill="currentColor" /> スーパーいいねとは？</h2>
       <p>
-        スーパーいいねは、スワイプ画面で送りたいVtuberを選んで送れます。
-        購入後すぐに応援したいVtuberさんに72時間のエフェクト効果と上位表示が発動し、全力応援できます。
+        スーパーいいねは、スワイプ画面から気になるVTuberに送れる特別ないいねです。
+        送った相手には72時間のエフェクトと上位表示が付き、いつもより目立つ形で応援できます。
       </p>
     </section>
   );

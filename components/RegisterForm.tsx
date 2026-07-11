@@ -56,7 +56,7 @@ export function RegisterForm({ categories, tags }: RegisterFormProps) {
         </select>
       </div>
       <div className="field">
-        <label htmlFor="description">プロフィール画面に表示する自己アピール</label>
+        <label htmlFor="description">プロフィール画面に掲載する自己アピール</label>
         <textarea id="description" name="description" required />
       </div>
       <div className="field">

@@ -4,7 +4,7 @@ import { BadgeCheck, ExternalLink, Search } from "lucide-react";
 
 import { PLAN_LABELS } from "@/lib/constants";
 import { absoluteUrl, siteName } from "@/lib/seo";
-import { getPublicStreamerBySlug, publicStreamerPath } from "@/lib/streamers";
+import { getPublicStreamerBySlug, publicStreamerPath, streamerImagePath } from "@/lib/streamers";
 import { videoSiteLabel, youtubeSubscribeUrl } from "@/lib/youtube";
 
 export const revalidate = 86400;
@@ -28,7 +28,7 @@ export async function generateMetadata({ params }: VtuberSeoPageProps): Promise<
   const title = `${streamer.name} | VtuberMatch掲載プロフィール`;
   const description = seoDescription(streamer.name, streamer.description || streamer.one_liner, streamer.categories, streamer.tags);
   const canonicalPath = publicStreamerPath(streamer);
-  const image = absoluteUrl(`/api/streamer-image/${encodeURIComponent(streamer.id)}?i=0`);
+  const image = absoluteUrl(streamerImagePath(streamer));
 
   return {
     title,
@@ -56,7 +56,7 @@ export default async function VtuberSeoPage({ params }: VtuberSeoPageProps) {
   if (!streamer) notFound();
 
   const siteLabel = videoSiteLabel(streamer.youtube_url);
-  const image = `/api/streamer-image/${encodeURIComponent(streamer.id)}?i=0`;
+  const image = streamerImagePath(streamer);
   const categories = streamer.categories || [];
   const tags = streamer.tags || [];
 
@@ -71,6 +71,9 @@ export default async function VtuberSeoPage({ params }: VtuberSeoPageProps) {
           <h1>{streamer.name}</h1>
           <div className="pill-row">
             <span className="pill dark">{PLAN_LABELS[streamer.plan_type]}</span>
+            {streamer.vtype_name && (
+              <span className="pill dark">VTYPE {streamer.vtype_code} {streamer.vtype_name}</span>
+            )}
             {streamer.plan_type !== "free" && (
               <span className="official-badge">
                 <BadgeCheck size={15} />

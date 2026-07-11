@@ -34,6 +34,15 @@ const VIEWER_KEYS = [
   "vtuber-match-viewer-profile",
 ];
 
+const GLOBAL_MENU_ITEMS = [
+  { href: "/swipe", label: "スワイプ" },
+  { href: "/viewer", label: "視聴者用" },
+  { href: "/creator", label: "配信者用" },
+  { href: "/diagnosis", label: "タイプ診断" },
+  { href: "https://www.youtube.com/@VtuberMatch", label: "公式YouTube", external: true },
+  { href: "/help", label: "ヘルプ" },
+];
+
 function readJson<T>(value: string | null): T | null {
   if (!value) return null;
   try {
@@ -196,15 +205,24 @@ export function HeaderAuthStatus() {
 
         {menuOpen ? (
           <div className="header-menu-panel" role="menu">
+            {GLOBAL_MENU_ITEMS.map((item) => (
+              <a
+                key={`${item.href}-${item.label}`}
+                href={item.href}
+                role="menuitem"
+                target={item.external ? "_blank" : undefined}
+                rel={item.external ? "noreferrer" : undefined}
+              >
+                {item.label}
+              </a>
+            ))}
             {menuItems.length ? (
-              menuItems.map((item) => (
-                <a key={`${item.href}-${item.label}`} href={item.href} role="menuitem">
+              menuItems.map((item, index) => (
+                <a key={`${item.href}-${item.label}`} className={index === 0 ? "menu-section-start" : undefined} href={item.href} role="menuitem">
                   {item.label}
                 </a>
               ))
-            ) : (
-              <span className="header-menu-empty">ログイン後利用可能</span>
-            )}
+            ) : null}
           </div>
         ) : null}
       </div>

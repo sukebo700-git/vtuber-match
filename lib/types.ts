@@ -3,8 +3,17 @@ export type StreamerPlanType = PlanType;
 export type AdminPlacement = "top" | "normal" | "bottom";
 export type ViewerPlanType = "free";
 export type SuperBoostEffect = "shine" | "shake";
+export type VtypeProfileFields = {
+  vtype_id?: number;
+  vtype_code?: string;
+  vtype_name?: string;
+  vtype_scores?: Partial<Record<string, number>>;
+  vtype_mode?: "light" | "advanced" | "viewer" | string;
+  vtype_result_id?: string;
+  vtype_updated_at?: string;
+};
 
-export type Streamer = {
+export type Streamer = VtypeProfileFields & {
   id: string;
   name: string;
   creator_email?: string;
@@ -61,8 +70,9 @@ export type Streamer = {
 };
 
 export type ApplicationStatus = "pending" | "approved" | "rejected";
+export type StreamerClaimStatus = "pending" | "approved" | "rejected";
 
-export type StreamerApplication = {
+export type StreamerApplication = VtypeProfileFields & {
   id: string;
   name: string;
   email: string;
@@ -90,6 +100,13 @@ export type StreamerApplication = {
   streamer_id?: string;
   creator_login_id?: string;
   creator_password_hash?: string;
+  claim_status?: StreamerClaimStatus;
+  claim_target_streamer_id?: string;
+  claim_verification_code?: string;
+  claim_x_account?: string;
+  claim_requested_at?: string;
+  claim_expires_at?: string;
+  claim_verified_at?: string;
 };
 
 export type PaymentRecord = {
@@ -106,7 +123,7 @@ export type PaymentRecord = {
   created_at: string;
 };
 
-export type ViewerProfile = {
+export type ViewerProfile = VtypeProfileFields & {
   id: string;
   anonymous_viewer_id?: string;
   email?: string;

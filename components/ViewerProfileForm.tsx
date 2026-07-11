@@ -3,6 +3,8 @@
 import { HeartHandshake, RotateCcw, Save } from "lucide-react";
 import { useEffect, useState } from "react";
 import { CATEGORIES } from "@/lib/constants";
+import { diagnosisTypes } from "@/lib/diagnosis";
+import { viewerVtypeStorageKey, type VtypeProfileFields } from "@/lib/diagnosisProfile";
 import type { ViewerProfile } from "@/lib/types";
 
 const storageKey = "vtuber-match-viewer-profile";
@@ -51,9 +53,11 @@ export function ViewerProfileForm() {
     const auth = safeParse(localStorage.getItem(authKey));
     const saved = localStorage.getItem(storageKey);
     const stored = saved ? safeParseProfile(saved) : {};
+    const storedVtype = readStoredVtypeProfile();
     const nextProfile = {
       ...emptyProfile,
       ...stored,
+      ...(stored.vtype_id ? {} : storedVtype || {}),
       id,
       email: auth?.email || stored.email || "",
       viewer_login_id: auth?.viewer_login_id || stored.viewer_login_id || "",
@@ -106,6 +110,7 @@ export function ViewerProfileForm() {
       profile: profile.profile || "",
       favorite_categories: profile.favorite_categories || [],
       visible_to_matched_streamers: profile.visible_to_matched_streamers !== false,
+      ...vtypePayload(profile),
     };
 
     localStorage.setItem(storageKey, JSON.stringify(cleanProfile));
@@ -303,6 +308,29 @@ export function ViewerProfileForm() {
       </div>
 
       <div className="field">
+        <label htmlFor="viewer_vtype_id">リスナーVTYPE</label>
+        <select
+          id="viewer_vtype_id"
+          value={profile.vtype_id ? String(profile.vtype_id) : ""}
+          onChange={(event) => update(vtypeProfileFromId(event.target.value) || {
+            vtype_id: undefined,
+            vtype_code: "",
+            vtype_name: "",
+            vtype_scores: undefined,
+            vtype_mode: "",
+            vtype_result_id: "",
+            vtype_updated_at: "",
+          })}
+        >
+          <option value="">選択しない</option>
+          {diagnosisTypes.map((type) => (
+            <option value={type.id} key={type.id}>{type.code} {type.name}</option>
+          ))}
+        </select>
+        <p className="help-text">診断済みの場合は自動で入ります。同じタイプのVTuberをおすすめ欄に表示します。</p>
+      </div>
+
+      <div className="field">
         <label>好きなカテゴリ {profile.favorite_categories?.length || 0}/5</label>
         <div className="choice-grid dense">
           {CATEGORIES.map((category) => (
@@ -344,6 +372,41 @@ function fanAppeal(matchCount: number) {
   if (matchCount >= 20) return "たくさんの配信者と出会っている、かなり積極的なファンです。";
   if (matchCount >= 5) return "気になる配信者をしっかり見つけているアクティブなファンです。";
   return "これから推しを見つけていくファンです。";
+}
+
+function readStoredVtypeProfile() {
+  try {
+    const raw = localStorage.getItem(viewerVtypeStorageKey);
+    return raw ? (JSON.parse(raw) as VtypeProfileFields) : null;
+  } catch {
+    return null;
+  }
+}
+
+function vtypeProfileFromId(value: string): VtypeProfileFields | null {
+  const type = diagnosisTypes.find((item) => item.id === Number(value));
+  if (!type) return null;
+  return {
+    vtype_id: type.id,
+    vtype_code: type.code,
+    vtype_name: type.name,
+    vtype_mode: "viewer",
+    vtype_updated_at: new Date().toISOString(),
+  };
+}
+
+function vtypePayload(profile: Partial<ViewerProfile>) {
+  const type = diagnosisTypes.find((item) => item.id === Number(profile.vtype_id));
+  if (!type) return {};
+  return {
+    vtype_id: type.id,
+    vtype_code: type.code,
+    vtype_name: type.name,
+    vtype_scores: profile.vtype_scores,
+    vtype_mode: profile.vtype_mode || "viewer",
+    vtype_result_id: profile.vtype_result_id || "",
+    vtype_updated_at: profile.vtype_updated_at || new Date().toISOString(),
+  };
 }
 
 function safeParse(value: string | null) {

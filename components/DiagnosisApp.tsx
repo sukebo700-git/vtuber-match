@@ -22,6 +22,12 @@ import {
   type DiagnosisType,
   type DiagnosisTypeMatch,
 } from "@/lib/diagnosis";
+import {
+  buildVtypeProfileFields,
+  creatorVtypeStorageKey,
+  viewerVtypeStorageKey,
+  type VtypeProfileFields,
+} from "@/lib/diagnosisProfile";
 
 type DiagnosisMode = "light" | "advanced" | "viewer";
 
@@ -32,6 +38,7 @@ type DiagnosisAppProps = {
 
 type SaveState = "idle" | "saving" | "saved" | "offline";
 type ImageSaveState = "idle" | "saving" | "saved" | "failed";
+type ProfileSaveTarget = "creator" | "viewer" | false;
 
 export default function DiagnosisApp({ mode, previewTypeId }: DiagnosisAppProps) {
   const questions = mode === "advanced" ? advancedQuestions : mode === "viewer" ? viewerQuestions : lightQuestions;
@@ -55,6 +62,7 @@ export default function DiagnosisApp({ mode, previewTypeId }: DiagnosisAppProps)
   } | null>(null);
   const [nameError, setNameError] = useState("");
   const [saveState, setSaveState] = useState<SaveState>("idle");
+  const [profileSaveTarget, setProfileSaveTarget] = useState<ProfileSaveTarget>(false);
   const [typeImageState, setTypeImageState] = useState<ImageSaveState>("idle");
   const [radarImageState, setRadarImageState] = useState<ImageSaveState>("idle");
   const currentQuestions = useMemo(() => {
@@ -74,6 +82,7 @@ export default function DiagnosisApp({ mode, previewTypeId }: DiagnosisAppProps)
     setStarted(false);
     setResult(null);
     setSaveState("idle");
+    setProfileSaveTarget(false);
   }, [questions]);
 
   useEffect(() => {
@@ -125,6 +134,7 @@ export default function DiagnosisApp({ mode, previewTypeId }: DiagnosisAppProps)
           mode,
           resultId: mode === "advanced" ? storedResultId : undefined,
           lightType: type.name,
+          lightTypeId: type.id,
           lightTypeCode: type.code,
           lightScores: scores,
           advancedScores: mode === "advanced" ? scores : undefined,
@@ -132,13 +142,18 @@ export default function DiagnosisApp({ mode, previewTypeId }: DiagnosisAppProps)
         }),
       });
       const data = (await response.json()) as { resultId?: string | null; saved?: boolean };
+      const resultId = data.resultId || null;
       if (data.resultId && typeof window !== "undefined") {
         window.localStorage.setItem("vtuber-match-diagnosis-result-id", data.resultId);
       }
-      setResult({ type, scores, resultId: data.resultId || null, matches });
+      rememberDiagnosisProfile(mode, type, scores, resultId);
+      setResult({ type, scores, resultId, matches });
       setSaveState(data.saved === false ? "offline" : "saved");
+      setProfileSaveTarget(isProfileSaveTarget((data as { profileSaved?: unknown }).profileSaved) ? (data as { profileSaved: ProfileSaveTarget }).profileSaved : false);
     } catch {
+      rememberDiagnosisProfile(mode, type, scores, null);
       setSaveState("offline");
+      setProfileSaveTarget(false);
     }
   }
 
@@ -247,6 +262,7 @@ export default function DiagnosisApp({ mode, previewTypeId }: DiagnosisAppProps)
 
           {mode === "viewer" ? <ListenerDeepDive type={result.type} /> : <StreamerDeepDive type={result.type} />}
           {mode === "viewer" ? <ViewerResultGuide type={result.type} /> : <ViewerMatchCard scores={result.scores} type={result.type} />}
+          {mode !== "viewer" ? <CreatorDiagnosisRegisterCta /> : null}
           {mode === "advanced" ? <AdvancedDetails scores={result.scores} /> : null}
           <DiagnosisNotice />
           <div className="diagnosis-result-main-actions">
@@ -263,6 +279,10 @@ export default function DiagnosisApp({ mode, previewTypeId }: DiagnosisAppProps)
             {saveState === "saving" ? <span className="diagnosis-save-note">診断結果を保存中...</span> : null}
             {saveState === "saved" ? <span className="diagnosis-save-note">診断結果を保存しました</span> : null}
             {saveState === "offline" ? <span className="diagnosis-save-note">表示は完了しました。保存はあとで再試行される場合があります</span> : null}
+            {profileSaveTarget === "creator" ? <span className="diagnosis-save-note">配信者プロフィールへ自動で反映しました</span> : null}
+            {profileSaveTarget === "viewer" ? <span className="diagnosis-save-note">視聴者プロフィールに保存しました</span> : null}
+            {!profileSaveTarget && mode !== "viewer" ? <span className="diagnosis-save-note">未ログインの場合は、プロフィール登録・修正画面でこのタイプを選べます</span> : null}
+            {!profileSaveTarget && mode === "viewer" ? <span className="diagnosis-save-note">視聴者プロフィール画面でこのタイプを保存できます</span> : null}
           </div>
 
           {mode === "light" ? (
@@ -277,7 +297,7 @@ export default function DiagnosisApp({ mode, previewTypeId }: DiagnosisAppProps)
               <DiagnosisLinkCard
                 image="/diagnosis/ui/viewer-30q.webp"
                 title="リスナー向け 相性診断"
-                description="あなたと相性のいいVTuberタイプを診断できます。"
+                description="あなたと相性のいいVTuberタイプがわかります。"
                 href="/diagnosis/viewer"
                 button="リスナー向け 相性診断"
               />
@@ -342,7 +362,7 @@ export default function DiagnosisApp({ mode, previewTypeId }: DiagnosisAppProps)
                 value={vtuberName}
                 onChange={(event) => setVtuberName(event.target.value)}
                 maxLength={50}
-                placeholder={mode === "viewer" ? "未入力でも診断できます" : "例: みらい ねお"}
+                placeholder={mode === "viewer" ? "未入力でもOK" : "例: みらい ねお"}
               />
             </label>
             {nameError ? <p className="diagnosis-error">{nameError}</p> : null}
@@ -601,7 +621,7 @@ function StreamerDeepDive({ type }: { type: DiagnosisType }) {
           <p>{type.viewerMatch}</p>
         </article>
       </div>
-      <p className="diagnosis-match-lead">VtuberMatchで、{type.name}タイプのあなたと相性のいい視聴者に見つけてもらいましょう。</p>
+      <p className="diagnosis-match-lead">VtuberMatchで、{type.name}タイプのあなたと相性のいい視聴者に届けましょう。</p>
     </section>
   );
 }
@@ -642,7 +662,23 @@ function ViewerMatchCard({ scores, type }: { scores: DiagnosisScores; type: Diag
           <span key={trait}>{trait}</span>
         ))}
       </div>
-      <p>VtuberMatchでは、{type.name}タイプのあなたを待っている視聴者に見つけてもらう導線を用意しています。</p>
+      <p>VtuberMatchでは、{type.name}タイプのあなたに興味を持つ視聴者へ届くきっかけを用意しています。</p>
+    </section>
+  );
+}
+
+function CreatorDiagnosisRegisterCta() {
+  return (
+    <section className="diagnosis-creator-register-cta">
+      <p className="diagnosis-kicker">未登録の配信者へ</p>
+      <h2>診断結果を保存して、相性のいいリスナーに見つけてもらう</h2>
+      <p>
+        無料掲載すると、診断で見えたあなたの配信スタイルをプロフィールに活かせます。
+        推しを探しているリスナーに、あなたの魅力が届くきっかけを作りましょう。
+      </p>
+      <a className="diagnosis-primary-button" href="/creator/apply">
+        無料掲載して診断結果を活かす
+      </a>
     </section>
   );
 }
@@ -826,6 +862,33 @@ function downloadBlob(blob: Blob, filename: string) {
   link.click();
   link.remove();
   URL.revokeObjectURL(url);
+}
+
+function rememberDiagnosisProfile(
+  mode: DiagnosisMode,
+  type: DiagnosisType,
+  scores: DiagnosisScores,
+  resultId: string | null,
+) {
+  if (typeof window === "undefined") return;
+  const fields = buildVtypeProfileFields({ type, scores, mode, resultId });
+  const key = mode === "viewer" ? viewerVtypeStorageKey : creatorVtypeStorageKey;
+  window.localStorage.setItem(key, JSON.stringify(fields));
+  if (mode === "viewer") mergeLocalJson("vtuber-match-viewer-profile", fields);
+  else mergeLocalJson("vtuber-match-creator-profile-draft", fields);
+}
+
+function mergeLocalJson(key: string, patch: VtypeProfileFields) {
+  try {
+    const current = JSON.parse(window.localStorage.getItem(key) || "{}") as Record<string, unknown>;
+    window.localStorage.setItem(key, JSON.stringify({ ...current, ...patch }));
+  } catch {
+    window.localStorage.setItem(key, JSON.stringify(patch));
+  }
+}
+
+function isProfileSaveTarget(value: unknown): value is ProfileSaveTarget {
+  return value === "creator" || value === "viewer" || value === false;
 }
 
 async function createRadarImageBlob(type: DiagnosisType, scores: DiagnosisScores, mode: DiagnosisMode) {

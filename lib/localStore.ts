@@ -316,6 +316,13 @@ export async function autoApproveLocalApplication(applicationId: string) {
     description: application.description,
     one_liner: String(application.one_liner || "").slice(0, 20),
     stream_time: application.stream_time,
+    vtype_id: application.vtype_id,
+    vtype_code: application.vtype_code,
+    vtype_name: application.vtype_name,
+    vtype_scores: application.vtype_scores,
+    vtype_mode: application.vtype_mode,
+    vtype_result_id: application.vtype_result_id,
+    vtype_updated_at: application.vtype_updated_at,
     plan_type: application.desired_plan,
     is_initial_scout: false,
     is_visible: true,
@@ -398,6 +405,13 @@ export async function approveLocalApplication(applicationId: string) {
     description: application.description,
     one_liner: String(application.one_liner || "").slice(0, 20),
     stream_time: application.stream_time,
+    vtype_id: application.vtype_id,
+    vtype_code: application.vtype_code,
+    vtype_name: application.vtype_name,
+    vtype_scores: application.vtype_scores,
+    vtype_mode: application.vtype_mode,
+    vtype_result_id: application.vtype_result_id,
+    vtype_updated_at: application.vtype_updated_at,
     plan_type: application.desired_plan,
     is_initial_scout: false,
     is_visible: true,
@@ -412,6 +426,51 @@ export async function approveLocalApplication(applicationId: string) {
   await fs.writeFile(applicationsPath, JSON.stringify(updated, null, 2));
 
   return streamer;
+}
+
+export async function approveLocalStreamerClaim(applicationId: string) {
+  const applications = await readLocalApplications();
+  const application = applications.find((item) => item.id === applicationId);
+  if (!application || application.claim_status !== "pending" || !application.claim_target_streamer_id) return null;
+  if (Date.parse(String(application.claim_expires_at || "")) <= Date.now()) return null;
+
+  const streamers = await readAllLocalStreamers();
+  const target = streamers.find((streamer) => (
+    streamer.id === application.claim_target_streamer_id &&
+    streamer.is_initial_scout === true &&
+    streamer.is_deleted !== true &&
+    streamer.withdrawal_status !== "requested"
+  ));
+  if (!target) return null;
+
+  const now = new Date().toISOString();
+  const updatedStreamers = streamers.map((streamer) => (
+    streamer.id === target.id
+      ? {
+          ...streamer,
+          creator_email: application.email.toLowerCase(),
+          source_application_id: application.id,
+          is_initial_scout: false,
+          updated_at: now,
+        }
+      : streamer
+  ));
+  const updatedApplications = applications.map((item) => (
+    item.id === applicationId
+      ? {
+          ...item,
+          status: "approved" as const,
+          claim_status: "approved" as const,
+          streamer_id: target.id,
+          reviewed_at: now,
+          claim_verified_at: now,
+        }
+      : item
+  ));
+
+  await fs.writeFile(streamersPath, JSON.stringify(updatedStreamers, null, 2));
+  await fs.writeFile(applicationsPath, JSON.stringify(updatedApplications, null, 2));
+  return updatedStreamers.find((streamer) => streamer.id === target.id) || null;
 }
 
 export async function incrementLocalStreamer(id: string, field: "impressions" | "likes") {

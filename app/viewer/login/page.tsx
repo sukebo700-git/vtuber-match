@@ -34,8 +34,8 @@ export default function ViewerLoginPage({ searchParams }: { searchParams?: { mod
           }
         >
           <section className="status-band">
-            <h1>{initialMode === "register" ? "視聴者新規登録" : "視聴者ログイン"}</h1>
-            <p>無料登録またはログインすると、プロフィール保存やスーパーいいね履歴の確認ができます。</p>
+          <h1>{initialMode === "register" ? "視聴者新規登録" : "視聴者ログイン"}</h1>
+          <p>無料登録またはログインすると、プロフィール保存やスーパーいいね履歴を使えます。</p>
           </section>
 
           <ViewerLoginForm initialMode={initialMode} />

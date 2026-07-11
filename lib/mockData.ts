@@ -62,6 +62,7 @@ export const mockStreamers: Streamer[] = names.map((name, index) => {
   const stale = index % 9 === 0;
   const boost = index % 7 === 0;
   const image = `${baseImages[index % baseImages.length]}?auto=format&fit=crop&w=900&q=82&sig=${index}`;
+  const vtypeId = (index % 16) + 1;
 
   return {
     id: `seed-${index + 1}`,
@@ -82,6 +83,9 @@ export const mockStreamers: Streamer[] = names.map((name, index) => {
     is_visible: true,
     impressions: 120 + index * 7,
     likes: 12 + index,
+    vtype_id: vtypeId,
+    vtype_code: `TYPE${vtypeId}`,
+    vtype_name: `タイプ${vtypeId}`,
     created_at: "2026-05-05T00:00:00.000Z"
   };
 });

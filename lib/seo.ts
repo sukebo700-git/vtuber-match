@@ -1,7 +1,7 @@
 export const siteName = "VtuberMatch";
 
 export const siteDescription =
-  "Vtuber配信者と新しい推しを探したい視聴者をつなぐ、登録無料のスワイプ型マッチングサービスです。";
+  "VTuber配信者と新しい推しを探したい視聴者をつなぐ、スワイプ型のマッチングサービスです。";
 
 export const siteKeywords = [
   "Vtuber",

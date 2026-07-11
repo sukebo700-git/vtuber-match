@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { useMemo, useState, type ChangeEvent } from "react";
-import { Copy, Edit3, ExternalLink, Eye, EyeOff, Heart, Save, Trash2, X } from "lucide-react";
+import { BadgeCheck, Copy, Edit3, ExternalLink, Eye, EyeOff, Heart, Save, Trash2, X } from "lucide-react";
 import { CATEGORIES, PLAN_LABELS, TAGS } from "@/lib/constants";
 import type { AdminPlacement, PlanType, Streamer, StreamerApplication, SuperBoostEffect } from "@/lib/types";
 
@@ -13,6 +13,21 @@ type AdminDashboardProps = {
 
 type StreamerView = "application" | "paid" | "boost";
 type EditState = Pick<Streamer, "id" | "name" | "youtube_url" | "youtube_channel_id" | "archive_url" | "description" | "one_liner" | "stream_time" | "plan_type" | "thumbnails" | "categories" | "tags">;
+type PublicImportDraft = {
+  name: string;
+  youtube_url: string;
+  x_account: string;
+  description: string;
+  one_liner: string;
+  stream_time: string;
+  plan_type: PlanType;
+  thumbnails: string[];
+  categories: string[];
+  tags: string[];
+  yomi: string;
+  is_visible: boolean;
+  publication_consent: boolean;
+};
 
 const ADMIN_PLACEMENT_LABELS: Record<AdminPlacement, string> = {
   top: "管理者指定 上位表示",
@@ -26,6 +41,7 @@ const SUPER_BOOST_EFFECT_LABELS: Record<SuperBoostEffect, string> = {
 };
 
 export function AdminDashboard({ initialApplications, initialStreamers, adminKey }: AdminDashboardProps) {
+  const [applications, setApplications] = useState(initialApplications);
   const [streamers, setStreamers] = useState(initialStreamers);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [busyId, setBusyId] = useState("");
@@ -36,20 +52,29 @@ export function AdminDashboard({ initialApplications, initialStreamers, adminKey
   const [previewStreamer, setPreviewStreamer] = useState<Streamer | null>(null);
   const [superEffects, setSuperEffects] = useState<Record<string, SuperBoostEffect>>({});
   const [actionFeedback, setActionFeedback] = useState<Record<string, string>>({});
+  const [publicImportText, setPublicImportText] = useState("");
+  const [publicDraft, setPublicDraft] = useState<PublicImportDraft | null>(null);
+  const [publicCreating, setPublicCreating] = useState(false);
+  const [createdPublicPath, setCreatedPublicPath] = useState("");
 
   const applicationByStreamerId = useMemo(() => {
     const map = new Map<string, StreamerApplication>();
-    initialApplications.forEach((application) => {
+    applications.forEach((application) => {
       if (application.streamer_id) map.set(application.streamer_id, application);
     });
     return map;
-  }, [initialApplications]);
+  }, [applications]);
 
   const applicationById = useMemo(() => {
     const map = new Map<string, StreamerApplication>();
-    initialApplications.forEach((application) => map.set(application.id, application));
+    applications.forEach((application) => map.set(application.id, application));
     return map;
-  }, [initialApplications]);
+  }, [applications]);
+
+  const pendingClaims = useMemo(
+    () => applications.filter((application) => application.claim_status === "pending" && application.claim_target_streamer_id),
+    [applications],
+  );
 
   const listedStreamers = useMemo(() => {
     const sorted = [...streamers].sort((a, b) => {
@@ -256,7 +281,9 @@ export function AdminDashboard({ initialApplications, initialStreamers, adminKey
     if (!editing) return;
     const files = Array.from(event.target.files || []).slice(0, editing.plan_type === "free" ? 1 : 3);
     Promise.all(files.map(fileToDataUrl)).then((images) => {
-      setEditing({ ...editing, thumbnails: images.filter(Boolean) });
+      const validImages = images.filter(Boolean);
+      setEditing({ ...editing, thumbnails: validImages });
+      if (validImages.length < files.length) setMessage("一部の画像を軽量化できませんでした。別の画像を選んでください。");
     });
     event.target.value = "";
   }
@@ -343,8 +370,272 @@ export function AdminDashboard({ initialApplications, initialStreamers, adminKey
     showActionFeedback(streamer.id, action === "like" ? "いいね送信" : "表示+1");
   }
 
+  function parsePublicImport() {
+    setCreatedPublicPath("");
+    const line = publicImportText.trim().split(/\r?\n/).find((value) => value.trim());
+    if (!line) {
+      setMessage("公開情報を貼り付けてください。");
+      return;
+    }
+    const columns = line.split("\t").map((value) => value.trim());
+    if (columns.length < 8) {
+      setMessage("貼り付け形式を確認してください。タブ区切りの申込行が必要です。");
+      return;
+    }
+    const hasReadingColumn = !isPublicProfileUrl(columns[2]) && isPublicProfileUrl(columns[3]);
+    const fieldIndexes = hasReadingColumn
+      ? { yomi: 2, url: 3, x: 4, description: 5, permission: 7, images: 8, consent: 9 }
+      : { yomi: 9, url: 2, x: 3, description: 4, permission: 6, images: 7, consent: 6 };
+    const publicationConsent =
+      isPublicImportConsent(columns[fieldIndexes.permission]) &&
+      isPublicImportConsent(columns[fieldIndexes.consent]);
+    if (!publicationConsent) {
+      setPublicDraft(null);
+      setMessage("掲載許可が確認できないため、公開ページは作成できません。");
+      return;
+    }
+    const planType = hasReadingColumn ? "free" : parsePublicPlan(columns[8]);
+    const imageLimit = planType === "free" ? 1 : 3;
+    const thumbnails = String(columns[fieldIndexes.images] || "")
+      .split(",")
+      .map(normalizePublicImageUrl)
+      .filter(Boolean)
+      .slice(0, imageLimit);
+    const description = String(columns[fieldIndexes.description] || "").slice(0, planType === "free" ? 100 : 500);
+
+    setPublicDraft({
+      name: columns[1] || "",
+      youtube_url: unwrapMarkdownUrl(columns[fieldIndexes.url]),
+      x_account: String(columns[fieldIndexes.x] || "").replace(/^＠/, "@"),
+      description,
+      one_liner: description.slice(0, 20),
+      stream_time: "",
+      plan_type: planType,
+      thumbnails,
+      categories: [],
+      tags: [],
+      yomi: columns[fieldIndexes.yomi] || "",
+      is_visible: true,
+      publication_consent: true,
+    });
+    setMessage("公開内容を確認してから作成してください。メールアドレスは保存されません。");
+  }
+
+  function updatePublicDraft(patch: Partial<PublicImportDraft>) {
+    setPublicDraft((current) => current ? { ...current, ...patch } : current);
+  }
+
+  function setPublicPlan(planType: PlanType) {
+    if (!publicDraft) return;
+    updatePublicDraft({
+      plan_type: planType,
+      thumbnails: publicDraft.thumbnails.slice(0, planType === "free" ? 1 : 3),
+      description: publicDraft.description.slice(0, planType === "free" ? 100 : 500),
+      categories: planType === "free" ? [] : publicDraft.categories,
+      tags: planType === "free" ? [] : publicDraft.tags,
+    });
+  }
+
+  function onPublicFilesChange(event: ChangeEvent<HTMLInputElement>) {
+    if (!publicDraft) return;
+    const files = Array.from(event.target.files || []).slice(0, publicDraft.plan_type === "free" ? 1 : 3);
+    Promise.all(files.map(fileToDataUrl)).then((images) => {
+      const validImages = images.filter(Boolean);
+      updatePublicDraft({ thumbnails: validImages });
+      if (validImages.length < files.length) setMessage("一部の画像を軽量化できませんでした。別の画像を選んでください。");
+    });
+    event.target.value = "";
+  }
+
+  async function createPublicStreamer() {
+    if (!publicDraft?.name.trim() || !publicDraft.youtube_url.trim()) {
+      setMessage("配信者名とYouTube URLは必須です。");
+      return;
+    }
+    const requestBody = JSON.stringify({
+      ...publicDraft,
+      is_initial_scout: true,
+      publication_source: "admin_public_import",
+    });
+    if (requestBody.length > 850_000) {
+      setMessage("画像サイズが大きすぎます。別の画像にするか、画像を小さくしてもう一度試してください。");
+      return;
+    }
+
+    setPublicCreating(true);
+    let response: Response;
+    try {
+      response = await fetch("/api/streamers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-admin-key": adminKey },
+        body: requestBody,
+      });
+    } catch {
+      setPublicCreating(false);
+      setMessage("送信に失敗しました。画像サイズを小さくしてもう一度試してください。");
+      return;
+    }
+    const data = await readJsonOrText(response);
+    setPublicCreating(false);
+    if (!response.ok) {
+      setMessage(publicCreateErrorMessage(data.error));
+      return;
+    }
+    if (data.streamer) {
+      setStreamers((current) => [data.streamer as Streamer, ...current]);
+    }
+    setCreatedPublicPath(String(data.public_path || ""));
+    setPublicImportText("");
+    setPublicDraft(null);
+    setMessage("公開情報だけの配信者ページを作成しました。");
+  }
+
+  async function approveStreamerClaim(application: StreamerApplication) {
+    if (!window.confirm(`${application.name} の引き継ぎ申請を承認しますか？DM送信元が登録済みXと一致することを確認してください。`)) return;
+    setBusyId(application.id);
+    const response = await fetch(`/api/admin/applications/${application.id}/claim/approve`, {
+      method: "POST",
+      headers: { "x-admin-key": adminKey },
+    });
+    const data = await response.json().catch(() => ({}));
+    setBusyId("");
+    if (!response.ok) {
+      setMessage(data.error || "引き継ぎ申請の承認に失敗しました。");
+      return;
+    }
+    setApplications((current) => current.map((item) => (
+      item.id === application.id
+        ? { ...item, status: "approved", claim_status: "approved", streamer_id: data.streamer?.id || application.claim_target_streamer_id }
+        : item
+    )));
+    if (data.streamer) {
+      setStreamers((current) => current.map((streamer) => streamer.id === data.streamer.id ? { ...streamer, ...data.streamer } : streamer));
+    }
+    setMessage(`${application.name} の既存ページを本人アカウントへ紐付けました。`);
+  }
+
   return (
     <div className="admin-layout">
+      {pendingClaims.length > 0 && (
+        <section className="status-band claim-admin-section">
+          <h2>本人確認待ちのページ引き継ぎ</h2>
+          <p>公式Xに届いたDMの送信元と、各申請の「登録済みX」「確認コード」が両方一致した場合だけ承認してください。</p>
+          <div className="claim-admin-list">
+            {pendingClaims.map((application) => {
+              const target = streamers.find((streamer) => streamer.id === application.claim_target_streamer_id);
+              return (
+                <article className="claim-admin-item" key={application.id}>
+                  <div>
+                    <span className="state pending">DM確認待ち</span>
+                    <h3>{target?.name || application.name}</h3>
+                    <p>申請者名：{application.name}</p>
+                  </div>
+                  <div className="claim-code-panel">
+                    <span>確認コード</span>
+                    <strong>{application.claim_verification_code || "コードなし"}</strong>
+                    <button
+                      className="secondary-button"
+                      type="button"
+                      onClick={() => navigator.clipboard.writeText(application.claim_verification_code || "")}
+                    >
+                      <Copy size={16} />コピー
+                    </button>
+                  </div>
+                  <dl className="data-list">
+                    <div><dt>登録済みX</dt><dd>{target?.x_account || "未登録"}</dd></div>
+                    <div><dt>申請入力X</dt><dd>{application.claim_x_account || application.x_account || "未入力"}</dd></div>
+                    <div><dt>YouTube</dt><dd>{target?.youtube_url || application.youtube_url}</dd></div>
+                    <div><dt>申請日</dt><dd>{formatDate(application.claim_requested_at || application.created_at)}</dd></div>
+                  </dl>
+                  <div className="admin-filter-row">
+                    <a className="secondary-button" href="https://x.com/vtubermatch" target="_blank" rel="noreferrer">
+                      <ExternalLink size={16} />公式Xを確認
+                    </a>
+                    <button
+                      className="primary-button"
+                      type="button"
+                      disabled={busyId === application.id || !target?.x_account}
+                      onClick={() => approveStreamerClaim(application)}
+                    >
+                      <BadgeCheck size={16} />DM確認済み・承認
+                    </button>
+                  </div>
+                  {!target?.x_account && <p className="notice-text">登録済みXがないため承認できません。対象ページを確認してください。</p>}
+                </article>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      <section className="status-band">
+        <h2>公開情報だけで配信者ページを作成</h2>
+        <p>申込行をそのまま貼り付け、内容を確認して公開できます。アカウントは作成せず、メールアドレスも保存しません。</p>
+        <label>
+          タブ区切りの申込行
+          <textarea
+            rows={4}
+            value={publicImportText}
+            onChange={(event) => setPublicImportText(event.target.value)}
+            placeholder="日時、配信者名、YouTube URL、X、紹介文、掲載内容、許可、画像URL..."
+          />
+        </label>
+        <div className="admin-filter-row">
+          <button className="secondary-button" type="button" onClick={parsePublicImport}>内容を読み込む</button>
+        </div>
+        {publicDraft && (
+          <div className="compact-form">
+            <label>配信者名
+              <input value={publicDraft.name} onChange={(event) => updatePublicDraft({ name: event.target.value })} />
+            </label>
+            <label>読み
+              <input value={publicDraft.yomi} onChange={(event) => updatePublicDraft({ yomi: event.target.value })} />
+            </label>
+            <label>YouTube URL
+              <input type="url" value={publicDraft.youtube_url} onChange={(event) => updatePublicDraft({ youtube_url: event.target.value })} />
+            </label>
+            <label>Xアカウント
+              <input value={publicDraft.x_account} onChange={(event) => updatePublicDraft({ x_account: event.target.value })} />
+            </label>
+            <label>紹介文
+              <textarea
+                rows={3}
+                maxLength={publicDraft.plan_type === "free" ? 100 : 500}
+                value={publicDraft.description}
+                onChange={(event) => updatePublicDraft({ description: event.target.value, one_liner: event.target.value.slice(0, 20) })}
+              />
+            </label>
+            <label>プラン
+              <select value={publicDraft.plan_type} onChange={(event) => setPublicPlan(event.target.value as PlanType)}>
+                <option value="free">無料</option>
+                <option value="paid">ベーシック</option>
+                <option value="boost">プレミアム</option>
+              </select>
+            </label>
+            <ImagePreview images={publicDraft.thumbnails} label={`${publicDraft.name || "配信者"} 画像`} />
+            <label>画像を差し替える
+              <input type="file" accept="image/*" multiple={publicDraft.plan_type !== "free"} onChange={onPublicFilesChange} />
+            </label>
+            <label className="choice">
+              <input type="checkbox" checked={publicDraft.is_visible} onChange={(event) => updatePublicDraft({ is_visible: event.target.checked })} />
+              作成後すぐ公開する
+            </label>
+            <div className="admin-filter-row">
+              <button className="primary-button" type="button" disabled={publicCreating} onClick={createPublicStreamer}>
+                <Save size={16} />{publicCreating ? "作成中..." : "公開ページを作成"}
+              </button>
+            </div>
+          </div>
+        )}
+        {createdPublicPath && (
+          <div className="admin-filter-row">
+            <a className="primary-button" href={createdPublicPath} target="_blank" rel="noreferrer">
+              <ExternalLink size={16} />作成したページを見る
+            </a>
+          </div>
+        )}
+      </section>
+
       <section className="status-band">
         <h2>掲載中の配信者管理</h2>
         <p>申込情報、決済情報、プロフィール情報をこの一覧で確認・修正できます。</p>
@@ -644,11 +935,110 @@ function toggleChoice(current: string[], value: string, limit: number) {
   return [...current, value].slice(0, limit);
 }
 
-function fileToDataUrl(file: File) {
+async function fileToDataUrl(file: File) {
+  if (!file.type.startsWith("image/")) return "";
+  try {
+    const bitmap = await createImageBitmap(file);
+    const maxDataUrlLength = 260_000;
+    const canvas = document.createElement("canvas");
+    const context = canvas.getContext("2d");
+    if (!context) return await readOriginalDataUrl(file);
+
+    for (const maxSize of [960, 720, 560, 420]) {
+      const scale = Math.min(1, maxSize / Math.max(bitmap.width, bitmap.height));
+      canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+      canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+      context.clearRect(0, 0, canvas.width, canvas.height);
+      context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+
+      for (const quality of [0.78, 0.66, 0.54]) {
+        const webp = canvas.toDataURL("image/webp", quality);
+        if (webp.length <= maxDataUrlLength) return webp;
+      }
+    }
+
+    return "";
+  } catch {
+    const original = await readOriginalDataUrl(file);
+    return original.length <= 260_000 ? original : "";
+  }
+}
+
+function readOriginalDataUrl(file: File) {
   return new Promise<string>((resolve) => {
     const reader = new FileReader();
     reader.onload = () => resolve(String(reader.result || ""));
     reader.onerror = () => resolve("");
     reader.readAsDataURL(file);
   });
+}
+
+function publicCreateErrorMessage(error: unknown) {
+  const message = String(error || "");
+  if (
+    message.includes("image payload") ||
+    message.includes("request body") ||
+    message.includes("reduce image size") ||
+    message.includes("Payload Too Large") ||
+    message.includes("FUNCTION_PAYLOAD_TOO_LARGE")
+  ) {
+    return "画像サイズが大きすぎます。別の画像にするか、画像を小さくしてもう一度試してください。";
+  }
+  if (message.includes("YouTube URL")) return "同じYouTube URLの配信者はすでに登録されています。";
+  if (message) return message;
+  return "公開ページの作成に失敗しました。";
+}
+
+async function readJsonOrText(response: Response) {
+  const contentType = response.headers.get("content-type") || "";
+  if (contentType.includes("application/json")) {
+    return response.json().catch(() => ({}));
+  }
+  const text = await response.text().catch(() => "");
+  return { error: text || response.statusText };
+}
+
+function unwrapMarkdownUrl(value: string | undefined) {
+  const input = String(value || "").trim();
+  const markdownMatch = input.match(/^\[[^\]]*]\((https?:\/\/[^)]+)\)$/i);
+  return markdownMatch?.[1] || input;
+}
+
+function normalizePublicImageUrl(value: string) {
+  const input = unwrapMarkdownUrl(value);
+  if (!/^https?:\/\//i.test(input)) return "";
+  try {
+    const url = new URL(input);
+    if (!/(^|\.)drive\.google\.com$/i.test(url.hostname)) return input;
+    const pathMatch = url.pathname.match(/\/file\/d\/([^/]+)/i);
+    const id = url.searchParams.get("id") || pathMatch?.[1] || "";
+    return id ? `https://drive.google.com/thumbnail?id=${encodeURIComponent(id)}&sz=w1600` : "";
+  } catch {
+    return "";
+  }
+}
+
+function isPublicProfileUrl(value: string | undefined) {
+  return /^https?:\/\//i.test(unwrapMarkdownUrl(value));
+}
+
+function parsePublicPlan(value: string | undefined): PlanType {
+  const input = String(value || "");
+  if (input.includes("プレミアム")) return "boost";
+  if (input.includes("ベーシック")) return "paid";
+  return "free";
+}
+
+function isPublicImportConsent(value: string | undefined) {
+  const input = String(value || "").trim();
+  const rejectedChoices = [
+    "無料プランを利用中",
+    "ベーシックプランを利用中",
+    "プレミアムプランを利用中",
+    "興味がない",
+  ];
+  if (rejectedChoices.some((choice) => input.includes(choice))) return false;
+  if (input.includes("希望しない") || input.includes("許可しない") || input.includes("同意しない")) return false;
+  return input.includes("許可する") ||
+    input.includes("無料掲載用データ作成を希望する");
 }

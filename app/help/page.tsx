@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "ヘルプ",
-  description: "VtuberMatchの使い方、配信者掲載、視聴者利用、通知、問い合わせについて確認できます。",
+  description: "VtuberMatchの使い方、配信者掲載、視聴者利用、通知、問い合わせについてまとめています。",
   alternates: {
     canonical: "/help",
   },
@@ -20,7 +20,7 @@ export default function HelpPage() {
       <main className="main grid-page">
         <section className="status-band">
           <h1>ヘルプ</h1>
-          <p>VtuberMatchを使う前に確認してほしい案内です。</p>
+          <p>VtuberMatchを使う前に知っておきたいことをまとめました。</p>
         </section>
 
         <section className="terms-list">
@@ -36,7 +36,7 @@ export default function HelpPage() {
             <h2>視聴者の利用</h2>
             <p>
               ログインなしでもスワイプを試せます。無料登録すると、プロフィール保存、配信者プロフィール閲覧、
-              配信リンクへの移動、スーパーいいねの履歴確認が使いやすくなります。
+              配信リンクへの移動、スーパーいいねの履歴確認がしやすくなります。
             </p>
           </article>
 
@@ -44,7 +44,7 @@ export default function HelpPage() {
             <h2>配信者の掲載</h2>
             <p>
               無料プランでは基本プロフィールを掲載できます。ベーシックプラン、プレミアムプランでは、
-              上位表示や公式チャンネルでの紹介特典が強化されます。
+              上位表示や公式チャンネルでの紹介特典を利用できます。
             </p>
           </article>
 

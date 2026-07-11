@@ -76,7 +76,7 @@ export function CreatorUpgradeForm() {
           <article className="plan-card">
             <strong>無料プラン</strong>
             <span className="plan-price">0円</span>
-            <p>まず掲載を始めたい方向け。基本プロフィールを登録できます。</p>
+            <p>まずは掲載を始めたい方向け。基本プロフィールを登録できます。</p>
             <ul>
               {PLAN_FEATURES.free.map((feature) => <li key={feature}>{feature}</li>)}
             </ul>
@@ -86,7 +86,7 @@ export function CreatorUpgradeForm() {
           <article className={`plan-card ${form.plan_type === "paid" ? "selected" : ""}`} onClick={() => update("plan_type", "paid")}>
             <strong>ベーシックプラン</strong>
             <span className="plan-price">月額500円</span>
-            <p>無料プランより上位に表示され、公式チャンネルでの紹介枠も強化されます。</p>
+            <p>無料プランより上位に表示され、公式チャンネルでの紹介枠も広がります。</p>
             <ul>
               {PLAN_FEATURES.paid.map((feature) => <li key={feature}>{feature}</li>)}
             </ul>
@@ -96,7 +96,7 @@ export function CreatorUpgradeForm() {
           <article className={`plan-card ${form.plan_type === "boost" ? "selected" : ""}`} onClick={() => update("plan_type", "boost")}>
             <strong>プレミアムプラン</strong>
             <span className="plan-price">月額980円</span>
-            <p>常時優先表示、プレミアムフレーム、Lo-Fi配信での優先紹介が使えます。</p>
+            <p>さらに目立たせたい方向け。常時優先表示を利用できます。</p>
             <ul>
               {PLAN_FEATURES.boost.map((feature) => <li key={feature}>{feature}</li>)}
             </ul>
@@ -107,7 +107,7 @@ export function CreatorUpgradeForm() {
 
       {form.plan_type === "boost" && (
         <p className="notice-text">
-          すでにベーシックプラン加入中の場合は、差額480円のプランで決済できます。
+          すでにベーシックプランをご利用中の場合は、差額480円のプランで決済できます。
         </p>
       )}
 

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { Firestore } from "firebase-admin/firestore";
+import { diagnosisTypes } from "@/lib/diagnosis";
 import { FieldValue, getAdminDb } from "@/lib/firebaseAdmin";
 import { readLocalViewerProfilesRaw, readLocalViewerProfilesWithStats, upsertLocalViewerProfile } from "@/lib/localStore";
 import { readUserSession, viewerSessionCookie } from "@/lib/userSession";
@@ -71,7 +72,8 @@ export async function POST(request: Request) {
     image: clean(body.image, 400000),
     profile: clean(body.profile, 400),
     favorite_categories: sanitizeArray(body.favorite_categories).slice(0, 5),
-    visible_to_matched_streamers: body.visible_to_matched_streamers !== false
+    visible_to_matched_streamers: body.visible_to_matched_streamers !== false,
+    ...buildVtypePatch(body),
   };
 
   if (!db) {
@@ -94,6 +96,28 @@ function clean(value: unknown, max: number) {
 
 function sanitizeArray(value: unknown) {
   return Array.isArray(value) ? value.map(String).map((item) => item.trim()).filter(Boolean) : [];
+}
+
+function buildVtypePatch(body: Record<string, unknown>) {
+  const type = diagnosisTypes.find((item) => item.id === Number(body.vtype_id));
+  if (!type) return {};
+  return {
+    vtype_id: type.id,
+    vtype_code: type.code,
+    vtype_name: type.name,
+    vtype_scores: normalizeScoreMap(body.vtype_scores),
+    vtype_mode: clean(body.vtype_mode, 20) || "viewer",
+    vtype_result_id: clean(body.vtype_result_id, 120),
+    vtype_updated_at: clean(body.vtype_updated_at, 50) || new Date().toISOString(),
+  };
+}
+
+function normalizeScoreMap(value: unknown) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
+  const entries = Object.entries(value as Record<string, unknown>)
+    .map(([key, score]) => [key, Math.max(0, Math.min(100, Math.round(Number(score))))] as const)
+    .filter(([, score]) => Number.isFinite(score));
+  return entries.length ? Object.fromEntries(entries) : undefined;
 }
 
 async function readLocalViewerProfile(id: string) {

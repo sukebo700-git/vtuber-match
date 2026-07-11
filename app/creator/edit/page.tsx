@@ -24,7 +24,7 @@ export default function CreatorEditPage() {
           fallback={
             <section className="status-band">
               <h2>ログインが必要です</h2>
-              <p>配信者プロフィールの修正は、本人確認のためログイン中のみ利用できます。</p>
+              <p>配信者プロフィールを修正するには、ログインが必要です。</p>
               <p style={{ marginTop: 12 }}>
                 <a className="primary-button" href="/creator/login">配信者ログインへ</a>
               </p>
@@ -33,7 +33,7 @@ export default function CreatorEditPage() {
         >
           <section className="status-band">
             <h2>プロフィール修正</h2>
-            <p>掲載中の名前、画像、自己アピール、カテゴリ、タグなどを変更できます。送信後、管理者確認なしで掲載プロフィールへ反映されます。</p>
+            <p>掲載中の名前、画像、自己アピール、カテゴリ、タグなどを変更できます。送信後、掲載プロフィールへすぐ反映されます。</p>
           </section>
           <CreatorProfileEditForm />
         </AuthVisibility>

@@ -58,6 +58,14 @@ export async function getStreamersForSwipe(): Promise<Streamer[]> {
         "likes",
         "weekly_impressions",
         "latest_video_id",
+        "vtype_id",
+        "vtype_code",
+        "vtype_name",
+        "vtype_scores",
+        "vtype_mode",
+        "vtype_result_id",
+        "vtype_updated_at",
+        "updated_at",
       )
       .limit(500)
       .get();
@@ -129,6 +137,13 @@ export async function getPublicStreamerBySlug(slug: string): Promise<Streamer | 
         "registered_at",
         "registeredAt",
         "createdAt",
+        "vtype_id",
+        "vtype_code",
+        "vtype_name",
+        "vtype_scores",
+        "vtype_mode",
+        "vtype_result_id",
+        "vtype_updated_at",
       )
       .limit(1)
       .get();
@@ -177,6 +192,13 @@ export async function getPublicStreamersForSeo(): Promise<Streamer[]> {
         "registered_at",
         "registeredAt",
         "createdAt",
+        "vtype_id",
+        "vtype_code",
+        "vtype_name",
+        "vtype_scores",
+        "vtype_mode",
+        "vtype_result_id",
+        "vtype_updated_at",
       )
       .limit(300)
       .get();
@@ -273,7 +295,14 @@ export function normalizeStreamer(id: string, data: Record<string, any>): Stream
     registeredAt: toIso(data.registeredAt),
     created_at: toIso(data.created_at ?? data.registered_at ?? data.registeredAt ?? data.createdAt ?? data.updated_at),
     updated_at: toIso(data.updated_at),
-    source_application_id: data.source_application_id
+    source_application_id: data.source_application_id,
+    vtype_id: Number.isFinite(Number(data.vtype_id)) ? Number(data.vtype_id) : undefined,
+    vtype_code: typeof data.vtype_code === "string" ? data.vtype_code : "",
+    vtype_name: typeof data.vtype_name === "string" ? data.vtype_name : "",
+    vtype_scores: normalizeVtypeScores(data.vtype_scores),
+    vtype_mode: typeof data.vtype_mode === "string" ? data.vtype_mode : "",
+    vtype_result_id: typeof data.vtype_result_id === "string" ? data.vtype_result_id : "",
+    vtype_updated_at: toIso(data.vtype_updated_at),
   };
 }
 
@@ -313,6 +342,15 @@ function normalizeEliteBoostDays(value: unknown) {
   );
 }
 
+function normalizeVtypeScores(value: unknown) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
+  return Object.fromEntries(
+    Object.entries(value as Record<string, unknown>)
+      .map(([key, score]) => [key, Number(score)] as const)
+      .filter(([, score]) => Number.isFinite(score))
+  );
+}
+
 function normalizeAdminPlacement(value: unknown): AdminPlacement {
   if (value === "top" || value === "bottom") return value;
   return "normal";
@@ -321,9 +359,14 @@ function normalizeAdminPlacement(value: unknown): AdminPlacement {
 function lightenStreamerForSwipe(streamer: Streamer): Streamer {
   return {
     ...streamer,
-    thumbnails: [`/api/streamer-image/${encodeURIComponent(streamer.id)}?i=0`],
+    thumbnails: [streamerImagePath(streamer)],
     description: "",
   };
+}
+
+export function streamerImagePath(streamer: Pick<Streamer, "id" | "updated_at">, index = 0) {
+  const version = streamer.updated_at ? `&v=${encodeURIComponent(streamer.updated_at)}` : "";
+  return `/api/streamer-image/${encodeURIComponent(streamer.id)}?i=${index}${version}`;
 }
 
 function getSwipeStreamerCache(): SwipeStreamerCache | null {
@@ -350,6 +393,15 @@ function cachePublicStreamers(data: Streamer[]) {
     expiresAt: Date.now() + publicSeoCacheTtlMs,
   };
   return data;
+}
+
+export function invalidateStreamerCaches() {
+  const cacheScope = globalThis as typeof globalThis & {
+    __vtuberMatchSwipeStreamersV3?: SwipeStreamerCache;
+    __vtuberMatchPublicSeoStreamersV1?: PublicStreamerCache;
+  };
+  delete cacheScope.__vtuberMatchSwipeStreamersV3;
+  delete cacheScope.__vtuberMatchPublicSeoStreamersV1;
 }
 
 function rankSwipeStreamers(streamers: Streamer[]) {

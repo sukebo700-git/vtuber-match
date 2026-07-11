@@ -69,7 +69,7 @@ export function ViewerLoginForm({ initialMode = "login" }: ViewerLoginFormProps)
       </div>
       <p className="help-text">
         {mode === "register"
-          ? "新しい視聴者アカウントを作成します。登録後、あなたに反応したVtuberの詳細を確認できます。"
+          ? "視聴者アカウントを作成します。登録後は、気になるVTuberの詳細を見られます。"
           : "登録済みの視聴者アカウントでログインします。"}
       </p>
       <button className="primary-button" type="submit" disabled={busy}>{busy ? "確認中..." : mode === "register" ? "視聴者として新規登録" : "ログイン"}</button>

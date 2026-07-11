@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { BadgeCheck, Crown, ImagePlus, Send } from "lucide-react";
-import { PushNotificationButton } from "@/components/PushNotificationButton";
 import { PLAN_FEATURES } from "@/lib/constants";
 import { LofiPlanBenefits } from "@/components/LofiPlanBenefits";
+import { diagnosisTypes } from "@/lib/diagnosis";
+import { creatorVtypeStorageKey, type VtypeProfileFields } from "@/lib/diagnosisProfile";
 
 type ApplicationFormProps = {
   categories: string[];
@@ -14,31 +15,35 @@ type ApplicationFormProps = {
 type CompletionInfo = {
   email: string;
   password: string;
+  claimPending?: boolean;
+  claimVerificationCode?: string;
+  claimXAccount?: string;
 };
 
 const creatorDraftKey = "vtuber-match-creator-profile-draft";
 const imageSlotCount = 3;
 const maxTotalImagePayload = 520_000;
 const maxSingleImagePayload = 130_000;
+const lofiChannelFormUrl = "https://forms.gle/BFn6Wti8aCBUHV41A";
 
 const planRows = [
   {
     id: "free",
     name: "無料プラン",
     price: "0円",
-    summary: "まず掲載したい方向け。画像、名前、配信サイトURL、100文字までの自己アピールを表示できます。",
+    summary: "まずは掲載を始めたい方向け。画像、名前、配信サイトURL、100文字までの自己アピールを掲載できます。",
   },
   {
     id: "paid",
     name: "ベーシックプラン",
     price: "月額500円",
-    summary: "画像3枚、X表示、カテゴリ・タグ、無料プランより上位表示に加えて、紹介動画の掲載特典が使えます。",
+    summary: "画像3枚、X表示、カテゴリ・タグ、無料プランより上位表示に加えて、紹介動画の特典を利用できます。",
   },
   {
     id: "boost",
     name: "プレミアムプラン",
     price: "月額980円",
-    summary: "常時優先表示、プレミアムフレーム、アーカイブ表示、Lo-Fi配信での優先紹介が使えます。",
+    summary: "常時優先表示、プレミアムフレーム、夕方〜深夜のLo-Fi配信優先掲載を利用できます。",
   },
 ];
 
@@ -49,12 +54,18 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
   const [selectedPlan, setSelectedPlan] = useState("free");
   const [status, setStatus] = useState("");
   const [completion, setCompletion] = useState<CompletionInfo | null>(null);
+  const [vtypeProfile, setVtypeProfile] = useState<VtypeProfileFields | null>(null);
   const [busy, setBusy] = useState(false);
 
   const isFree = selectedPlan === "free";
   const categoryLimit = 3;
   const tagLimit = 3;
   const visibleImages = isFree ? images.slice(0, 1) : images;
+
+  useEffect(() => {
+    const stored = readStoredVtypeProfile();
+    if (stored?.vtype_id) setVtypeProfile(stored);
+  }, []);
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -96,6 +107,7 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
       thumbnails,
       categories: selectedCategories.slice(0, 3),
       tags: selectedTags.slice(0, 3),
+      ...vtypePayload(vtypeProfile),
     };
 
     setStatus("登録内容を送信しています...");
@@ -116,6 +128,27 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
     if (!response.ok) {
       setStatus(data.error || `登録に失敗しました。エラーコード: ${response.status}`);
       setBusy(false);
+      return;
+    }
+
+    if (data.claim_pending) {
+      setStatus("既存ページの引き継ぎ申請を受け付けました。確認コードを公式XへDMしてください。");
+      setCompletion({
+        email,
+        password,
+        claimPending: true,
+        claimVerificationCode: String(data.claim_verification_code || ""),
+        claimXAccount: String(data.claim_x_account || ""),
+      });
+      formElement.reset();
+      setSelectedCategories([]);
+      setSelectedTags([]);
+      setImages(Array(imageSlotCount).fill(""));
+      setSelectedPlan("free");
+      setBusy(false);
+      window.setTimeout(() => {
+        document.getElementById("creator-application-completion")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 0);
       return;
     }
 
@@ -144,6 +177,7 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
       categories: selectedCategories,
       tags: selectedTags.slice(0, 3),
       desired_plan: desiredPlan,
+      ...vtypePayload(vtypeProfile),
     }));
     window.dispatchEvent(new Event("vtuber-match-auth-changed"));
 
@@ -152,7 +186,7 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
       return;
     }
 
-    setStatus(data.already_registered ? "このメールアドレスは登録済みです。配信者ページへ移動できます。" : "無料プランの申し込みを受け付け、掲載しました。");
+    setStatus(data.already_registered ? "このメールアドレスは登録済みです。配信者ページから続きの操作ができます。" : "無料プランの申し込みを受け付けました。掲載を開始しました。");
     setCompletion({ email, password });
     formElement.reset();
     setSelectedCategories([]);
@@ -160,7 +194,9 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
     setImages(Array(imageSlotCount).fill(""));
     setSelectedPlan("free");
     setBusy(false);
-    window.location.assign("/creator/edit?notify=1");
+    window.setTimeout(() => {
+      document.getElementById("creator-application-completion")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 0);
   }
 
   async function onFileChange(index: number, event: React.ChangeEvent<HTMLInputElement>) {
@@ -239,7 +275,7 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
       <div className="field">
         <label htmlFor="email">ログイン用メールアドレス</label>
         <input id="email" name="email" type="email" required />
-        <p className="help-text">このメールアドレスとパスワードで、あとからプロフィール修正やアップグレードができます。</p>
+        <p className="help-text">このメールアドレスとパスワードで、あとからプロフィール修正やプラン変更ができます。</p>
       </div>
       <div className="field">
         <label htmlFor="creator_password">ログイン用パスワード</label>
@@ -283,20 +319,35 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
         </div>
       </div>
       <div className="field">
-        <label htmlFor="description">プロフィール画面に表示する自己アピール</label>
+        <label htmlFor="description">プロフィール画面に掲載する自己アピール</label>
         <textarea id="description" name="description" required={!isFree} maxLength={isFree ? 100 : 500} />
-        <p className="help-text">{isFree ? "無料プランでは100文字までプロフィール画面に表示されます。" : "プロフィール画面に表示されます。"}</p>
+        <p className="help-text">{isFree ? "無料プランでは100文字まで掲載できます。" : "プロフィール画面に掲載されます。"}</p>
       </div>
       <div className="field">
         <label htmlFor="one_liner">今日のひとこと</label>
         <input id="one_liner" name="one_liner" required={!isFree} maxLength={20} />
-        <p className="help-text">{isFree ? "無料プランでもプロフィールとスワイプ画面に表示されます。" : "スワイプ画面の詳細欄に表示されます。"}</p>
+        <p className="help-text">{isFree ? "無料プランでもプロフィールとスワイプ画面に掲載されます。" : "スワイプ画面の詳細欄に掲載されます。"}</p>
+      </div>
+
+      <div className="field">
+        <label htmlFor="vtype_id">VTYPE診断タイプ 任意</label>
+        <select
+          id="vtype_id"
+          value={vtypeProfile?.vtype_id ? String(vtypeProfile.vtype_id) : ""}
+          onChange={(event) => setVtypeProfile(vtypeProfileFromId(event.target.value))}
+        >
+          <option value="">選択しない</option>
+          {diagnosisTypes.map((type) => (
+            <option value={type.id} key={type.id}>{type.code} {type.name}</option>
+          ))}
+        </select>
+        <p className="help-text">診断済みの場合は自動で候補が入ります。相性の近い視聴者に見つけてもらいやすくなります。</p>
       </div>
 
       {isFree ? (
         <section className="status-band">
           <h2>無料プランの表示内容</h2>
-          <p>無料プランでは、写真、名前、配信サイトURL、100文字までの自己アピール、今日のひとことを表示します。カテゴリ、タグ、公式バッジ、上位表示はベーシックプランから使えます。</p>
+          <p>無料プランでは、写真、名前、配信サイトURL、100文字までの自己アピール、今日のひとことを掲載します。カテゴリ、タグ、公式バッジ、上位表示はベーシックプランから利用できます。</p>
         </section>
       ) : (
         <>
@@ -327,10 +378,10 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
             </div>
           </div>
           {selectedPlan === "paid" && (
-            <p className="notice-text"><BadgeCheck size={16} /> ベーシックプランでは公式バッジ、上位表示、紹介動画の掲載特典が使えます。</p>
+            <p className="notice-text"><BadgeCheck size={16} /> ベーシックプランでは公式バッジ、上位表示、紹介動画の特典を利用できます。</p>
           )}
           {selectedPlan === "boost" && (
-            <p className="notice-text"><Crown size={16} /> プレミアムプランでは常時優先表示、プレミアムフレーム、Lo-Fi配信での優先紹介が使えます。</p>
+            <p className="notice-text"><Crown size={16} /> プレミアムプランでは常時優先表示、プレミアムフレーム、夕方〜深夜のLo-Fi配信優先掲載を利用できます。</p>
           )}
         </>
       )}
@@ -350,24 +401,85 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
         </p>
       )}
       {completion && (
-        <section className="status-band">
-          <h2>ログイン情報</h2>
-          <p>この画面をスクリーンショット等で保管してください。</p>
+        <section className="status-band application-completion" id="creator-application-completion">
+          <h2>{completion.claimPending ? "既存ページの引き継ぎ申請を受け付けました" : "申し込みを受け付けました"}</h2>
+          {completion.claimPending ? (
+            <div className="claim-user-guide">
+              <p>次の確認コードを、掲載ページに登録されているXアカウントからVtuberMatch公式XへDMしてください。</p>
+              {completion.claimXAccount && <p className="help-text">確認対象のX：<strong>{completion.claimXAccount}</strong></p>}
+              <strong className="claim-verification-code">{completion.claimVerificationCode}</strong>
+              <p className="inline-actions">
+                <button
+                  className="secondary-button"
+                  type="button"
+                  onClick={() => navigator.clipboard.writeText(completion.claimVerificationCode || "")}
+                >
+                  確認コードをコピー
+                </button>
+                <a className="primary-button" href="https://x.com/vtubermatch" target="_blank" rel="noreferrer">公式XへDMする</a>
+              </p>
+              <p className="help-text">運営がDM送信元を確認して承認するまで、既存ページへはログインできません。</p>
+            </div>
+          ) : (
+            <>
+              <p><strong>Lo-Fiチャンネル掲載希望の方はこちらの登録もお願いします。</strong></p>
+              <p className="help-text">Lo-Fiチャンネルでの掲載を希望する場合は、続けて専用フォームにもご登録ください。</p>
+              <p className="inline-actions" style={{ marginTop: 12 }}>
+                <a className="primary-button" href={lofiChannelFormUrl} target="_blank" rel="noreferrer">Lo-Fi掲載フォームを開く</a>
+                <a className="secondary-button" href="/creator/edit">プロフィールを確認する</a>
+              </p>
+            </>
+          )}
+          <h2 className="application-completion-subheading">ログイン情報</h2>
+          <p>この画面をスクリーンショットなどで保管してください。</p>
           <dl className="data-list">
             <div><dt>ログイン用メールアドレス</dt><dd>{completion.email}</dd></div>
             <div><dt>パスワード</dt><dd>{completion.password}</dd></div>
           </dl>
           <p className="help-text">申込ID、掲載IDは運営管理用のため、この画面には表示していません。</p>
-          <div style={{ marginTop: 12 }}>
-            <PushNotificationButton targetType="creator" intent="onboarding" />
-          </div>
-          <p className="inline-actions" style={{ marginTop: 12 }}>
-            <a className="secondary-button" href="/creator">配信者ページへ</a>
-          </p>
+          {!completion.claimPending && (
+            <p className="inline-actions" style={{ marginTop: 12 }}>
+              <a className="secondary-button" href="/creator">配信者ページへ</a>
+            </p>
+          )}
         </section>
       )}
     </form>
   );
+}
+
+function readStoredVtypeProfile() {
+  try {
+    const raw = localStorage.getItem(creatorVtypeStorageKey) || localStorage.getItem(creatorDraftKey);
+    return raw ? (JSON.parse(raw) as VtypeProfileFields) : null;
+  } catch {
+    return null;
+  }
+}
+
+function vtypeProfileFromId(value: string): VtypeProfileFields | null {
+  const type = diagnosisTypes.find((item) => item.id === Number(value));
+  if (!type) return null;
+  return {
+    vtype_id: type.id,
+    vtype_code: type.code,
+    vtype_name: type.name,
+    vtype_mode: "light",
+    vtype_updated_at: new Date().toISOString(),
+  };
+}
+
+function vtypePayload(profile: VtypeProfileFields | null) {
+  const type = diagnosisTypes.find((item) => item.id === Number(profile?.vtype_id));
+  if (!type) return {};
+  return {
+    ...profile,
+    vtype_id: type.id,
+    vtype_code: type.code,
+    vtype_name: type.name,
+    vtype_mode: profile?.vtype_mode || "light",
+    vtype_updated_at: profile?.vtype_updated_at || new Date().toISOString(),
+  };
 }
 
 function fileToDataUrl(file: File) {
