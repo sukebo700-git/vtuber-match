@@ -39,7 +39,7 @@ export default function ApplyPage() {
             <picture>
               <source srcSet="/promo/plan-comparison/plan-comparison.webp" type="image/webp" />
               <img
-                src="/promo/plan-comparison/plan-comparison.png"
+                src="/promo/plan-comparison/plan-comparison.jpg"
                 alt="プランの違い: 無料プランはLo-Fi 24時間配信への掲載・YouTube Shortsでの宣伝・VtuberMatch宣伝ページ掲載がまとめて0円。ベーシックプラン月額500円は写真3枚・Xアカウント表示・カテゴリタグ設定・紹介動画で上位表示。プレミアムプラン月額980円は写真5枚・常時優先表示・プレミアムフレームで宣伝効果を最大化。"
                 loading="eager"
               />
