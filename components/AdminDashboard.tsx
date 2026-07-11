@@ -238,7 +238,7 @@ export function AdminDashboard({ initialApplications, initialStreamers, adminKey
 
   async function saveEdit() {
     if (!editing) return;
-    const imageLimit = editing.plan_type === "free" ? 1 : 3;
+    const imageLimit = editing.plan_type === "free" ? 1 : editing.plan_type === "boost" ? 5 : 3;
     await updateStreamer(editing.id, {
       ...editing,
       thumbnails: editing.thumbnails.slice(0, imageLimit),
@@ -395,7 +395,7 @@ export function AdminDashboard({ initialApplications, initialStreamers, adminKey
       return;
     }
     const planType = hasReadingColumn ? "free" : parsePublicPlan(columns[8]);
-    const imageLimit = planType === "free" ? 1 : 3;
+    const imageLimit = planType === "free" ? 1 : planType === "boost" ? 5 : 3;
     const thumbnails = String(columns[fieldIndexes.images] || "")
       .split(",")
       .map(normalizePublicImageUrl)

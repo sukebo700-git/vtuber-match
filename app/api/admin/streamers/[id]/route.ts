@@ -52,7 +52,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   if ("stream_time" in body) patch.stream_time = clean(body.stream_time, 50);
   if ("categories" in body) patch.categories = sanitizeArray(body.categories).slice(0, 3);
   if ("tags" in body) patch.tags = sanitizeArray(body.tags).slice(0, 3);
-  if ("thumbnails" in body) patch.thumbnails = sanitizeArray(body.thumbnails).slice(0, 3);
+  if ("thumbnails" in body) patch.thumbnails = sanitizeArray(body.thumbnails).slice(0, 5);
   if ("super_boost_count" in body) patch.super_boost_count = Number(body.super_boost_count || 0);
   if ("super_boost_until" in body) patch.super_boost_until = clean(body.super_boost_until, 60);
   if ("super_boost_effect" in body && ["shine", "shake"].includes(String(body.super_boost_effect))) {

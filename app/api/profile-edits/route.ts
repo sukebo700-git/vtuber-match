@@ -359,16 +359,16 @@ function sanitizeArray(value: unknown) {
 }
 
 function validateThumbnailCount(body: Record<string, unknown>, plan: PlanType) {
-  const maxImages = plan === "free" ? 1 : 3;
+  const maxImages = plan === "free" ? 1 : plan === "boost" ? 5 : 3;
   const count = normalizeThumbnailInput(body.thumbnails, body.image).length;
   if (count > maxImages) {
-    return NextResponse.json({ error: plan === "free" ? "無料プランの画像登録は1枚までです。" : "画像登録は最大3枚までです。", code: "TOO_MANY_IMAGES" }, { status: 400 });
+    return NextResponse.json({ error: plan === "free" ? "無料プランの画像登録は1枚までです。" : `画像登録は最大${maxImages}枚までです。`, code: "TOO_MANY_IMAGES" }, { status: 400 });
   }
   return null;
 }
 
 function normalizeThumbnails(value: unknown, fallback: unknown, plan: PlanType = "boost") {
-  const maxImages = plan === "free" ? 1 : 3;
+  const maxImages = plan === "free" ? 1 : plan === "boost" ? 5 : 3;
   const thumbnails = normalizeThumbnailInput(value, fallback).map((item) => item.slice(0, 650000)).slice(0, maxImages);
   return thumbnails;
 }

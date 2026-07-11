@@ -144,7 +144,7 @@ function validate(body: Record<string, unknown>) {
   if (body.is_initial_scout === true && body.publication_consent !== true) return "publication consent is required";
   if (String(body.description || "").length > (plan === "free" ? 100 : 500)) return "description is too long";
   if (plan !== "free" && !body.description) return "profile appeal is required";
-  if (sanitizeArray(body.thumbnails).length > 3) return "thumbnails max is 3";
+  if (sanitizeArray(body.thumbnails).length > 5) return "thumbnails max is 5";
   if (totalTextLength(sanitizeArray(body.thumbnails)) > 900_000) return "画像サイズが大きすぎます。画像を小さくしてもう一度試してください。";
   if (plan === "free" && categoryCount > 0) return "free plan cannot set categories";
   if (plan === "free" && tagCount > 0) return "free plan cannot set tags";
@@ -158,7 +158,7 @@ function sanitizeArray(value: unknown) {
 }
 
 function normalizeThumbnails(values: string[]) {
-  return values.slice(0, 3);
+  return values.slice(0, 5);
 }
 
 function totalTextLength(values: string[]) {

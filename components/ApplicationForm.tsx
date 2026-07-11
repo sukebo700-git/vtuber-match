@@ -21,8 +21,8 @@ type CompletionInfo = {
 };
 
 const creatorDraftKey = "vtuber-match-creator-profile-draft";
-const imageSlotCount = 3;
-const maxTotalImagePayload = 520_000;
+const imageSlotCount = 5;
+const maxTotalImagePayload = 700_000;
 const maxSingleImagePayload = 130_000;
 const lofiChannelFormUrl = "https://forms.gle/BFn6Wti8aCBUHV41A";
 
@@ -43,7 +43,7 @@ const planRows = [
     id: "boost",
     name: "プレミアムプラン",
     price: "月額980円",
-    summary: "常時優先表示、プレミアムフレーム、Lo-Fi配信CMとShorts掲載で宣伝効果を最大化できます。",
+    summary: "画像5枚、常時優先表示、プレミアムフレーム、Lo-Fi配信CMとShorts掲載で宣伝効果を最大化できます。",
   },
 ];
 
@@ -60,7 +60,7 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
   const isFree = selectedPlan === "free";
   const categoryLimit = 3;
   const tagLimit = 3;
-  const visibleImages = isFree ? images.slice(0, 1) : images;
+  const visibleImages = images.slice(0, planImageLimit(selectedPlan));
 
   useEffect(() => {
     const stored = readStoredVtypeProfile();
@@ -78,7 +78,7 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
     const desiredPlan = String(form.get("desired_plan") || "free");
     const email = String(form.get("email") || "").trim();
     const password = String(form.get("creator_password") || "");
-    const thumbnails = images.slice(0, desiredPlan === "free" ? 1 : imageSlotCount).filter(Boolean);
+    const thumbnails = images.slice(0, planImageLimit(desiredPlan)).filter(Boolean);
     const totalImageSize = thumbnails.reduce((sum, image) => sum + image.length, 0);
 
     if (thumbnails.length === 0) {
@@ -296,7 +296,7 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
       </div>
       <div className="field">
         <span className="field-label">
-          <ImagePlus size={16} /> 掲載画像 {isFree ? "1枚" : "最大3枚"}
+          <ImagePlus size={16} /> 掲載画像 {isFree ? "1枚" : selectedPlan === "paid" ? "最大3枚" : "最大5枚"}
         </span>
         <div className="image-slot-grid">
           {visibleImages.map((image, index) => (
@@ -521,4 +521,10 @@ function compressImage(image: HTMLImageElement) {
   }
 
   return best || canvas.toDataURL("image/jpeg", 0.3);
+}
+
+function planImageLimit(plan: string) {
+  if (plan === "free") return 1;
+  if (plan === "boost") return 5;
+  return 3;
 }

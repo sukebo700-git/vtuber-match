@@ -21,7 +21,7 @@ type CreatorDraft = VtypeProfileFields & {
 };
 
 const creatorDraftKey = "vtuber-match-creator-profile-draft";
-const imageSlotCount = 3;
+const imageSlotCount = 5;
 
 type ImageEdit = {
   scale: number;
@@ -59,7 +59,7 @@ export function CreatorProfileEditForm() {
   const [planType, setPlanType] = useState("free");
   const [vtypeProfile, setVtypeProfile] = useState<VtypeProfileFields | null>(null);
   const [status, setStatus] = useState("");
-  const visibleImages = planType === "free" ? images.slice(0, 1) : images;
+  const visibleImages = images.slice(0, planImageLimit(planType));
 
   useEffect(() => {
     const draft = safeParseDraft(localStorage.getItem(creatorDraftKey));
@@ -112,7 +112,7 @@ export function CreatorProfileEditForm() {
     const editedImages = await Promise.all(
       images.map((image, index) => sourceImages[index] ? renderEditedImage(sourceImages[index], imageEdits[index]) : Promise.resolve(image)),
     );
-    const allowedImageCount = planType === "free" ? 1 : imageSlotCount;
+    const allowedImageCount = planImageLimit(planType);
     const thumbnails = editedImages.filter(Boolean).slice(0, allowedImageCount);
     setStatus("プロフィールを更新しています...");
 
@@ -259,7 +259,7 @@ export function CreatorProfileEditForm() {
       </div>
 
       <div className="field">
-        <span className="field-label">プロフィール画像（{planType === "free" ? "無料プランは1枚" : "最大3枚"}）</span>
+        <span className="field-label">プロフィール画像（{planType === "free" ? "無料プランは1枚" : planType === "paid" ? "最大3枚" : "最大5枚"}）</span>
         {planType === "free" && images.filter(Boolean).length > 1 && (
           <p className="help-text">既に登録済みの複数画像は保持されます。無料プランでは新しく編集できる画像は1枚目です。</p>
         )}
@@ -489,4 +489,10 @@ function compressCanvas(canvas: HTMLCanvasElement, targetLength: number) {
     if (encoded.length <= targetLength) return encoded;
   }
   return best;
+}
+
+function planImageLimit(plan: string) {
+  if (plan === "free") return 1;
+  if (plan === "boost") return 5;
+  return 3;
 }

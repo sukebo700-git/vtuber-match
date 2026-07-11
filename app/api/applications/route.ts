@@ -507,5 +507,5 @@ function sanitizeArray(value: unknown) {
 }
 
 function normalizeThumbnails(values: string[], plan: PlanType) {
-  return values.slice(0, plan === "free" ? 1 : 3);
+  return values.slice(0, plan === "free" ? 1 : plan === "boost" ? 5 : 3);
 }

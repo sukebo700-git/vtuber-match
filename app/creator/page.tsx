@@ -119,6 +119,7 @@ export default function CreatorPage() {
               <span className="plan-price">月額980円</span>
               <p>さらに目立たせたい方向け。常時優先表示を利用できます。</p>
               <ul>
+                <li>画像5枚</li>
                 <li>ベーシックプランのすべて</li>
                 <li>常時優先表示で宣伝効果を最大化</li>
                 <li>より目立つプレミアムフレーム</li>
