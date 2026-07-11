@@ -79,6 +79,15 @@ export default function HomePage() {
             </div>
           </div>
 
+          <a className="landing-promo-banner" href="/creator/apply">
+            <div className="landing-promo-banner-copy">
+              <span className="landing-promo-banner-kicker">ショート動画&amp;24時間宣伝企画</span>
+              <strong>Lo-Fi配信への掲載・紹介ショート動画・無料掲載ページ、すべて0円</strong>
+              <p>無料プランに申し込むだけで、3つの宣伝をまとめて利用できます。</p>
+            </div>
+            <span className="landing-promo-banner-cta">無料で宣伝を申し込む</span>
+          </a>
+
           <a className="landing-scroll-cue landing-refresh-scroll" href="#lofi-benefits">
             <span>Lo-Fi配信特典を見る</span>
             <span aria-hidden="true">↓</span>
