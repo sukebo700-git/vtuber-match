@@ -39,11 +39,12 @@ export default function CreatorPage() {
           <span className="creator-page-kicker">For VTubers</span>
           <h1>あなたの活動を、推しを探している人へ。</h1>
           <p>
-            VtuberMatchでは、無料掲載からプロフィール公開を始められます。
-            上位プランでは表示機会や公式チャンネルでの紹介内容が広がり、Lo-Fi配信内での掲載特典も利用できます。
+            無料プランに申し込むと、Lo-Fi 24時間配信への掲載、紹介ショート動画での宣伝、
+            あなた専用の無料掲載ページの作成をまとめて利用できます。
+            上位プランでは、CMの長さや掲載回数が広がり、宣伝効果がさらに高まります。
           </p>
           <div className="creator-hero-actions">
-            <a className="primary-button" href="/creator/apply">VTuberとして無料掲載</a>
+            <a className="primary-button" href="/creator/apply">無料で宣伝を申し込む</a>
             <a className="secondary-button" href="/creator/upgrade">プランを見る</a>
           </div>
         </section>
@@ -51,8 +52,8 @@ export default function CreatorPage() {
         <AuthVisibility role="creator" mode="logged-out">
           <section className="creator-action-grid creator-entry-grid">
             <a className="creator-action-card featured" href="/creator/apply">
-              <strong>無料掲載を始める</strong>
-              <span>画像、名前、配信サイトURL、自己アピールを登録して、視聴者に見つけてもらうきっかけを作れます。</span>
+              <strong>無料で宣伝を申し込む</strong>
+              <span>Lo-Fi 24時間配信への掲載、紹介ショート動画での宣伝、無料掲載ページの作成をまとめて申し込めます。</span>
             </a>
             <a className="creator-action-card" href="/login">
               <strong>配信者ログイン</strong>
@@ -90,13 +91,12 @@ export default function CreatorPage() {
             <article className="plan-card">
               <strong>無料プラン</strong>
               <span className="plan-price">0円</span>
-              <p>まずは掲載を始めたい方向け。基本プロフィールを登録できます。</p>
+              <p>Lo-Fi配信への掲載、ショート動画での宣伝、無料掲載ページの作成をまとめて申し込めます。</p>
               <ul>
-                <li>画像1枚</li>
-                <li>名前、配信サイトURLを掲載</li>
-                <li>自己アピール100文字まで</li>
-                <li className="plan-highlight-red">20秒CMとしてLo-Fi 24時間配信に掲載</li>
-                <li className="plan-highlight-red">YouTube Shortsにも無料掲載</li>
+                <li className="plan-highlight-red">Lo-Fi 24時間配信に掲載(20秒CM)</li>
+                <li className="plan-highlight-red">紹介ショート動画で宣伝(YouTube Shorts)</li>
+                <li className="plan-highlight-red">無料掲載ページを作成</li>
+                <li>画像1枚、名前、配信サイトURL、自己アピール100文字まで</li>
               </ul>
               <LofiPlanBenefits planId="registered" />
             </article>

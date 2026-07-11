@@ -33,16 +33,18 @@ export default function ApplyPage() {
           }
         >
           <section className="status-band">
-            <h1>VTuberとして掲載を申し込む</h1>
+            <h1>Lo-Fi配信とショート動画で、あなたを宣伝します</h1>
             <p>
-              無料プランは申し込み後すぐに掲載されます。画像、名前、配信サイトURL、自己アピール、カテゴリ、タグを登録できます。
-              ベーシックプランとプレミアムプランでは、上位表示や24時間生配信での紹介特典が加わります。
+              無料プランに申し込むと、次の3つをまとめて利用できます。むずかしい手続きはなく、申し込み後すぐに掲載が始まります。
             </p>
             <ul className="feature-list">
-              <li>無料プラン: 20秒CMとしてLo-Fi 24時間配信に掲載 + YouTube Shortsにも無料掲載</li>
-              <li>ベーシックプラン: 1〜3分のCMを配信 + Shortsは音声ナレーション+テキスト付き</li>
-              <li>プレミアムプラン: ベーシックの内容 + さらに優先表示で宣伝効果を最大化</li>
+              <li>Lo-Fi 24時間配信への掲載(20秒CMとして紹介)</li>
+              <li>紹介ショート動画での宣伝(YouTube Shortsに無料掲載)</li>
+              <li>あなた専用の無料掲載ページを作成</li>
             </ul>
+            <p>
+              ベーシックプラン・プレミアムプランでは、1〜3分のCM配信、ナレーション付きShorts、優先表示などで宣伝効果がさらに広がります。
+            </p>
           </section>
           <ApplicationForm categories={CATEGORIES} tags={TAGS} />
         </AuthVisibility>

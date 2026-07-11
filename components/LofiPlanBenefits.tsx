@@ -5,9 +5,9 @@ type LofiPlanBenefitsProps = {
 const lofiPlans = {
   registered: {
     badge: "ショート動画&24時間宣伝企画",
-    title: "20秒CMとしてLo-Fi 24時間配信に掲載",
-    lead: "VtuberMatch登録者限定で、あなたの活動を無料で紹介します。",
-    items: ["YouTube Shortsにも無料掲載", "VtuberMatch宣伝ページに無料掲載"],
+    title: "Lo-Fi配信+ショート動画+掲載ページ、すべて無料",
+    lead: "無料プランの申し込みだけで、3つの宣伝をまとめて利用できます。",
+    items: ["20秒CMとしてLo-Fi 24時間配信に掲載", "YouTube Shortsにも無料掲載", "VtuberMatch宣伝ページに無料掲載"],
   },
   paid: {
     badge: "ショート動画&24時間宣伝企画",

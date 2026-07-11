@@ -90,8 +90,8 @@ export default function HomePage() {
             <span className="landing-section-kicker">For VTubers</span>
             <h2>Lo-Fi配信で、あなたの活動をそっと届ける。</h2>
             <p>
-              掲載VTuber向けに、紹介ショート動画や24時間Lo-Fi配信内でのチャンネル掲載特典を用意しています。
-              まずは無料掲載から始められます。
+              無料プランに申し込むと、Lo-Fi 24時間配信への掲載、紹介ショート動画での宣伝、
+              無料掲載ページの作成をまとめて利用できます。
             </p>
           </div>
           <div className="landing-lofi-player" aria-label="Lo-Fi配信ミニプレーヤー">
@@ -104,7 +104,7 @@ export default function HomePage() {
             />
           </div>
           <div className="landing-campaign-actions">
-            <UiButton href="/creator/apply">VTuberとして無料掲載</UiButton>
+            <UiButton href="/creator/apply">無料で宣伝を申し込む</UiButton>
             <UiButton variant="secondary" href="/creator">
               Lo-Fi特典を見る
             </UiButton>

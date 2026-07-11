@@ -31,7 +31,7 @@ const planRows = [
     id: "free",
     name: "無料プラン",
     price: "0円",
-    summary: "まずは掲載を始めたい方向け。画像、名前、配信サイトURL、100文字までの自己アピールを掲載できます。",
+    summary: "Lo-Fi配信への掲載、ショート動画での宣伝、無料掲載ページの作成をまとめて申し込めます。",
   },
   {
     id: "paid",
@@ -186,7 +186,7 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
       return;
     }
 
-    setStatus(data.already_registered ? "このメールアドレスは登録済みです。配信者ページから続きの操作ができます。" : "無料プランの申し込みを受け付けました。掲載を開始しました。");
+    setStatus(data.already_registered ? "このメールアドレスは登録済みです。配信者ページから続きの操作ができます。" : "無料プランの申し込みを受け付けました。掲載ページを作成しました。Lo-Fi配信とショート動画での紹介は順次行われます。");
     setCompletion({ email, password });
     formElement.reset();
     setSelectedCategories([]);

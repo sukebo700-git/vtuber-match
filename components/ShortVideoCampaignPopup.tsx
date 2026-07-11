@@ -68,11 +68,11 @@ export function ShortVideoCampaignPopup() {
           無料で作成します
         </h2>
         <p className="campaign-popup-lead">
-          VtuberMatch公式YouTubeチャンネルで、あなたの活動を紹介します。
+          無料プランに申し込むと、Lo-Fi 24時間配信への掲載、紹介ショート動画での宣伝、無料掲載ページの作成をまとめて利用できます。
         </p>
 
         <div className="campaign-popup-actions">
-          <a className="primary-button" href="/creator/apply">無料掲載を申し込む</a>
+          <a className="primary-button" href="/creator/apply">無料で宣伝を申し込む</a>
           <a className="secondary-button" href="/creator">内容を見る</a>
         </div>
 
