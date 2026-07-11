@@ -39,9 +39,9 @@ export default function ApplyPage() {
               ベーシックプランとプレミアムプランでは、上位表示や24時間生配信での紹介特典が加わります。
             </p>
             <ul className="feature-list">
-              <li>無料プラン: 紹介ショート動画を無料で作成</li>
-              <li>ベーシックプラン: ショート動画作成 + 24時間生配信で1日3回程度紹介</li>
-              <li>プレミアムプラン: 夕方〜深夜を優先して1日5回程度紹介</li>
+              <li>無料プラン: 20秒CMとしてLo-Fi 24時間配信に掲載 + YouTube Shortsにも無料掲載</li>
+              <li>ベーシックプラン: 1〜3分のCMを配信 + Shortsは音声ナレーション+テキスト付き</li>
+              <li>プレミアムプラン: ベーシックの内容 + さらに優先表示で宣伝効果を最大化</li>
             </ul>
           </section>
           <ApplicationForm categories={CATEGORIES} tags={TAGS} />

@@ -97,7 +97,8 @@ export default function CreatorPage() {
                 <li>画像1枚</li>
                 <li>名前、配信サイトURLを掲載</li>
                 <li>自己アピール100文字まで</li>
-                <li className="plan-highlight-red">紹介ショート動画制作無料</li>
+                <li className="plan-highlight-red">20秒CMとしてLo-Fi 24時間配信に掲載</li>
+                <li className="plan-highlight-red">YouTube Shortsにも無料掲載</li>
               </ul>
               <LofiPlanBenefits planId="registered" />
             </article>
@@ -111,8 +112,8 @@ export default function CreatorPage() {
                 <li>カテゴリ、タグ表示</li>
                 <li>無料プランより上位表示</li>
                 <li>月1回の72時間プレミアム体験</li>
-                <li className="plan-highlight-red">ショート動画制作無料</li>
-                <li className="plan-highlight-red">24時間生配信での宣伝無料</li>
+                <li className="plan-highlight-red">1〜3分のCMをLo-Fi 24時間配信で配信</li>
+                <li className="plan-highlight-red">Shortsは音声ナレーション+テキスト付き</li>
               </ul>
               <LofiPlanBenefits planId="paid" />
             </article>
@@ -122,10 +123,10 @@ export default function CreatorPage() {
               <p>さらに目立たせたい方向け。常時優先表示を利用できます。</p>
               <ul>
                 <li>ベーシックプランのすべて</li>
-                <li>常時優先表示</li>
+                <li>常時優先表示で宣伝効果を最大化</li>
                 <li>より目立つプレミアムフレーム</li>
-                <li className="plan-highlight-red">ショート動画制作無料</li>
-                <li className="plan-highlight-red">24時間生配信での宣伝無料</li>
+                <li className="plan-highlight-red">1〜3分のCMをLo-Fi 24時間配信で配信</li>
+                <li className="plan-highlight-red">Shortsは音声ナレーション+テキスト付き</li>
               </ul>
               <LofiPlanBenefits planId="boost" />
             </article>

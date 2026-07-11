@@ -43,7 +43,7 @@ const planRows = [
     id: "boost",
     name: "プレミアムプラン",
     price: "月額980円",
-    summary: "常時優先表示、プレミアムフレーム、夕方〜深夜のLo-Fi配信優先掲載を利用できます。",
+    summary: "常時優先表示、プレミアムフレーム、Lo-Fi配信CMとShorts掲載で宣伝効果を最大化できます。",
   },
 ];
 
@@ -381,7 +381,7 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
             <p className="notice-text"><BadgeCheck size={16} /> ベーシックプランでは公式バッジ、上位表示、紹介動画の特典を利用できます。</p>
           )}
           {selectedPlan === "boost" && (
-            <p className="notice-text"><Crown size={16} /> プレミアムプランでは常時優先表示、プレミアムフレーム、夕方〜深夜のLo-Fi配信優先掲載を利用できます。</p>
+            <p className="notice-text"><Crown size={16} /> プレミアムプランでは常時優先表示、プレミアムフレーム、Lo-Fi配信CMとShorts掲載を利用できます。</p>
           )}
         </>
       )}
