@@ -38,7 +38,7 @@ export async function GET(request: Request) {
       .get(),
     db
       .collection("short_video_requests")
-      .select("streamer_id", "status")
+      .select("streamer_id", "status", "appeal_points", "notes")
       .limit(500)
       .get(),
   ]);
@@ -48,6 +48,11 @@ export async function GET(request: Request) {
       .filter((doc) => String(doc.data().status || "open") !== "rejected")
       .map((doc) => String(doc.data().streamer_id || doc.id))
       .filter(Boolean)
+  );
+  const appealPointsByStreamerId = new Map(
+    requestSnapshot.docs
+      .filter((doc) => String(doc.data().status || "open") !== "rejected")
+      .map((doc) => [String(doc.data().streamer_id || doc.id), String(doc.data().appeal_points || "")])
   );
 
   const vtubers = snapshot.docs
@@ -64,6 +69,7 @@ export async function GET(request: Request) {
         description:   String(d.description || ""),
         one_liner:     String(d.one_liner || ""),
         yomi:          String(d.yomi || ""),
+        appeal_points: appealPointsByStreamerId.get(doc.id) || "",
         _plan_type:    String(d.plan_type || "free"),
         _visible:      d.is_visible !== false,
         _deleted:      d.is_deleted === true,
