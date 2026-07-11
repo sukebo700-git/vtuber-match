@@ -16,7 +16,7 @@ export async function GET(request: Request) {
 
   const snapshot = await db
     .collection("streamers")
-    .where("plan_type", "in", ["paid", "boost"])
+    .where("plan_type", "in", ["free", "paid", "boost"])
     .select(
       "name",
       "creator_email",
@@ -30,7 +30,7 @@ export async function GET(request: Request) {
       "one_liner",
       "yomi"
     )
-    .limit(300)
+    .limit(500)
     .get();
 
   const vtubers = snapshot.docs
@@ -41,7 +41,7 @@ export async function GET(request: Request) {
         name:          String(d.name || ""),
         x_account_url: normalizeXUrl(d.x_account),
         youtube_url:   String(d.youtube_url || ""),
-        plan:          d.plan_type === "boost" ? "premium" : "standard",
+        plan:          d.plan_type === "boost" ? "premium" : d.plan_type === "paid" ? "standard" : "free",
         email:         String(d.creator_email || ""),
         avatar_url:    absoluteUrl(`/api/streamer-image/${encodeURIComponent(doc.id)}?i=0`),
         description:   String(d.description || ""),
