@@ -108,5 +108,12 @@ function stripWrappingQuotes(value: string) {
 }
 
 function isFirestoreSpecialValue(value: object) {
-  return value instanceof Date || "_methodName" in value || typeof (value as { toDate?: unknown }).toDate === "function";
+  // firebase-admin v12ではserverTimestamp()等のsentinelに_methodNameが無いため、instanceofで判定する。
+  // これを外すとstripUndefinedがsentinelを空オブジェクト{}に潰してFirestoreに書き込んでしまう。
+  return (
+    value instanceof Date ||
+    value instanceof admin.firestore.FieldValue ||
+    "_methodName" in value ||
+    typeof (value as { toDate?: unknown }).toDate === "function"
+  );
 }
