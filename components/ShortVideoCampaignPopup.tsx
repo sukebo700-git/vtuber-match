@@ -13,13 +13,12 @@ type CreatorAuth = {
 const popupVersion = "20260702-top-restore";
 const popupDismissedUntilKey = `vtuber-match-short-video-campaign-dismissed-until-${popupVersion}`;
 const popupDismissDaysMs = 7 * 24 * 60 * 60 * 1000;
-const shortVideoFormUrl = process.env.NEXT_PUBLIC_SHORT_VIDEO_FORM_URL || "https://t.co/RvMn6IQife";
+const shortVideoRequestPath = "/creator/short-video";
 
 export function ShortVideoCampaignPopup() {
   const [open, setOpen] = useState(false);
   const [creator, setCreator] = useState<CreatorAuth | null>(null);
   const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState("");
 
   useEffect(() => {
     try {
@@ -49,24 +48,10 @@ export function ShortVideoCampaignPopup() {
     setOpen(false);
   }
 
-  async function requestShortVideo() {
+  function requestShortVideo() {
     if (busy) return;
     setBusy(true);
-    setMessage("");
-    try {
-      const response = await fetch("/api/short-video-requests", { method: "POST" });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        setMessage(data.error || "リクエストを送信できませんでした。配信者としてログインしているか確認してください。");
-        return;
-      }
-      setMessage("リクエストを受け付けました。紹介ショート動画に必要な情報をフォームに入力してください。");
-      window.open(shortVideoFormUrl, "_blank", "noopener,noreferrer");
-    } catch {
-      setMessage("通信に失敗しました。時間をおいてもう一度お試しください。");
-    } finally {
-      setBusy(false);
-    }
+    window.location.href = shortVideoRequestPath;
   }
 
   return (
@@ -95,14 +80,10 @@ export function ShortVideoCampaignPopup() {
           <section className="campaign-popup-creator">
             <span>登録済み配信者向け</span>
             <strong>{creatorLabel}</strong>
-            <p>紹介ショート動画に必要な情報をフォームに入力してください。</p>
-            <a className="campaign-form-link" href={shortVideoFormUrl} target="_blank" rel="noreferrer">
-              フォームを開く
-            </a>
+            <p>アピールしたいポイントを書いて送るだけで、紹介ショート動画を依頼できます。</p>
             <button className="primary-button" type="button" disabled={busy} onClick={requestShortVideo}>
-              {busy ? "送信中..." : "作成を依頼する"}
+              {busy ? "移動中..." : "作成を依頼する"}
             </button>
-            {message ? <p className="campaign-popup-note">{message}</p> : null}
           </section>
         ) : (
           <section className="campaign-popup-creator muted">

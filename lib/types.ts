@@ -67,6 +67,7 @@ export type Streamer = VtypeProfileFields & {
   created_at?: string;
   updated_at?: string;
   source_application_id?: string;
+  promo_video_id?: string;
 };
 
 export type ApplicationStatus = "pending" | "approved" | "rejected";

@@ -1,5 +1,6 @@
 ﻿import { HeaderAuthStatus } from "@/components/HeaderAuthStatus";
 import { AdminDashboard } from "@/components/AdminDashboard";
+import { ShortVideoAdminPanel } from "@/components/ShortVideoAdminPanel";
 import { ReportAdminPanel } from "@/components/ReportAdminPanel";
 import { ViewerAdminPanel } from "@/components/ViewerAdminPanel";
 import { PasswordResetAdminPanel } from "@/components/PasswordResetAdminPanel";
@@ -119,6 +120,7 @@ export default async function AdminPage({ searchParams }: { searchParams?: Admin
             <AdminAnalyticsPanel analytics={analyticsStats} />
           </>
         )}
+        {activeTab === "streamers" && <ShortVideoAdminPanel adminKey="" />}
         {needsStreamerData && <AdminDashboard initialApplications={applications} initialStreamers={streamers} adminKey="" />}
         {activeTab === "viewers" && <ViewerAdminPanel viewers={viewers} />}
         {(activeTab === "streamers" || activeTab === "viewers") && (
@@ -244,14 +246,14 @@ async function readImportantNotifications(): Promise<AdminImportantNotification[
   });
   shortVideoDocs.docs.forEach((doc) => {
     const data = doc.data();
-    if (data.status === "handled") return;
+    if (["handled", "published", "rejected"].includes(String(data.status || ""))) return;
     items.push({
       id: `short_video:${doc.id}`,
       type: "short_video",
       title: "ショート動画希望",
       body: `${data.name || data.email || data.streamer_id || data.application_id || doc.id} が無料ショート動画作成を希望しています。`,
       created_at: timestampToIso(data.requested_at ?? data.updated_at),
-      href: data.form_url || "/admin?tab=streamers",
+      href: "/admin?tab=streamers",
     });
   });
 

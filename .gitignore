@@ -22,3 +22,6 @@ yarn-debug.log*
 yarn-error.log*
 *.tsbuildinfo
 .env*
+
+worker/short-video/.secrets/
+worker/short-video/output/

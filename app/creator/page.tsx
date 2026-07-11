@@ -70,6 +70,10 @@ export default function CreatorPage() {
               <strong>プロフィール修正</strong>
               <span>掲載中の名前、画像、自己アピール、カテゴリ、タグなどを更新できます。</span>
             </a>
+            <a className="creator-action-card" href="/creator/short-video">
+              <strong>紹介ショート動画を依頼</strong>
+              <span>公式YouTubeチャンネルで公開する紹介ショート動画を無料で依頼できます。</span>
+            </a>
             <a className="creator-action-card" href="/creator/upgrade">
               <strong>アップグレード</strong>
               <span>上位表示、公式紹介、Lo-Fi配信での紹介特典を確認できます。</span>

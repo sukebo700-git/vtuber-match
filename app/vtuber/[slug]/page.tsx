@@ -98,6 +98,17 @@ export default async function VtuberSeoPage({ params }: VtuberSeoPageProps) {
               <ExternalLink size={18} />
               {siteLabel}を開く
             </a>
+            {streamer.promo_video_id && (
+              <a
+                className="secondary-button"
+                href={`https://www.youtube.com/shorts/${encodeURIComponent(streamer.promo_video_id)}`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <ExternalLink size={18} />
+                紹介ショート動画を見る
+              </a>
+            )}
             <a className="secondary-button" href="/swipe">
               <Search size={18} />
               他のVTuberも探す
