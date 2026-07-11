@@ -24,15 +24,12 @@ type ShortVideoRequest = {
 };
 
 const statusLabels: Record<string, string> = {
-  open: "依頼を受け付けました(運営の確認待ち)",
-  approved: "制作決定!動画を準備しています",
-  rendering: "動画を制作しています",
-  uploaded: "動画が完成し、公開準備中です",
+  open: "依頼を受け付けました(順番に制作します)",
   published: "公開されました",
   rejected: "今回は見送りになりました",
 };
 
-const lockedStatuses = ["approved", "rendering", "uploaded", "published"];
+const lockedStatuses = ["published"];
 
 export function ShortVideoRequestForm() {
   const [profile, setProfile] = useState<Profile | null>(null);

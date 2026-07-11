@@ -5,7 +5,9 @@ import { invalidateStreamerCaches } from "@/lib/streamers";
 
 export const dynamic = "force-dynamic";
 
-const allowedStatuses = ["open", "approved", "rendering", "uploaded", "published", "rejected"] as const;
+// 依頼のステータス管理のみを行う。動画制作はローカルの動画ジェネレーターが担当。
+// open: 依頼受付(ジェネレーター同期対象) / published: 対応済み / rejected: 見送り(同期対象外)
+const allowedStatuses = ["open", "published", "rejected"] as const;
 type RequestStatus = (typeof allowedStatuses)[number];
 
 export async function PATCH(request: Request, { params }: { params: { id: string } }) {
@@ -26,36 +28,29 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   const doc = await ref.get();
   if (!doc.exists) return NextResponse.json({ error: "request not found" }, { status: 404 });
 
-  const introText = typeof body.intro_text === "string" ? body.intro_text.trim().slice(0, 500) : undefined;
   const status = typeof body.status === "string" && (allowedStatuses as readonly string[]).includes(body.status)
     ? (body.status as RequestStatus)
     : undefined;
+  const videoId = parseYouTubeVideoId(body.youtube_video || body.youtube_video_id);
 
-  if (introText === undefined && status === undefined) {
-    return NextResponse.json({ error: "intro_text または status を指定してください。" }, { status: 400 });
-  }
-
-  if (status === "approved") {
-    const effectiveIntro = introText !== undefined ? introText : String(doc.data()?.intro_text || "");
-    if (!effectiveIntro.trim()) {
-      return NextResponse.json({ error: "GOサインには紹介テキストの入力が必要です。" }, { status: 400 });
-    }
+  if (status === undefined && videoId === undefined) {
+    return NextResponse.json({ error: "status または youtube_video を指定してください。" }, { status: 400 });
   }
 
   await ref.set(stripUndefined({
-    intro_text: introText,
     status,
-    approved_at: status === "approved" ? FieldValue.serverTimestamp() : undefined,
+    youtube_video_id: videoId,
+    published_at: status === "published" ? FieldValue.serverTimestamp() : undefined,
     updated_at: FieldValue.serverTimestamp(),
   }), { merge: true });
 
   if (status === "published") {
     const requestData = doc.data() || {};
     const streamerId = String(requestData.streamer_id || "");
-    const videoId = String(requestData.youtube_video_id || "");
-    if (streamerId && videoId) {
+    const effectiveVideoId = videoId || String(requestData.youtube_video_id || "");
+    if (streamerId && effectiveVideoId) {
       await db.collection("streamers").doc(streamerId).set({
-        promo_video_id: videoId,
+        promo_video_id: effectiveVideoId,
         updated_at: FieldValue.serverTimestamp(),
       }, { merge: true });
       invalidateStreamerCaches();
@@ -68,8 +63,15 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     request: {
       id: params.id,
       status: String(updated.status || "open"),
-      intro_text: String(updated.intro_text || ""),
       youtube_video_id: String(updated.youtube_video_id || ""),
     },
   });
+}
+
+function parseYouTubeVideoId(value: unknown): string | undefined {
+  const raw = String(value || "").trim();
+  if (!raw) return undefined;
+  const urlMatch = /(?:youtube\.com\/(?:watch\?v=|shorts\/)|youtu\.be\/)([\w-]{6,20})/.exec(raw);
+  if (urlMatch) return urlMatch[1];
+  return /^[\w-]{6,20}$/.test(raw) ? raw : undefined;
 }

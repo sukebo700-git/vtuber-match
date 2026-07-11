@@ -81,9 +81,9 @@ export async function POST(request: Request) {
 
   const existing = await db.collection("short_video_requests").doc(requestId).get();
   const existingStatus = String(existing.data()?.status || "");
-  if (existing.exists && ["approved", "rendering", "uploaded", "published"].includes(existingStatus)) {
+  if (existing.exists && existingStatus === "published") {
     return NextResponse.json({
-      error: "この依頼はすでに制作フローに入っています。内容の変更は運営までお問い合わせください。",
+      error: "この依頼の動画はすでに公開されています。内容の変更は運営までお問い合わせください。",
       status: existingStatus,
     }, { status: 409 });
   }

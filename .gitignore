@@ -23,6 +23,4 @@ yarn-error.log*
 *.tsbuildinfo
 .env*
 
-worker/short-video/.secrets/
-worker/short-video/output/
 *.bak-tag-remove

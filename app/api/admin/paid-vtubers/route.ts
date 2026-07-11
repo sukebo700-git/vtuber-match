@@ -5,6 +5,9 @@ import { absoluteUrl } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
+// 動画ジェネレーター同期用API。
+// 有料プラン(paid/boost)は全員、無料プランは「ショート動画依頼があった人」だけを返す。
+// plan はジェネレーター側の語彙(registered=25秒 / standard / premium)で返す。
 export async function GET(request: Request) {
   const unauthorized = requireAdmin(request);
   if (unauthorized) return unauthorized;
@@ -14,24 +17,38 @@ export async function GET(request: Request) {
     return NextResponse.json({ vtubers: [] });
   }
 
-  const snapshot = await db
-    .collection("streamers")
-    .where("plan_type", "in", ["free", "paid", "boost"])
-    .select(
-      "name",
-      "creator_email",
-      "youtube_url",
-      "x_account",
-      "plan_type",
-      "is_visible",
-      "is_deleted",
-      "withdrawal_status",
-      "description",
-      "one_liner",
-      "yomi"
-    )
-    .limit(500)
-    .get();
+  const [snapshot, requestSnapshot] = await Promise.all([
+    db
+      .collection("streamers")
+      .where("plan_type", "in", ["free", "paid", "boost"])
+      .select(
+        "name",
+        "creator_email",
+        "youtube_url",
+        "x_account",
+        "plan_type",
+        "is_visible",
+        "is_deleted",
+        "withdrawal_status",
+        "description",
+        "one_liner",
+        "yomi"
+      )
+      .limit(500)
+      .get(),
+    db
+      .collection("short_video_requests")
+      .select("streamer_id", "status")
+      .limit(500)
+      .get(),
+  ]);
+
+  const requestedStreamerIds = new Set(
+    requestSnapshot.docs
+      .filter((doc) => String(doc.data().status || "open") !== "rejected")
+      .map((doc) => String(doc.data().streamer_id || doc.id))
+      .filter(Boolean)
+  );
 
   const vtubers = snapshot.docs
     .map((doc) => {
@@ -41,19 +58,21 @@ export async function GET(request: Request) {
         name:          String(d.name || ""),
         x_account_url: normalizeXUrl(d.x_account),
         youtube_url:   String(d.youtube_url || ""),
-        plan:          d.plan_type === "boost" ? "premium" : d.plan_type === "paid" ? "standard" : "free",
+        plan:          d.plan_type === "boost" ? "premium" : d.plan_type === "paid" ? "standard" : "registered",
         email:         String(d.creator_email || ""),
         avatar_url:    absoluteUrl(`/api/streamer-image/${encodeURIComponent(doc.id)}?i=0`),
         description:   String(d.description || ""),
         one_liner:     String(d.one_liner || ""),
         yomi:          String(d.yomi || ""),
+        _plan_type:    String(d.plan_type || "free"),
         _visible:      d.is_visible !== false,
         _deleted:      d.is_deleted === true,
         _withdrawal:   String(d.withdrawal_status || ""),
       };
     })
     .filter((v) => v._visible && !v._deleted && v._withdrawal !== "requested")
-    .map(({ _visible, _deleted, _withdrawal, ...v }) => v);
+    .filter((v) => v._plan_type !== "free" || requestedStreamerIds.has(v.id))
+    .map(({ _plan_type, _visible, _deleted, _withdrawal, ...v }) => v);
 
   return NextResponse.json({ vtubers });
 }
