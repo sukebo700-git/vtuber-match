@@ -7,7 +7,8 @@ async function main() {
   const authUrl = buildAuthUrl();
   console.log("ブラウザで次のURLを開いて、VtuberMatch公式チャンネルのGoogleアカウントで認可してください:");
   console.log(authUrl);
-  execFile("cmd", ["/c", "start", "", authUrl], () => undefined);
+  // cmd の start は URL 中の & 以降を切り捨てるため、rundll32 でブラウザを開く。
+  execFile("rundll32", ["url.dll,FileProtocolHandler", authUrl], () => undefined);
 
   const code = await waitForAuthCode();
   await exchangeCodeForToken(code);
