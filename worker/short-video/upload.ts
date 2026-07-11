@@ -1,6 +1,11 @@
 import fs from "fs";
 import { getAccessToken } from "./youtubeAuth";
 
+function siteUrl() {
+  const configured = (process.env.NEXT_PUBLIC_APP_URL || "").trim().replace(/\/$/, "");
+  return configured.startsWith("https://") ? configured : "https://www.vtubermatch.com";
+}
+
 export type UploadInput = {
   videoPath: string;
   name: string;
@@ -19,7 +24,7 @@ export async function uploadToYouTube(input: UploadInput): Promise<string> {
     input.xAccount ? `X: ${input.xAccount}` : "",
     "",
     "VtuberMatch - 気になるVTuberと直感で出会える",
-    "https://vtuber-match.vercel.app",
+    siteUrl(),
     "",
     "#VTuber #Shorts #VtuberMatch",
   ].filter((line, index, lines) => line !== "" || lines[index - 1] !== "");
