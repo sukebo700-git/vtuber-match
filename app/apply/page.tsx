@@ -38,7 +38,7 @@ export default function ApplyPage() {
               無料プランに申し込むと、次の3つをまとめて利用できます。むずかしい手続きはなく、申し込み後すぐに掲載が始まります。
             </p>
             <ul className="feature-list">
-              <li>Lo-Fi 24時間配信への掲載(25秒CMとして紹介)</li>
+              <li>Lo-Fi 24時間配信への掲載(20秒CMとして紹介)</li>
               <li>紹介ショート動画での宣伝(YouTube Shortsに無料掲載)</li>
               <li>あなた専用の無料掲載ページを作成</li>
             </ul>

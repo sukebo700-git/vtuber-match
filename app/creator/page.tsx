@@ -93,7 +93,7 @@ export default function CreatorPage() {
               <span className="plan-price">0円</span>
               <p>Lo-Fi配信への掲載、ショート動画での宣伝、無料掲載ページの作成をまとめて申し込めます。</p>
               <ul>
-                <li className="plan-highlight-red">Lo-Fi 24時間配信に掲載(25秒CM)</li>
+                <li className="plan-highlight-red">Lo-Fi 24時間配信に掲載(20秒CM)</li>
                 <li className="plan-highlight-red">紹介ショート動画で宣伝(YouTube Shorts)</li>
                 <li className="plan-highlight-red">無料掲載ページを作成</li>
                 <li>画像1枚、名前、配信サイトURL、自己アピール100文字まで</li>

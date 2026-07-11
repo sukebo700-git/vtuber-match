@@ -82,7 +82,7 @@ export const PLAN_LABELS: Record<string, string> = {
 
 export const PLAN_FEATURES = {
   free: [
-    "Lo-Fi 24時間配信に掲載(25秒CM)",
+    "Lo-Fi 24時間配信に掲載(20秒CM)",
     "紹介ショート動画で宣伝(YouTube Shorts)",
     "無料掲載ページを作成",
     "写真1枚、名前、動画・配信サイトURL",
