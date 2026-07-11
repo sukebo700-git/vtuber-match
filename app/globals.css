@@ -7422,3 +7422,13 @@ body::after {
     padding: 16px 18px;
   }
 }
+
+/* 掲載申込フォーム: プラン比較を広く見せるため全体を拡幅 */
+.application-form {
+  max-width: 1160px;
+  width: 100%;
+}
+
+.application-form .plan-table {
+  gap: 16px;
+}

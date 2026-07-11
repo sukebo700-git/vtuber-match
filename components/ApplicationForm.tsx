@@ -241,7 +241,7 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
   }
 
   return (
-    <form className="form" onSubmit={submit}>
+    <form className="form application-form" onSubmit={submit}>
       <section className="status-band">
         <h2>プランの違い</h2>
         <div className="plan-table">
