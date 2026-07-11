@@ -21,15 +21,8 @@ export function rankStreamers(streamers: Streamer[], seed = rankingSeed()) {
 }
 
 function score(streamer: Streamer) {
-  const basePlan = isBasicPremiumTrialActive(streamer.basic_premium_trial_until) && streamer.plan_type === "paid" ? "boost" : streamer.plan_type;
   const activeSuperBoost = isActiveSuperBoost(streamer.super_boost_until);
-  return (planScore[basePlan] || 0) + (activeSuperBoost ? superBoostScore : 0);
-}
-
-export function isBasicPremiumTrialActive(value?: string) {
-  if (!value) return false;
-  const time = new Date(value).getTime();
-  return Number.isFinite(time) && time > Date.now();
+  return (planScore[streamer.plan_type] || 0) + (activeSuperBoost ? superBoostScore : 0);
 }
 
 function jstDateKey(date = new Date()) {

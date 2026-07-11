@@ -1,7 +1,6 @@
 import { HeaderAuthStatus } from "@/components/HeaderAuthStatus";
 import { AuthVisibility } from "@/components/AuthVisibility";
 import { CreatorSuperBoostNotice } from "@/components/CreatorSuperBoostNotice";
-import { BasicPremiumTrialPanel } from "@/components/BasicPremiumTrialPanel";
 import { LofiPlanBenefits } from "@/components/LofiPlanBenefits";
 import { CreatorProfileSharePanel } from "@/components/CreatorProfileSharePanel";
 import type { Metadata } from "next";
@@ -64,7 +63,6 @@ export default function CreatorPage() {
 
         <AuthVisibility role="creator" mode="logged-in">
           <CreatorProfileSharePanel />
-          <BasicPremiumTrialPanel />
           <section className="creator-action-grid creator-entry-grid">
             <a className="creator-action-card featured" href="/creator/edit">
               <strong>プロフィール修正</strong>
@@ -111,7 +109,6 @@ export default function CreatorPage() {
                 <li>Xアカウント表示</li>
                 <li>カテゴリ、タグ表示</li>
                 <li>無料プランより上位表示</li>
-                <li>月1回の72時間プレミアム体験</li>
                 <li className="plan-highlight-red">1〜3分のCMをLo-Fi 24時間配信で配信</li>
                 <li className="plan-highlight-red">Shortsは音声ナレーション+テキスト付き</li>
               </ul>

@@ -31,7 +31,6 @@ export async function GET() {
       "is_deleted",
       "super_boost_until",
       "super_boost_effect",
-      "basic_premium_trial_until",
       "elite_boost_days",
       "likes",
       "weekly_impressions",

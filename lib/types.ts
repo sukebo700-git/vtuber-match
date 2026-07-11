@@ -55,8 +55,6 @@ export type Streamer = VtypeProfileFields & {
   super_boost_count?: number;
   super_boost_until?: string;
   super_boost_effect?: SuperBoostEffect;
-  basic_premium_trial_until?: string;
-  basic_premium_trial_last_month?: string;
   fcm_tokens?: string[];
   notification_enabled?: boolean;
   last_creator_login_at?: string;

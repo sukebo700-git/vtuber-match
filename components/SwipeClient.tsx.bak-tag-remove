@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { BadgeCheck, ChevronDown, ExternalLink, Heart, Info, Search, Sparkles, Star, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -6,12 +6,10 @@ import { CATEGORIES } from "@/lib/constants";
 import { diagnosisTypes } from "@/lib/diagnosis";
 import { viewerVtypeStorageKey, type VtypeProfileFields } from "@/lib/diagnosisProfile";
 import { ensureAnonymousUser } from "@/lib/firebase";
+import { isBasicPremiumTrialActive } from "@/lib/ranking";
 import { anonymousViewerProfile, getViewerIdentity } from "@/lib/viewerIdentity";
 import { videoSiteLabel, youtubeSubscribeUrl } from "@/lib/youtube";
 import type { Streamer, ViewerProfile } from "@/lib/types";
-import { UiBadge } from "@/components/ui/UiBadge";
-import { UiButton } from "@/components/ui/UiButton";
-import { UiPanel } from "@/components/ui/UiPanel";
 
 type SwipeClientProps = {
   initialStreamers: Streamer[];
@@ -208,21 +206,21 @@ export function SwipeClient({ initialStreamers }: SwipeClientProps) {
 
   if (!initialStreamers.length) {
     return (
-      <UiPanel as="div" className="empty-swipe-state">
+      <div className="status-band empty-swipe-state">
         <h2>ただいまスワイプデータを準備中です</h2>
         <p>アクセス集中や一時的な読み込み制限により、カードを表示できない場合があります。少し時間をおいて再読み込みしてください。</p>
         <div className="empty-swipe-actions">
-          <UiButton type="button" onClick={() => window.location.reload()}>
+          <button className="primary-button" type="button" onClick={() => window.location.reload()}>
             再読み込み
-          </UiButton>
-          <UiButton variant="secondary" href="/">
+          </button>
+          <a className="secondary-button" href="/">
             TOPへ戻る
-          </UiButton>
-          <UiButton variant="secondary" href="/creator/apply">
+          </a>
+          <a className="secondary-button" href="/creator/apply">
             VTuberとして登録
-          </UiButton>
+          </a>
         </div>
-      </UiPanel>
+      </div>
     );
   }
 
@@ -604,14 +602,14 @@ function readPendingImpressions() {
 
 function canGuestSwipe() {
   const identity = getViewerIdentity();
-  if (identity.registered || readCreatorSwipeProfile()) return true;
+  if (identity.registered) return true;
   resetGuestSwipeCountIfNeeded();
   return Number(localStorage.getItem(guestSwipeCountKey) || "0") < guestSwipeLimit;
 }
 
 function incrementGuestSwipeCount() {
   const identity = getViewerIdentity();
-  if (identity.registered || readCreatorSwipeProfile()) return;
+  if (identity.registered) return;
   resetGuestSwipeCountIfNeeded();
   const count = Number(localStorage.getItem(guestSwipeCountKey) || "0") + 1;
   localStorage.setItem(guestSwipeCountKey, String(count));
@@ -674,10 +672,8 @@ function SwipeCard({
   const frameRef = useRef<number | null>(null);
   const showNewRibbon = isNewStreamer(streamer.created_at);
   const superEffect = isActiveSuperBoost(streamer.super_boost_until) ? streamer.super_boost_effect || "shine" : "";
-  const premiumVisual = streamer.plan_type === "boost";
+  const premiumVisual = streamer.plan_type === "boost" || (streamer.plan_type === "paid" && isBasicPremiumTrialActive(streamer.basic_premium_trial_until));
   const visualPlan = premiumVisual ? "boost" : streamer.plan_type;
-  const showTopPills = streamer.plan_type !== "free" || streamer.categories.length > 0 || streamer.tags.length > 0;
-  const vtypeLabel = streamer.vtype_name ? `VTYPE ${streamer.vtype_code ? `${streamer.vtype_code} ` : ""}${streamer.vtype_name}` : "";
 
   useEffect(() => {
     return () => {
@@ -759,26 +755,26 @@ function SwipeCard({
       ) : null}
       <img src={thumbnail} alt={`${streamer.name} image`} loading="eager" decoding="async" fetchPriority="high" />
       <div className="card-overlay">
-        {showTopPills && (
+        {streamer.plan_type !== "free" && (
           <div className="pill-row">
-            {streamer.plan_type !== "free" && (
-              <UiBadge variant="official">
-                <BadgeCheck size={15} />
-                公式
-              </UiBadge>
-            )}
+            <span className="official-badge">
+              <BadgeCheck size={15} />
+              公式
+            </span>
             {streamer.categories.slice(0, 1).map((category) => (
-              <UiBadge key={category}>{category}</UiBadge>
+              <span className="pill" key={category}>{category}</span>
             ))}
             {streamer.tags.slice(0, 3).map((tag) => (
-              <UiBadge key={tag}>#{tag}</UiBadge>
+              <span className="pill" key={tag}>#{tag}</span>
             ))}
           </div>
         )}
         <h1>{streamer.name}</h1>
-        {vtypeLabel && (
+        {!!streamer.tags.length && (
           <div className="card-tag-row">
-            <span>{vtypeLabel}</span>
+            {streamer.tags.slice(0, 4).map((tag) => (
+              <span key={tag}>#{tag}</span>
+            ))}
           </div>
         )}
       </div>
@@ -914,8 +910,9 @@ function prioritizeSameVtype(streamers: Streamer[], viewerVtypeId: number | null
 }
 
 function swipePriorityScore(streamer: Streamer) {
+  const basePlan = streamer.plan_type === "paid" && isBasicPremiumTrialActive(streamer.basic_premium_trial_until) ? "boost" : streamer.plan_type;
   const superBoostScore = isActiveSuperBoost(streamer.super_boost_until) ? 5_000_000 : 0;
-  return (swipePlanScore[streamer.plan_type] || 0) + superBoostScore;
+  return (swipePlanScore[basePlan] || 0) + superBoostScore;
 }
 
 function seededIndex(input: string, modulo: number) {

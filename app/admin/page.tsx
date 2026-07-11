@@ -582,8 +582,6 @@ async function readAllFirestoreStreamers({ cursor, xFilter }: { cursor?: string;
       "super_boost_count",
       "super_boost_until",
       "super_boost_effect",
-      "basic_premium_trial_until",
-      "basic_premium_trial_last_month",
       "fcm_tokens",
       "notification_enabled",
       "last_creator_login_at",
