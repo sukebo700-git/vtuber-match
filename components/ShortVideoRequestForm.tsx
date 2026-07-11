@@ -119,6 +119,9 @@ export function ShortVideoRequestForm() {
           {profile.x_account ? <li>X: {profile.x_account}</li> : null}
           {profile.one_liner ? <li>ひとこと: {profile.one_liner}</li> : null}
         </ul>
+        <p className="help-text">
+          下の「アピールしたいポイント」が空の場合は、この「ひとこと」がそのまま動画のナレーション・テロップになります。誤字や記載漏れがないようご注意ください。
+        </p>
         <a className="secondary-button" href="/creator/edit">プロフィールを修正する</a>
       </section>
 
@@ -145,6 +148,9 @@ export function ShortVideoRequestForm() {
           <form className="form" onSubmit={submit}>
             <div className="field">
               <label htmlFor="short_video_appeal">アピールしたいポイント(300文字まで)</label>
+              <p className="help-text">
+                ここに書いた内容が、そのまま動画のナレーション・テロップになります。誤字や記載漏れがないようご注意ください。
+              </p>
               <textarea
                 id="short_video_appeal"
                 value={appealPoints}
