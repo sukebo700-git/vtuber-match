@@ -9,6 +9,7 @@ export function PublicFooter() {
         <a href="/help">ヘルプ</a>
         <a href="/terms">利用規約</a>
         <a href="/commercial-disclosure">特商法</a>
+        <a href="/ai-policy">生成AI利用ポリシー</a>
       </nav>
 
       <div className="footer-cta-row">
