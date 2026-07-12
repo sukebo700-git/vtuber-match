@@ -61,11 +61,6 @@ export default function HomePage() {
                 VTYPE診断をする
               </UiButton>
             </div>
-            <div className="landing-signal-row" aria-label="主な機能">
-              <UiButton className="landing-inline-apply-cta" href="https://www.vtubermatch.com/creator/apply">
-                VTuberとして無料掲載
-              </UiButton>
-            </div>
           </div>
 
           <div className="landing-visual landing-refresh-visual" aria-label="VTuberビジュアル">
