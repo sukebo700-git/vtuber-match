@@ -8,6 +8,7 @@ import { creatorVtypeStorageKey, type VtypeProfileFields } from "@/lib/diagnosis
 
 type CreatorDraft = VtypeProfileFields & {
   name?: string;
+  yomi?: string;
   youtube_url?: string;
   x_account?: string;
   description?: string;
@@ -49,6 +50,7 @@ export function CreatorProfileEditForm() {
   const [youtubeUrl, setYoutubeUrl] = useState("");
   const [xAccount, setXAccount] = useState("");
   const [description, setDescription] = useState("");
+  const [yomi, setYomi] = useState("");
   const [oneLiner, setOneLiner] = useState("");
   const [streamTime, setStreamTime] = useState("");
   const [categories, setCategories] = useState<string[]>([]);
@@ -71,6 +73,7 @@ export function CreatorProfileEditForm() {
     setYoutubeUrl(draft?.youtube_url || localStorage.getItem("vtuber-match-creator-youtube-url") || "");
     setXAccount(draft?.x_account || localStorage.getItem("vtuber-match-creator-x-account") || "");
     setDescription(draft?.description || "");
+    setYomi(draft?.yomi || "");
     setOneLiner(draft?.one_liner || "");
     setStreamTime(draft?.stream_time || "");
     setImages(draftImages);
@@ -90,6 +93,7 @@ export function CreatorProfileEditForm() {
         setYoutubeUrl(profile.youtube_url || localStorage.getItem("vtuber-match-creator-youtube-url") || "");
         setXAccount(profile.x_account || localStorage.getItem("vtuber-match-creator-x-account") || "");
         setDescription(profile.description || "");
+        setYomi(profile.yomi || "");
         setOneLiner((profile.one_liner || "").slice(0, 20));
         setStreamTime(profile.stream_time || "");
         setImages(nextImages);
@@ -127,6 +131,7 @@ export function CreatorProfileEditForm() {
         youtube_url: form.get("youtube_url"),
         x_account: form.get("x_account"),
         name: form.get("name"),
+        yomi,
         description: form.get("description"),
         one_liner: form.get("one_liner"),
         stream_time: String(form.get("stream_time") || "").slice(0, 50),
@@ -226,6 +231,11 @@ export function CreatorProfileEditForm() {
         <label htmlFor="edit_name">配信者名</label>
         <input id="edit_name" name="name" value={name} onChange={(event) => setName(event.target.value)} placeholder="変更する場合のみ入力" />
       </div>
+      <div className="field">
+        <label htmlFor="edit_yomi">名前のよみがな</label>
+        <input id="edit_yomi" name="yomi" value={yomi} maxLength={80} onChange={(event) => setYomi(event.target.value)} placeholder="例: ぶいちゅーばー はなこ" />
+        <p className="help-text">紹介動画のナレーションでお名前を正しく読み上げるために使います。</p>
+      </div>
 
       <div className="field">
         <label htmlFor="edit_one_liner">今日のひとこと</label>
@@ -235,7 +245,7 @@ export function CreatorProfileEditForm() {
       <div className="field">
         <label htmlFor="edit_description">自己アピール</label>
         <textarea id="edit_description" name="description" value={description} maxLength={planType === "free" ? 100 : 500} onChange={(event) => setDescription(event.target.value.slice(0, planType === "free" ? 100 : 500))} />
-        <p className="help-text">{planType === "free" ? `${description.length}/100` : "プロフィール画面に掲載されます。"}</p>
+        <p className="help-text">{planType === "free" ? `${description.length}/100` : "プロフィール画面に掲載されます。紹介動画のナレーション原稿にも使われます(500文字で約2分)。誤字にご注意ください。"}</p>
       </div>
 
       <div className="field">

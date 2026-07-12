@@ -293,6 +293,7 @@ function buildStreamerPatch(body: Record<string, unknown>, plan: PlanType): Part
   };
 
   setIfPresent(patch, "name", clean(body.name, 80));
+  setIfPresent(patch, "yomi", clean(body.yomi, 80));
   setIfPresent(patch, "youtube_url", clean(body.youtube_url, 240));
   setIfPresent(patch, "x_account", normalizeXAccount(body.x_account));
   setIfPresent(patch, "description", clean(body.description, plan === "free" ? 100 : 800));
@@ -314,6 +315,7 @@ function buildApplicationPatch(body: Record<string, unknown>, plan: PlanType) {
   };
 
   setIfPresent(patch, "name", clean(body.name, 80));
+  setIfPresent(patch, "yomi", clean(body.yomi, 80));
   setIfPresent(patch, "youtube_url", clean(body.youtube_url, 240));
   setIfPresent(patch, "x_account", normalizeXAccount(body.x_account));
   setIfPresent(patch, "description", clean(body.description, plan === "free" ? 100 : 800));
@@ -415,6 +417,7 @@ function buildProfileResponse(streamer?: Partial<Streamer>, application?: Partia
     streamer_id: streamerId,
     public_path: streamerId ? publicStreamerPath({ id: streamerId, name }) : "",
     name,
+    yomi: streamer?.yomi || application?.yomi || "",
     youtube_url: streamer?.youtube_url || application?.youtube_url || "",
     youtube_channel_id: streamer?.youtube_channel_id || application?.youtube_channel_id || "",
     x_account: streamer?.x_account || application?.x_account || "",

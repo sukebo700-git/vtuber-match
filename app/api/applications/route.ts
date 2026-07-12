@@ -71,6 +71,7 @@ export async function POST(request: Request) {
   const desiredPlan = normalizePlan(String(body.desired_plan || "free"));
   const payload = {
     name: String(body.name).trim(),
+    yomi: String(body.yomi || "").trim().slice(0, 80),
     email: String(body.email).trim().toLowerCase(),
     youtube_url: normalizePublicUrl(String(body.youtube_url)),
     youtube_channel_id: String(body.youtube_channel_id || "").trim(),
@@ -148,6 +149,7 @@ export async function POST(request: Request) {
     const application = await addLocalApplication(payload);
     const streamer = await addLocalStreamer({
       name: payload.name,
+      yomi: payload.yomi,
       creator_email: payload.email,
       youtube_url: payload.youtube_url,
       youtube_channel_id: payload.youtube_channel_id,
@@ -303,6 +305,7 @@ export async function POST(request: Request) {
 
   const streamerRef = await db.collection("streamers").add(stripUndefined({
     name: payload.name,
+    yomi: payload.yomi,
     creator_email: payload.email,
     youtube_url: payload.youtube_url,
     youtube_channel_id: payload.youtube_channel_id,

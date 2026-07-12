@@ -16,6 +16,7 @@ export type VtypeProfileFields = {
 export type Streamer = VtypeProfileFields & {
   id: string;
   name: string;
+  yomi?: string;
   creator_email?: string;
   youtube_url: string;
   youtube_channel_id?: string;
@@ -74,6 +75,7 @@ export type StreamerClaimStatus = "pending" | "approved" | "rejected";
 export type StreamerApplication = VtypeProfileFields & {
   id: string;
   name: string;
+  yomi?: string;
   email: string;
   youtube_url: string;
   youtube_channel_id?: string;

@@ -249,6 +249,7 @@ export function normalizeStreamer(id: string, data: Record<string, any>): Stream
   return {
     id,
     name: data.name || "",
+    yomi: typeof data.yomi === "string" ? data.yomi : "",
     creator_email: data.creator_email || data.email || "",
     youtube_url: data.youtube_url || "",
     youtube_channel_id: data.youtube_channel_id,

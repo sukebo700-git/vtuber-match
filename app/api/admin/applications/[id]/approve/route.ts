@@ -60,6 +60,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
       const streamerRef = db.collection("streamers").doc();
       tx.set(streamerRef, {
         name: application.name,
+        yomi: String(application.yomi || ""),
         creator_email: String(application.email || "").trim().toLowerCase(),
         youtube_url: application.youtube_url,
         youtube_channel_id: application.youtube_channel_id || null,

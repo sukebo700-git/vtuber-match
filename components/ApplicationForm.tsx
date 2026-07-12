@@ -95,6 +95,7 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
 
     const payload = {
       name: form.get("name"),
+      yomi: form.get("yomi"),
       email,
       youtube_url: form.get("youtube_url"),
       youtube_channel_id: form.get("youtube_channel_id"),
@@ -166,6 +167,7 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
     localStorage.setItem("vtuber-match-creator-x-account", String(form.get("x_account") || ""));
     localStorage.setItem(creatorDraftKey, JSON.stringify({
       name: String(form.get("name") || ""),
+      yomi: String(form.get("yomi") || ""),
       youtube_url: String(form.get("youtube_url") || ""),
       youtube_channel_id: String(form.get("youtube_channel_id") || ""),
       x_account: String(form.get("x_account") || ""),
@@ -273,6 +275,11 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
         <input id="name" name="name" required maxLength={60} />
       </div>
       <div className="field">
+        <label htmlFor="yomi">名前のよみがな</label>
+        <input id="yomi" name="yomi" required maxLength={80} placeholder="例: ぶいちゅーばー はなこ" />
+        <p className="help-text">紹介動画のナレーションでお名前を正しく読み上げるために使います。</p>
+      </div>
+      <div className="field">
         <label htmlFor="email">ログイン用メールアドレス</label>
         <input id="email" name="email" type="email" required />
         <p className="help-text">このメールアドレスとパスワードで、あとからプロフィール修正やプラン変更ができます。</p>
@@ -320,6 +327,11 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
       </div>
       <div className="field">
         <label htmlFor="description">プロフィール画面に掲載する自己アピール</label>
+        {!isFree ? (
+          <p className="help-text">
+            自己アピールは紹介動画のナレーション原稿にも使われます。500文字で約2分の動画になります。誤字や記載漏れがないようご注意ください。
+          </p>
+        ) : null}
         <textarea id="description" name="description" required={!isFree} maxLength={isFree ? 100 : 500} />
         <p className="help-text">{isFree ? "無料プランでは100文字まで掲載できます。" : "プロフィール画面に掲載されます。"}</p>
       </div>
