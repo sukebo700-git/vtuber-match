@@ -41,7 +41,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
             position: "absolute",
             inset: 0,
             background:
-              "radial-gradient(circle at 16% 18%, rgba(255,63,145,0.34), transparent 24%), radial-gradient(circle at 72% 22%, rgba(34,199,232,0.26), transparent 24%), radial-gradient(circle at 76% 88%, rgba(155,92,255,0.28), transparent 30%)",
+              "radial-gradient(circle at 16% 18%, rgba(255,63,145,0.34), transparent 24%), radial-gradient(circle at 72% 22%, rgba(255,196,84,0.26), transparent 24%), radial-gradient(circle at 76% 88%, rgba(255,122,82,0.28), transparent 30%)",
           }}
         />
         <div
@@ -88,12 +88,12 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
               width: "fit-content",
               borderRadius: 999,
               padding: "13px 20px",
-              background: "linear-gradient(135deg, #ff3f91, #9b5cff)",
+              background: "linear-gradient(135deg, #ff4f97, #ff6a52)",
               color: "#fff",
               fontSize: 34,
               fontWeight: 900,
               letterSpacing: 0,
-              boxShadow: "0 14px 30px rgba(155,92,255,0.24)",
+              boxShadow: "0 14px 30px rgba(255,106,82,0.24)",
             }}
           >
             VTYPE診断

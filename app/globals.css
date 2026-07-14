@@ -10,11 +10,11 @@
   --blue-dark: #1f63c5;
   --yellow: #ffd85d;
   --neon-pink: #ff2bd6;
-  --neon-purple: #6b18ff;
+  --neon-blue: #2f7de1;
   --neon-cyan: #20f6ff;
   --neon-yellow: #fff238;
   --neon-ink: #11121a;
-  --neon-shadow: 0 16px 34px rgba(107, 24, 255, 0.18), 0 0 18px rgba(255, 43, 214, 0.16);
+  --neon-shadow: 0 16px 34px rgba(47, 125, 225, 0.18), 0 0 18px rgba(255, 43, 214, 0.16);
   --neon-hover: 0 18px 38px rgba(32, 246, 255, 0.26), 0 0 0 3px rgba(32, 246, 255, 0.12);
   --green: #38b878;
   --line: rgba(242, 56, 120, 0.18);
@@ -496,7 +496,7 @@ button {
   align-content: center;
   min-width: 0;
   padding: 12px 14px;
-  border: 1px solid rgba(107, 24, 255, 0.16);
+  border: 1px solid rgba(47, 125, 225, 0.16);
   border-radius: 18px;
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(244, 249, 255, 0.94)),
@@ -1102,11 +1102,11 @@ button {
 
 .card.plan-boost {
   border-color: #ffe36f;
-  background: linear-gradient(135deg, #26143f, #111);
+  background: linear-gradient(135deg, #2a1226, #111);
   box-shadow:
     0 0 0 4px rgba(255, 227, 111, 0.35),
     0 0 34px rgba(255, 74, 151, 0.45),
-    0 22px 48px rgba(76, 40, 130, 0.38);
+    0 22px 48px rgba(104, 32, 66, 0.38);
 }
 
 .card.plan-boost::before {
@@ -1125,23 +1125,23 @@ button {
 .card.plan-boost .card-overlay {
   background:
     radial-gradient(circle at 18% 14%, rgba(255, 232, 144, 0.28), transparent 24%),
-    linear-gradient(180deg, rgba(28, 12, 52, 0.02) 10%, rgba(44, 20, 74, 0.34) 46%, rgba(13, 7, 29, 0.86) 100%);
+    linear-gradient(180deg, rgba(44, 12, 30, 0.02) 10%, rgba(64, 16, 42, 0.34) 46%, rgba(22, 8, 16, 0.86) 100%);
 }
 
 .card.plan-boost .floating-badge {
   width: 104px;
   height: 80px;
   border-radius: 26px 26px 26px 8px;
-  background: linear-gradient(135deg, #ffe36f, #ff62a6 52%, #7a5cff);
+  background: linear-gradient(135deg, #ffe36f, #ff62a6 52%, #d92762);
   color: #fff;
-  text-shadow: 0 2px 8px rgba(52, 24, 84, 0.45);
+  text-shadow: 0 2px 8px rgba(72, 20, 46, 0.45);
   box-shadow: 0 14px 30px rgba(255, 74, 151, 0.34), 0 0 0 3px rgba(255, 232, 144, 0.4);
 }
 
 .card.plan-boost .official-badge {
   color: #fff;
-  background: linear-gradient(135deg, #ff4f97, #7a5cff);
-  box-shadow: 0 8px 24px rgba(122, 92, 255, 0.36);
+  background: linear-gradient(135deg, #ff4f97, #d92762);
+  box-shadow: 0 8px 24px rgba(217, 39, 98, 0.36);
 }
 
 .card::after {
@@ -1168,7 +1168,7 @@ button {
     0 0 0 6px rgba(255, 223, 92, 0.72),
     0 0 34px rgba(255, 79, 147, 0.82),
     0 0 70px rgba(47, 125, 225, 0.58),
-    0 22px 60px rgba(111, 66, 193, 0.36);
+    0 22px 60px rgba(200, 60, 110, 0.36);
   animation: superPulse 1.8s ease-in-out infinite;
 }
 
@@ -1725,7 +1725,7 @@ button {
 .primary-button {
   border: 1px solid rgba(255, 255, 255, 0.78);
   color: #fff;
-  background: linear-gradient(135deg, #ff3f91 0%, #9b5cff 58%, #22c7e8 120%);
+  background: linear-gradient(135deg, #ff4f97 0%, #ff6a52 100%);
   box-shadow:
     0 14px 30px rgba(233, 79, 139, 0.24),
     0 0 0 1px rgba(255, 255, 255, 0.42) inset;
@@ -1745,8 +1745,8 @@ button {
 .primary-button:hover {
   transform: translateY(-1px);
   box-shadow:
-    0 18px 38px rgba(155, 92, 255, 0.28),
-    0 0 18px rgba(34, 199, 232, 0.32),
+    0 18px 38px rgba(255, 90, 132, 0.30),
+    0 0 18px rgba(255, 138, 82, 0.30),
     0 0 0 1px rgba(255, 255, 255, 0.5) inset;
 }
 
@@ -2382,13 +2382,13 @@ button {
   border: 2px solid rgba(255, 255, 255, 0.94);
   border-radius: 14px 14px 14px 4px;
   padding: 8px 16px;
-  background: linear-gradient(135deg, #ff3f91 0%, #9b5cff 58%, #22c7e8 120%);
+  background: linear-gradient(135deg, #ff4f97 0%, #ff6a52 100%);
   color: #fff;
   font-size: clamp(1rem, 3.5vw, 1.25rem);
   font-weight: 1000;
   letter-spacing: 0;
   box-shadow:
-    0 14px 30px rgba(155, 92, 255, 0.26),
+    0 14px 30px rgba(47, 125, 225, 0.26),
     0 0 18px rgba(34, 199, 232, 0.24);
   transform: rotate(-1.5deg);
 }
@@ -2446,11 +2446,11 @@ button {
   justify-content: center;
   border-radius: 18px;
   padding: 14px 18px;
-  background: linear-gradient(135deg, #ff3f91 0%, #9b5cff 58%, #22c7e8 120%);
+  background: linear-gradient(135deg, #ff4f97 0%, #ff6a52 100%);
   color: #fff;
   font-size: 1.05rem;
   font-weight: 950;
-  box-shadow: 0 16px 34px rgba(155, 92, 255, 0.24);
+  box-shadow: 0 16px 34px rgba(47, 125, 225, 0.24);
 }
 
 @media (max-width: 520px) {
@@ -4490,7 +4490,7 @@ button {
 
 .diagnosis-primary-button {
   border: 1px solid rgba(255, 255, 255, 0.78);
-  background: linear-gradient(135deg, #ff3f91 0%, #9b5cff 58%, #22c7e8 120%);
+  background: linear-gradient(135deg, #ff4f97 0%, #ff6a52 100%);
   color: #fff;
   padding: 0 24px;
   box-shadow:
@@ -4513,7 +4513,7 @@ button {
 
 .diagnosis-primary-button:hover {
   box-shadow:
-    0 18px 38px rgba(155, 92, 255, 0.28),
+    0 18px 38px rgba(47, 125, 225, 0.28),
     0 0 18px rgba(34, 199, 232, 0.32),
     0 0 0 1px rgba(255, 255, 255, 0.5) inset;
 }
@@ -4658,9 +4658,9 @@ button {
   display: inline-grid;
   place-items: center;
   border-radius: 999px;
-  background: linear-gradient(135deg, #ff3f91, #9b5cff);
+  background: linear-gradient(135deg, #ff4f97, #ff6a52);
   color: #fff;
-  box-shadow: 0 10px 22px rgba(155, 92, 255, 0.22);
+  box-shadow: 0 10px 22px rgba(47, 125, 225, 0.22);
 }
 
 .diagnosis-range-row input[type="range"] {
@@ -4678,7 +4678,7 @@ button {
   border: 3px solid #fff;
   border-radius: 50%;
   appearance: none;
-  background: linear-gradient(135deg, #ff3f91, #9b5cff);
+  background: linear-gradient(135deg, #ff4f97, #ff6a52);
   box-shadow: 0 8px 18px rgba(30, 38, 62, 0.22);
   cursor: pointer;
 }
@@ -4688,7 +4688,7 @@ button {
   height: 26px;
   border: 3px solid #fff;
   border-radius: 50%;
-  background: linear-gradient(135deg, #ff3f91, #9b5cff);
+  background: linear-gradient(135deg, #ff4f97, #ff6a52);
   box-shadow: 0 8px 18px rgba(30, 38, 62, 0.22);
   cursor: pointer;
 }
@@ -4711,7 +4711,7 @@ button {
 
 .diagnosis-range-ticks button.selected {
   border-color: transparent;
-  background: linear-gradient(135deg, #ff3f91, #9b5cff);
+  background: linear-gradient(135deg, #ff4f97, #ff6a52);
   color: #fff;
   box-shadow: 0 10px 20px rgba(233, 79, 139, 0.18);
 }
@@ -5617,7 +5617,7 @@ button {
   .card.plan-boost {
     background:
       radial-gradient(circle at 50% 18%, rgba(255, 232, 144, 0.3), transparent 32%),
-      linear-gradient(135deg, #26143f, #111) !important;
+      linear-gradient(135deg, #2a1226, #111) !important;
   }
 
   .card img {
@@ -7018,7 +7018,7 @@ body::after {
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.94) !important;
   background:
-    linear-gradient(135deg, rgba(255, 247, 107, 0.96), rgba(255, 92, 158, 0.92) 48%, rgba(91, 135, 255, 0.92)),
+    linear-gradient(135deg, rgba(255, 247, 107, 0.96), rgba(255, 92, 158, 0.92) 48%, rgba(255, 138, 82, 0.92)),
     rgba(255, 255, 255, 0.9) !important;
   color: #ffffff !important;
   box-shadow:
