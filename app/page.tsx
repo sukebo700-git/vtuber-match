@@ -118,18 +118,18 @@ export default function HomePage() {
         <UiPanel variant="landing" className="landing-diagnosis-section landing-refresh-section" id="diagnosis-menu">
           <div className="landing-section-copy">
             <span className="landing-section-kicker">VTYPE診断</span>
-            <h2>好みのVTuberタイプを診断する。</h2>
-            <p>質問に答えると、推し探しのヒントになるVTYPEを確認できます。</p>
+            <h2>あなたと相性のいいVTuberが見つかる16タイプ診断</h2>
+            <p>簡単な質問に答えるだけ。あなたのVTYPEをチェック。</p>
           </div>
           <div className="landing-diagnosis-actions" aria-label="診断メニュー">
             <UiButton variant="secondary" href="/diagnosis">
-              30問診断
+              VTuber向け簡易診断
             </UiButton>
             <UiButton variant="secondary" href="/diagnosis/advanced">
-              100問診断
+              VTuber向け本気診断
             </UiButton>
             <UiButton variant="secondary" href="/diagnosis/viewer">
-              リスナー診断
+              リスナーの方はこちら
             </UiButton>
           </div>
         </UiPanel>

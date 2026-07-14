@@ -69,6 +69,9 @@ export async function POST(request: Request) {
   if (error) return NextResponse.json({ error }, { status: 400 });
 
   const desiredPlan = normalizePlan(String(body.desired_plan || "free"));
+  // 申込フォームの同意チェック。true のとき、無料登録でも紹介動画の作成依頼
+  // (short_video_requests, status=open)を自動作成し、管理画面へ即反映する。
+  const wantShortVideo = Boolean(body.want_short_video);
   const payload = {
     name: String(body.name).trim(),
     yomi: String(body.yomi || "").trim().slice(0, 80),
@@ -341,6 +344,26 @@ export async function POST(request: Request) {
     streamer_id: streamerId,
     updated_at: FieldValue.serverTimestamp(),
   }), { merge: true });
+
+  // 同意チェックがあれば紹介動画の作成依頼を自動作成(管理画面/paid-vtubersに反映)。
+  // ドキュメントIDは短編依頼APIと同じく streamer_id を使う。
+  if (wantShortVideo) {
+    await db.collection("short_video_requests").doc(streamerId).set(stripUndefined({
+      streamer_id: streamerId,
+      application_id: doc.id,
+      creator_login_id: payload.creator_login_id,
+      name: payload.name,
+      email: payload.email,
+      youtube_url: payload.youtube_url || undefined,
+      x_account: payload.x_account || undefined,
+      one_liner: payload.one_liner || undefined,
+      plan_type: payload.desired_plan,
+      appeal_points: payload.description || undefined,
+      status: "open",
+      requested_at: FieldValue.serverTimestamp(),
+      updated_at: FieldValue.serverTimestamp(),
+    }), { merge: true });
+  }
 
   const response = NextResponse.json({
     id: doc.id,

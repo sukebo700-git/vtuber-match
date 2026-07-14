@@ -93,6 +93,17 @@ export default async function VtuberSeoPage({ params }: VtuberSeoPageProps) {
               {tags.slice(0, 5).map((tag) => <span key={tag}>#{tag}</span>)}
             </div>
           )}
+          {streamer.promo_video_id && (
+            <div className="vtuber-short-embed">
+              <iframe
+                src={`https://www.youtube.com/embed/${encodeURIComponent(streamer.promo_video_id)}`}
+                title={`${streamer.name} 紹介ショート動画`}
+                loading="lazy"
+                allow="accelerated-sensors; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+              />
+            </div>
+          )}
           <div className="vtuber-seo-actions">
             <a className="primary-button" href={youtubeSubscribeUrl(streamer.youtube_url)} target="_blank" rel="noreferrer">
               <ExternalLink size={18} />
@@ -106,7 +117,7 @@ export default async function VtuberSeoPage({ params }: VtuberSeoPageProps) {
                 rel="noreferrer"
               >
                 <ExternalLink size={18} />
-                紹介ショート動画を見る
+                YouTubeで見る
               </a>
             )}
             <a className="secondary-button" href="/swipe">

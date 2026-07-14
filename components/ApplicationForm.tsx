@@ -24,7 +24,6 @@ const creatorDraftKey = "vtuber-match-creator-profile-draft";
 const imageSlotCount = 5;
 const maxTotalImagePayload = 700_000;
 const maxSingleImagePayload = 130_000;
-const lofiChannelFormUrl = "https://forms.gle/BFn6Wti8aCBUHV41A";
 
 const planRows = [
   {
@@ -105,6 +104,7 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
       stream_time: String(form.get("stream_time") || "").slice(0, 50),
       creator_password: password,
       desired_plan: desiredPlan,
+      want_short_video: form.get("want_short_video") === "on",
       thumbnails,
       categories: selectedCategories.slice(0, 3),
       tags: selectedTags.slice(0, 3),
@@ -398,6 +398,16 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
         </>
       )}
 
+      <div className="field consent-field">
+        <label className="choice consent-choice">
+          <input type="checkbox" name="want_short_video" defaultChecked />
+          紹介動画(Lo-Fi配信への掲載・紹介ショート動画)の作成・公開に同意し、作成を希望します
+        </label>
+        <p className="help-text">
+          チェックしたまま申し込むと、紹介動画の作成依頼が運営に届きます(無料・任意)。外部フォームへの登録は不要です。あとから配信サイトで変更もできます。
+        </p>
+      </div>
+
       <button className="primary-button" type="submit" disabled={busy}>
         <Send size={18} />
         {busy ? "送信中..." : "申し込む"}
@@ -434,11 +444,10 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
             </div>
           ) : (
             <>
-              <p><strong>Lo-Fiチャンネル掲載希望の方はこちらの登録もお願いします。</strong></p>
-              <p className="help-text">Lo-Fiチャンネルでの掲載を希望する場合は、続けて専用フォームにもご登録ください。</p>
+              <p><strong>紹介動画の作成依頼を受け付けました。</strong></p>
+              <p className="help-text">申込時に同意いただいた場合、紹介動画(Lo-Fi配信への掲載・紹介ショート動画)の作成依頼が運営に届いています。順次作成し、公開後はプロフィールページに掲載されます。外部フォームへの登録は不要です。</p>
               <p className="inline-actions" style={{ marginTop: 12 }}>
-                <a className="primary-button" href={lofiChannelFormUrl} target="_blank" rel="noreferrer">Lo-Fi掲載フォームを開く</a>
-                <a className="secondary-button" href="/creator/edit">プロフィールを確認する</a>
+                <a className="primary-button" href="/creator/edit">プロフィールを確認する</a>
               </p>
             </>
           )}
