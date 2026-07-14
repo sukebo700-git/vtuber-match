@@ -747,6 +747,12 @@ function SwipeCard({
     >
       {showNewRibbon && <div className="new-ribbon">NEW</div>}
       {superEffect && <div className="super-boost-ribbon">SUPER</div>}
+      {visualPlan === "boost" && (
+        <>
+          <div className="card-holo" aria-hidden />
+          <div className="card-corners" aria-hidden />
+        </>
+      )}
       {streamer.plan_type !== "free" && (
         <div className="floating-badge">
           {streamer.plan_type === "boost" ? "PREMIUM" : "優先"}
