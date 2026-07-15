@@ -38,6 +38,7 @@ export function ShortVideoAdminPanel({ adminKey }: ShortVideoAdminPanelProps) {
   const [busyId, setBusyId] = useState("");
   const [message, setMessage] = useState("");
   const [loaded, setLoaded] = useState(false);
+  const [showPublished, setShowPublished] = useState(false);
 
   useEffect(() => {
     fetch("/api/admin/short-video-requests", { headers: adminHeaders(adminKey) })
@@ -83,17 +84,25 @@ export function ShortVideoAdminPanel({ adminKey }: ShortVideoAdminPanelProps) {
     );
   }
 
-  const sorted = [...requests].sort((a, b) => statusOrder.indexOf(a.status) - statusOrder.indexOf(b.status));
+  const visibleRequests = showPublished ? requests : requests.filter((request) => request.status !== "published");
+  const publishedCount = requests.length - requests.filter((request) => request.status !== "published").length;
+  const sorted = [...visibleRequests].sort((a, b) => statusOrder.indexOf(a.status) - statusOrder.indexOf(b.status));
 
   return (
     <section className="status-band">
-      <h2>紹介ショート動画の依頼({requests.length}件)</h2>
+      <h2>紹介ショート動画の依頼({visibleRequests.length}件)</h2>
       <p>
         「依頼受付」の依頼は動画ジェネレーターの同期対象になります(台本はジェネレーター側で人力作成)。
-        動画を投稿したらYouTubeのURLを入れて「対応済みにする」を押すと、掲載ページに動画リンクが表示されます。
+        動画が公開されると自動でURLが反映され「対応済み」になり、この一覧からは自動的に外れます。
       </p>
+      {publishedCount > 0 && (
+        <label className="choice">
+          <input type="checkbox" checked={showPublished} onChange={(event) => setShowPublished(event.target.checked)} />
+          対応済み({publishedCount}件)も表示する
+        </label>
+      )}
       {message ? <p className="form-status">{message}</p> : null}
-      {sorted.length === 0 ? <p>依頼はまだありません。</p> : null}
+      {sorted.length === 0 ? <p>{showPublished ? "依頼はまだありません。" : "対応待ちの依頼はありません。"}</p> : null}
       {sorted.map((request) => (
         <article className="admin-card" key={request.id}>
           <header>
