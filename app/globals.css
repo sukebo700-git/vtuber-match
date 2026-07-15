@@ -2064,6 +2064,41 @@ button {
   background: transparent;
 }
 
+/* 管理画面の配信者編集モーダル。CSSが未定義で無装飾のまま本文に埋もれ、
+   「編集ボタンが反応しない」ように見えていたため、固定オーバーレイとして表示する。 */
+.editor-panel {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 95;
+  width: min(560px, 92vw);
+  max-height: 88svh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: #fff;
+  border-radius: 20px;
+  padding: clamp(18px, 3vw, 28px);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.4);
+}
+
+.editor-panel::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: rgba(19, 27, 44, 0.76);
+  backdrop-filter: blur(8px);
+}
+
+.editor-panel .editor-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
 .detail-lightbox {
   position: fixed;
   inset: 0;
