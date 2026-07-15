@@ -22,7 +22,13 @@ export async function GET(request: Request, { params }: { params: { id: string }
   if (!snapshot.exists || snapshot.data()?.is_deleted === true) {
     return NextResponse.json({ error: "streamer not found" }, { status: 404 });
   }
-  return NextResponse.json({ streamer: normalizeStreamer(snapshot.id, snapshot.data() || {}), source: "firestore" });
+  const requestDoc = await db.collection("short_video_requests").doc(params.id).get();
+  const wantShortVideo = requestDoc.exists && String(requestDoc.data()?.status || "open") !== "rejected";
+  return NextResponse.json({
+    streamer: normalizeStreamer(snapshot.id, snapshot.data() || {}),
+    want_short_video: wantShortVideo,
+    source: "firestore",
+  });
 }
 
 export async function PATCH(request: Request, { params }: { params: { id: string } }) {
@@ -75,6 +81,31 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   const beforeStreamer = normalizeStreamer(beforeDoc.id, beforeDoc.data() || {});
   const nextPatch = stripUndefined({ ...patch, updated_at: FieldValue.serverTimestamp(), ...(needsAdminGrantSource(patch) ? { grant_source: "admin" as const } : {}) });
   await ref.update(nextPatch);
+
+  // 管理者が代理で「紹介動画を希望する」にチェックした場合、short_video_requests を作成する
+  // (既に依頼済みならステータスは変更しない。取り下げはShortVideoAdminPanelの「見送りにする」で行う)。
+  if (body.want_short_video === true) {
+    const requestRef = db.collection("short_video_requests").doc(params.id);
+    const existingRequest = await requestRef.get();
+    if (!existingRequest.exists) {
+      const streamerData = { ...(beforeDoc.data() || {}), ...patch };
+      await requestRef.set(stripUndefined({
+        streamer_id: params.id,
+        name: String(streamerData.name || ""),
+        email: String(streamerData.creator_email || ""),
+        youtube_url: streamerData.youtube_url || undefined,
+        x_account: streamerData.x_account || undefined,
+        one_liner: streamerData.one_liner || undefined,
+        plan_type: streamerData.plan_type || "free",
+        appeal_points: streamerData.description || undefined,
+        notes: "管理者による代理登録",
+        status: "open",
+        requested_at: FieldValue.serverTimestamp(),
+        updated_at: FieldValue.serverTimestamp(),
+      }), { merge: true });
+    }
+  }
+
   invalidateStreamerCaches();
   revalidateStreamerPaths(beforeStreamer, normalizeStreamer(params.id, { ...(beforeDoc.data() || {}), ...patch, updated_at: new Date().toISOString() }));
   await writeAuditLog(db, request, {

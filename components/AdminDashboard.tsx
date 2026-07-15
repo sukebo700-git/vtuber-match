@@ -12,7 +12,7 @@ type AdminDashboardProps = {
 };
 
 type StreamerView = "application" | "paid" | "boost";
-type EditState = Pick<Streamer, "id" | "name" | "youtube_url" | "youtube_channel_id" | "archive_url" | "description" | "one_liner" | "stream_time" | "plan_type" | "thumbnails" | "categories" | "tags">;
+type EditState = Pick<Streamer, "id" | "name" | "youtube_url" | "youtube_channel_id" | "archive_url" | "description" | "one_liner" | "stream_time" | "plan_type" | "thumbnails" | "categories" | "tags"> & { want_short_video: boolean };
 type PublicImportDraft = {
   name: string;
   youtube_url: string;
@@ -92,7 +92,7 @@ export function AdminDashboard({ initialApplications, initialStreamers, adminKey
   const editCategoryLimit = editing?.plan_type === "free" ? 1 : 3;
   const editTagLimit = editing?.plan_type === "free" ? 1 : 5;
 
-  async function updateStreamer(id: string, patch: Partial<Streamer>) {
+  async function updateStreamer(id: string, patch: Partial<Streamer> & { want_short_video?: boolean }) {
     setBusyId(id);
     const response = await fetch(`/api/admin/streamers/${id}`, {
       method: "PATCH",
@@ -201,6 +201,12 @@ export function AdminDashboard({ initialApplications, initialStreamers, adminKey
   }
 
   async function loadFullStreamer(streamer: Streamer) {
+    const data = await fetchStreamerDetail(streamer);
+    if (!data) return streamer;
+    return { ...streamer, ...(data.streamer || {}) } as Streamer;
+  }
+
+  async function fetchStreamerDetail(streamer: Streamer) {
     setBusyId(streamer.id);
     const response = await fetch(`/api/admin/streamers/${streamer.id}`, {
       headers: { "x-admin-key": adminKey },
@@ -208,14 +214,14 @@ export function AdminDashboard({ initialApplications, initialStreamers, adminKey
     setBusyId("");
     if (!response.ok) {
       setMessage("配信者データの詳細取得に失敗しました。一覧の情報で表示します。");
-      return streamer;
+      return null;
     }
-    const data = await response.json().catch(() => ({}));
-    return { ...streamer, ...(data.streamer || {}) } as Streamer;
+    return await response.json().catch(() => null) as { streamer?: Partial<Streamer>; want_short_video?: boolean } | null;
   }
 
   async function startEdit(streamer: Streamer) {
-    const fullStreamer = await loadFullStreamer(streamer);
+    const data = await fetchStreamerDetail(streamer);
+    const fullStreamer = { ...streamer, ...(data?.streamer || {}) } as Streamer;
     setEditing({
       id: fullStreamer.id,
       name: fullStreamer.name,
@@ -228,7 +234,8 @@ export function AdminDashboard({ initialApplications, initialStreamers, adminKey
       plan_type: fullStreamer.plan_type,
       thumbnails: fullStreamer.thumbnails || [],
       categories: fullStreamer.categories || [],
-      tags: fullStreamer.tags || []
+      tags: fullStreamer.tags || [],
+      want_short_video: Boolean(data?.want_short_video),
     });
   }
 
@@ -779,6 +786,16 @@ export function AdminDashboard({ initialApplications, initialStreamers, adminKey
           <label>今日のひとこと<input maxLength={20} value={editing.one_liner || ""} onChange={(event) => setEditing({ ...editing, one_liner: event.target.value.slice(0, 20) })} /></label>
           <label>配信時間帯<input maxLength={50} value={editing.stream_time || ""} onChange={(event) => setEditing({ ...editing, stream_time: event.target.value.slice(0, 50) })} /></label>
           <label>自己紹介<textarea value={editing.description || ""} onChange={(event) => setEditing({ ...editing, description: event.target.value })} /></label>
+          <label className="choice">
+            <input
+              type="checkbox"
+              checked={editing.want_short_video}
+              disabled={editing.want_short_video}
+              onChange={(event) => setEditing({ ...editing, want_short_video: event.target.checked })}
+            />
+            紹介動画を希望する(保存時に依頼を登録。チェック済みの場合は動画ジェネレーターの同期対象)
+          </label>
+          {editing.want_short_video && <p className="help-text">依頼状況の変更(見送り等)は下の「紹介ショート動画の依頼」から行えます。</p>}
           <label>画像（無料1枚、ベーシック/プレミアム3枚）
             <input type="file" accept="image/*" multiple={editing.plan_type !== "free"} onChange={onEditFilesChange} />
           </label>
