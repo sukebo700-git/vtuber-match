@@ -19,6 +19,7 @@ type CreatorDraft = VtypeProfileFields & {
   categories?: string[];
   tags?: string[];
   plan_type?: string;
+  want_short_video?: boolean;
 };
 
 const creatorDraftKey = "vtuber-match-creator-profile-draft";
@@ -59,6 +60,7 @@ export function CreatorProfileEditForm() {
   const [sourceImages, setSourceImages] = useState<string[]>(makeImageSlots());
   const [imageEdits, setImageEdits] = useState<ImageEdit[]>(makeImageEdits());
   const [planType, setPlanType] = useState("free");
+  const [wantShortVideo, setWantShortVideo] = useState(false);
   const [vtypeProfile, setVtypeProfile] = useState<VtypeProfileFields | null>(null);
   const [status, setStatus] = useState("");
   const visibleImages = images.slice(0, planImageLimit(planType));
@@ -104,6 +106,7 @@ export function CreatorProfileEditForm() {
         setVtypeProfile(profile.vtype_id ? profile : readStoredVtypeProfile());
         const nextPlan = profile.plan_type || localStorage.getItem("vtuber-match-creator-plan") || storedPlan;
         setPlanType(nextPlan);
+        setWantShortVideo(Boolean(profile.want_short_video));
         localStorage.setItem("vtuber-match-creator-plan", nextPlan);
         localStorage.setItem(creatorDraftKey, JSON.stringify(profile));
       })
@@ -139,6 +142,7 @@ export function CreatorProfileEditForm() {
         thumbnails,
         categories,
         tags,
+        want_short_video: wantShortVideo,
         ...vtypePayload(vtypeProfile),
       }),
     });
@@ -245,7 +249,7 @@ export function CreatorProfileEditForm() {
       <div className="field">
         <label htmlFor="edit_description">自己アピール</label>
         <textarea id="edit_description" name="description" value={description} maxLength={planType === "free" ? 100 : 500} onChange={(event) => setDescription(event.target.value.slice(0, planType === "free" ? 100 : 500))} />
-        <p className="help-text">{planType === "free" ? `${description.length}/100` : "プロフィール画面に掲載されます。紹介動画のナレーション原稿にも使われます(500文字で約2分)。誤字にご注意ください。"}</p>
+        <p className="help-text">{planType === "free" ? `${description.length}/100` : "プロフィール画面に掲載されます。紹介動画のナレーション原稿にも使われます(150文字で約1分、500文字で約2〜3分が目安。段落分けにより前後します)。誤字にご注意ください。"}</p>
       </div>
 
       <div className="field">
@@ -357,6 +361,23 @@ export function CreatorProfileEditForm() {
             </label>
           ))}
         </div>
+      </div>
+
+      <div className="field consent-field">
+        <label className="choice consent-choice">
+          <input
+            type="checkbox"
+            checked={wantShortVideo}
+            disabled={wantShortVideo}
+            onChange={(event) => setWantShortVideo(event.target.checked)}
+          />
+          紹介動画(Lo-Fi配信への掲載・紹介ショート動画)の作成・公開に同意し、作成を希望します
+        </label>
+        <p className="help-text">
+          {wantShortVideo
+            ? "作成依頼は運営に届いています。順次対応します。"
+            : "チェックして更新すると、紹介動画の作成依頼が運営に届きます(プラン問わず任意)。チェックがない場合、動画は作成されません。"}
+        </p>
       </div>
 
       <div className="field">

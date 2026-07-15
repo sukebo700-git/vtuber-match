@@ -6,7 +6,9 @@ import { absoluteUrl } from "@/lib/seo";
 export const dynamic = "force-dynamic";
 
 // 動画ジェネレーター同期用API。
-// 有料プラン(paid/boost)は全員、無料プランは「ショート動画依頼があった人」だけを返す。
+// プラン不問で「ショート動画依頼(short_video_requests)があった人」だけを返す
+// (2026-07-15: 有料/プレミアムだから自動的に動画を作る、という無条件対象化をやめ、
+// 全プラン共通でチェックボックスによる明示的な希望制に統一した)。
 // plan はジェネレーター側の語彙(registered=25秒 / standard / premium)で返す。
 export async function GET(request: Request) {
   const unauthorized = requireAdmin(request);
@@ -77,7 +79,7 @@ export async function GET(request: Request) {
       };
     })
     .filter((v) => v._visible && !v._deleted && v._withdrawal !== "requested")
-    .filter((v) => v._plan_type !== "free" || requestedStreamerIds.has(v.id))
+    .filter((v) => requestedStreamerIds.has(v.id))
     .map(({ _plan_type, _visible, _deleted, _withdrawal, ...v }) => v);
 
   return NextResponse.json({ vtubers });

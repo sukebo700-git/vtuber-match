@@ -519,6 +519,7 @@ function validate(body: Record<string, unknown>) {
   if (thumbnailCount < 1) return "画像を1枚以上登録してください。";
   if (String(body.description || "").length > (plan === "free" ? 100 : 500)) return plan === "free" ? "無料プランの自己アピールは100文字までです。" : "自己アピールは500文字までです。";
   if (plan !== "free" && !body.description) return "ベーシックプラン以上では自己アピールを入力してください。";
+  if (plan !== "free" && String(body.description || "").length < 150) return "自己アピールは150文字以上で入力してください(紹介動画が短くなりすぎるため)。";
   if (plan !== "free" && !body.one_liner) return "ベーシックプラン以上では今日のひとことを入力してください。";
   if (String(body.creator_password || "").length < 8) return "パスワードは8文字以上で入力してください。";
   if (plan === "free" && thumbnailCount > 1) return "無料プランの画像登録は1枚までです。";

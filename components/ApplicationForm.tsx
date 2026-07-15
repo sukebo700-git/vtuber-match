@@ -329,11 +329,17 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
         <label htmlFor="description">プロフィール画面に掲載する自己アピール</label>
         {!isFree ? (
           <p className="help-text">
-            自己アピールは紹介動画のナレーション原稿にも使われます。500文字で約2分の動画になります。誤字や記載漏れがないようご注意ください。
+            自己アピールは紹介動画のナレーション原稿にも使われます。150文字で約1分、500文字で約2〜3分の動画が目安です(文章の段落分けにより前後します)。誤字や記載漏れがないようご注意ください。
           </p>
         ) : null}
-        <textarea id="description" name="description" required={!isFree} maxLength={isFree ? 100 : 500} />
-        <p className="help-text">{isFree ? "無料プランでは100文字まで掲載できます。" : "プロフィール画面に掲載されます。"}</p>
+        <textarea
+          id="description"
+          name="description"
+          required={!isFree}
+          minLength={isFree ? undefined : 150}
+          maxLength={isFree ? 100 : 500}
+        />
+        <p className="help-text">{isFree ? "無料プランでは100文字まで掲載できます。" : "150文字以上、500文字まで掲載できます。"}</p>
       </div>
       <div className="field">
         <label htmlFor="one_liner">今日のひとこと</label>
@@ -390,21 +396,21 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
             </div>
           </div>
           {selectedPlan === "paid" && (
-            <p className="notice-text"><BadgeCheck size={16} /> ベーシックプランでは公式バッジ、上位表示、紹介動画の特典を利用できます。</p>
+            <p className="notice-text"><BadgeCheck size={16} /> ベーシックプランでは公式バッジ、上位表示を利用できます。紹介動画は下のチェックで希望した場合に作成されます。</p>
           )}
           {selectedPlan === "boost" && (
-            <p className="notice-text"><Crown size={16} /> プレミアムプランでは常時優先表示、プレミアムフレーム、Lo-Fi配信CMとShorts掲載を利用できます。</p>
+            <p className="notice-text"><Crown size={16} /> プレミアムプランでは常時優先表示、プレミアムフレームを利用できます。Lo-Fi配信CMとShorts掲載は下のチェックで希望した場合に作成されます。</p>
           )}
         </>
       )}
 
       <div className="field consent-field">
         <label className="choice consent-choice">
-          <input type="checkbox" name="want_short_video" defaultChecked />
+          <input type="checkbox" name="want_short_video" />
           紹介動画(Lo-Fi配信への掲載・紹介ショート動画)の作成・公開に同意し、作成を希望します
         </label>
         <p className="help-text">
-          チェックしたまま申し込むと、紹介動画の作成依頼が運営に届きます(無料・任意)。外部フォームへの登録は不要です。あとから配信サイトで変更もできます。
+          チェックして申し込むと、紹介動画の作成依頼が運営に届きます(プラン問わず任意)。チェックがない場合、動画は作成されません。外部フォームへの登録は不要です。あとから配信サイトで変更もできます。
         </p>
       </div>
 

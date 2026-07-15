@@ -67,7 +67,13 @@ export async function GET(request: Request) {
     }
   }
 
-  return NextResponse.json({ profile: buildProfileResponse(streamer, application), source: "firestore" });
+  let wantShortVideo = false;
+  if (streamer?.id) {
+    const requestDoc = await db.collection("short_video_requests").doc(streamer.id).get();
+    wantShortVideo = requestDoc.exists && String(requestDoc.data()?.status || "open") !== "rejected";
+  }
+
+  return NextResponse.json({ profile: buildProfileResponse(streamer, application, wantShortVideo), source: "firestore" });
 }
 
 export async function POST(request: Request) {
@@ -132,6 +138,29 @@ export async function POST(request: Request) {
     ...buildApplicationPatch(body, plan),
     updated_at: FieldValue.serverTimestamp(),
   }), { merge: true });
+
+  // 「ショート動画希望」チェックを後から入れた場合、short_video_requests を作成/更新する。
+  // (7/15の同意欄追加より前に申し込んだ無料プランの人は、ここでしか希望を出せない)
+  if (body.want_short_video === true) {
+    const requestRef = db.collection("short_video_requests").doc(resolvedStreamerId);
+    const existingRequest = await requestRef.get();
+    // 既にopen/published等で進行中のリクエストがあれば status は上書きしない(巻き戻り防止)
+    const statusPatch = existingRequest.exists ? {} : { status: "open", requested_at: FieldValue.serverTimestamp() };
+    await requestRef.set(stripUndefined({
+      streamer_id: resolvedStreamerId,
+      application_id: match.id,
+      creator_login_id: match.data.creator_login_id,
+      name: clean(body.name, 80) || match.data.name,
+      email,
+      youtube_url: clean(body.youtube_url, 240) || match.data.youtube_url || undefined,
+      x_account: normalizeXAccount(body.x_account) || match.data.x_account || undefined,
+      one_liner: clean(body.one_liner, 20) || undefined,
+      plan_type: plan,
+      appeal_points: clean(body.description, plan === "free" ? 100 : 500) || undefined,
+      ...statusPatch,
+      updated_at: FieldValue.serverTimestamp(),
+    }), { merge: true });
+  }
 
   invalidateStreamerCaches();
   const streamerDoc = await db.collection("streamers").doc(resolvedStreamerId).get();
@@ -296,7 +325,7 @@ function buildStreamerPatch(body: Record<string, unknown>, plan: PlanType): Part
   setIfPresent(patch, "yomi", clean(body.yomi, 80));
   setIfPresent(patch, "youtube_url", clean(body.youtube_url, 240));
   setIfPresent(patch, "x_account", normalizeXAccount(body.x_account));
-  setIfPresent(patch, "description", clean(body.description, plan === "free" ? 100 : 800));
+  setIfPresent(patch, "description", clean(body.description, plan === "free" ? 100 : 500));
   setIfPresent(patch, "one_liner", clean(body.one_liner, 20));
   setIfPresent(patch, "stream_time", clean(body.stream_time, 50));
   if ("thumbnails" in body || "image" in body) patch.thumbnails = thumbnails;
@@ -318,7 +347,7 @@ function buildApplicationPatch(body: Record<string, unknown>, plan: PlanType) {
   setIfPresent(patch, "yomi", clean(body.yomi, 80));
   setIfPresent(patch, "youtube_url", clean(body.youtube_url, 240));
   setIfPresent(patch, "x_account", normalizeXAccount(body.x_account));
-  setIfPresent(patch, "description", clean(body.description, plan === "free" ? 100 : 800));
+  setIfPresent(patch, "description", clean(body.description, plan === "free" ? 100 : 500));
   setIfPresent(patch, "one_liner", clean(body.one_liner, 20));
   setIfPresent(patch, "stream_time", clean(body.stream_time, 50));
   if ("thumbnails" in body || "image" in body) patch.thumbnails = thumbnails;
@@ -410,10 +439,11 @@ function normalizeScoreMap(value: unknown) {
   return entries.length ? Object.fromEntries(entries) : undefined;
 }
 
-function buildProfileResponse(streamer?: Partial<Streamer>, application?: Partial<StreamerApplication>) {
+function buildProfileResponse(streamer?: Partial<Streamer>, application?: Partial<StreamerApplication>, wantShortVideo = false) {
   const streamerId = streamer?.id || application?.streamer_id || "";
   const name = streamer?.name || application?.name || "";
   return {
+    want_short_video: wantShortVideo,
     streamer_id: streamerId,
     public_path: streamerId ? publicStreamerPath({ id: streamerId, name }) : "",
     name,

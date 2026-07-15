@@ -1255,6 +1255,10 @@ button {
   .card.plan-boost { animation: none; }
   .card.plan-boost::before { animation: none; }
   .card.plan-boost .card-holo { animation: none; }
+  .super-effect { animation: none; }
+  .super-effect::after { animation: none; }
+  .super-shine::before { animation: none; }
+  .super-shake img { animation: none; }
 }
 
 .card.plan-boost .card-overlay {
@@ -6684,6 +6688,10 @@ body {
     linear-gradient(135deg, #fffafd 0%, #f7fbff 48%, #fff9fd 100%);
   background-attachment: fixed;
   background-size: 120% 120%, 125% 125%, 115% 115%, 100% 100%;
+}
+
+/* オーロラの背景アニメーションはトップページ(landing-refresh-main)のみに限定する */
+body:has(.landing-refresh-main) {
   animation: landing-page-aurora 16s ease-in-out infinite;
 }
 
@@ -7298,6 +7306,7 @@ body::after {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  body,
   .landing-refresh-main::before,
   .landing-refresh-main::after,
   .landing-hero-milestone,
