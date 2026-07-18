@@ -43,6 +43,14 @@ export async function POST(request: Request) {
   const viewerId = String(metadata.viewer_id || "");
   const effect = normalizeEffect(metadata.effect);
   const subscriptionId = String(session.subscription || "");
+  // checkout.session.completed は「チェックアウトフォームの入力が完了した」イベントであり、
+  // 決済(サブスクの初回請求)が実際に成功したことまでは保証しない
+  // (3Dセキュア未完了・銀行振込待ち等でpayment_statusが"unpaid"のまま完了扱いになる場合がある)。
+  // ここでpayment_statusを見ずに有料プランを付与すると、未払いのまま課金済み扱いになるため、
+  // 未確定の場合はplan_typeを上げずpaymentStateを保留にし、実際の入金はinvoice.payment_succeeded/
+  // invoice.paidで確定させる。
+  const paymentStatus = String(session.payment_status || "");
+  const paymentConfirmed = paymentStatus === "paid" || paymentStatus === "no_payment_required";
 
   if (!isPaidPlan(planType) && !isOneTimePlan(planType)) return NextResponse.json({ error: "invalid plan" }, { status: 400 });
 
@@ -51,6 +59,7 @@ export async function POST(request: Request) {
 
   if (isOneTimePlan(planType)) {
     if (!streamerId || !viewerId || !effect) return NextResponse.json({ error: "invalid super like metadata" }, { status: 400 });
+    if (!paymentConfirmed) return NextResponse.json({ received: true, skipped: "payment not confirmed" });
     const activated = await activateSuperBoostFromCheckout(db, {
       eventId: String(event.id || ""),
       sessionId: String(session.id || ""),
@@ -89,12 +98,12 @@ export async function POST(request: Request) {
       resolvedStreamerRef = existingStreamerId ? db.collection("streamers").doc(existingStreamerId) : db.collection("streamers").doc();
 
       tx.set(applicationRef, {
-        payment_status: "paid",
-        payment_state: "active",
-        subscription_status: "active",
+        payment_status: paymentConfirmed ? "paid" : "pending",
+        payment_state: paymentConfirmed ? "active" : "pending",
+        subscription_status: paymentConfirmed ? "active" : "incomplete",
         stripe_subscription_id: subscriptionId,
-        paid_at: FieldValue.serverTimestamp(),
-        status: "approved",
+        ...(paymentConfirmed ? { paid_at: FieldValue.serverTimestamp() } : {}),
+        status: paymentConfirmed ? "approved" : "pending",
         reviewed_at: FieldValue.serverTimestamp(),
         streamer_id: resolvedStreamerRef.id,
         updated_at: FieldValue.serverTimestamp()
@@ -112,13 +121,15 @@ export async function POST(request: Request) {
         description: application.description || "",
         one_liner: String(application.one_liner || application.description || "").slice(0, 20),
         stream_time: application.stream_time || "",
-        plan_type: planType,
+        // 決済が未確定のうちは無料プランのまま。invoice.payment_succeeded/invoice.paidで
+        // 実際の入金が確認できてから有料プランへ昇格する(markInvoicePaymentState参照)。
+        plan_type: paymentConfirmed ? planType : "free",
         is_initial_scout: false,
         is_visible: true,
         ...(existingStreamerId ? {} : { impressions: 0, likes: 0, created_at: FieldValue.serverTimestamp() }),
         source_application_id: applicationId,
-        payment_state: "active",
-        subscription_status: "active",
+        payment_state: paymentConfirmed ? "active" : "pending",
+        subscription_status: paymentConfirmed ? "active" : "incomplete",
         stripe_subscription_id: subscriptionId,
         grant_source: "stripe",
         fcm_tokens: Array.isArray(application.fcm_tokens) ? application.fcm_tokens : [],
@@ -132,7 +143,7 @@ export async function POST(request: Request) {
       plan_type: planType,
       amount: getPlanAmount(planType, currentPlan),
       payer_email: session.customer_details?.email || session.customer_email || "",
-      status: "paid",
+      status: paymentConfirmed ? "paid" : "pending",
       provider: "stripe",
       provider_session_id: session.id,
       provider_subscription_id: subscriptionId,
@@ -140,7 +151,7 @@ export async function POST(request: Request) {
       created_at: FieldValue.serverTimestamp()
     }, { merge: true });
 
-    if (resolvedStreamerRef && isStreamerPaidPlan(planType) && !applicationId) {
+    if (resolvedStreamerRef && isStreamerPaidPlan(planType) && !applicationId && paymentConfirmed) {
       tx.set(resolvedStreamerRef, {
         plan_type: planType,
         payment_state: "active",
@@ -270,14 +281,21 @@ async function markInvoicePaymentState(invoice: any, paymentState: "active" | "p
   const subscription = await resolveInvoiceSubscription(invoice);
   const metadata = subscription?.metadata || invoice.subscription_details?.metadata || {};
   const subscriptionId = String(subscription?.id || invoice.subscription || "");
+  const planType = String(metadata.plan_type || "");
+  // checkout.session.completed 時点で決済未確定だったためplan_typeの昇格を
+  // 見送っていたケースを、実際の入金が確認できたこのタイミングで確定させる。
+  // (subscription_data.metadataに checkout/session/route.ts が plan_type を積んでいる)
+  const grantPlan = paymentState === "active" && isStreamerPaidPlan(planType);
   const patch = paymentState === "past_due" ? {
     payment_state: "past_due",
     payment_failed_at: FieldValue.serverTimestamp(),
     updated_at: FieldValue.serverTimestamp(),
   } : {
     payment_state: "active",
+    subscription_status: "active",
     payment_recovered_at: FieldValue.serverTimestamp(),
     updated_at: FieldValue.serverTimestamp(),
+    ...(grantPlan ? { plan_type: planType, stripe_subscription_id: subscriptionId, grant_source: "stripe" } : {}),
   };
 
   const applicationId = String(metadata.application_id || "");
