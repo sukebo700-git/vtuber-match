@@ -49,11 +49,19 @@ export function AdminImportantNotifications({ notifications }: { notifications: 
             <div>
               <strong>{notification.title}</strong>
               <p>{notification.body}</p>
+              {notification.type === "short_video" && (
+                <p className="help-text">
+                  この「非表示」はこの画面上だけの表示切り替えです。実際の依頼状況は
+                  「配信者」タブの「紹介ショート動画の依頼」から変更してください。
+                </p>
+              )}
               <small>{formatDate(notification.created_at)}</small>
             </div>
             <div className="admin-important-actions">
               {notification.href && <a className="secondary-button" href={notification.href}>確認</a>}
-              <button className="secondary-button" type="button" onClick={() => markHandled(notification.id)}>対応済み</button>
+              <button className="secondary-button" type="button" onClick={() => markHandled(notification.id)}>
+                {notification.type === "short_video" ? "この通知を非表示" : "対応済み"}
+              </button>
             </div>
           </article>
         ))}
