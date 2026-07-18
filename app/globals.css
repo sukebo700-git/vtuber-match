@@ -1914,18 +1914,20 @@ button {
   display: grid;
   grid-template-columns: minmax(0, 1.35fr) minmax(286px, 0.65fr);
   gap: 24px;
-  align-items: start;
+  align-items: stretch;
 }
 
 .detail-media-stack {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 12px;
 }
 
 .detail-media-panel {
   position: relative;
   width: 100%;
-  aspect-ratio: 16 / 9;
+  flex: 1.6 1 auto;
+  min-height: 260px;
   border: 0;
   border-radius: 18px;
   overflow: hidden;
@@ -1975,7 +1977,8 @@ button {
 
 .detail-site-link {
   width: 100%;
-  aspect-ratio: 16 / 9;
+  flex: 1 1 auto;
+  min-height: 140px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
