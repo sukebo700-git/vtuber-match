@@ -44,6 +44,9 @@ type PagedResult<T> = {
   items: T[];
   nextCursor?: string;
   totalCount?: number;
+  // ページング対象外でも、有料/上位プランの配信者はクライアント側の
+  // 「有料登録のみ」フィルタが全件を絞り込めるよう、全ページ横断で別途返す。
+  paidItems?: T[];
 };
 
 export default async function AdminPage({ searchParams }: { searchParams?: AdminPageSearchParams }) {
@@ -121,7 +124,7 @@ export default async function AdminPage({ searchParams }: { searchParams?: Admin
           </>
         )}
         {activeTab === "streamers" && <ShortVideoAdminPanel adminKey="" />}
-        {needsStreamerData && <AdminDashboard initialApplications={applications} initialStreamers={streamers} adminKey="" />}
+        {needsStreamerData && <AdminDashboard initialApplications={applications} initialStreamers={streamers} initialPaidStreamers={streamerPage.paidItems ?? []} adminKey="" />}
         {activeTab === "viewers" && <ViewerAdminPanel viewers={viewers} />}
         {(activeTab === "streamers" || activeTab === "viewers") && (
           <AdminPagination
@@ -613,7 +616,10 @@ async function readAllFirestoreStreamers({ cursor, xFilter }: { cursor?: string;
   const pageBase = decodedCursor ? sorted.filter((streamer) => isAfterAdminCursor(streamer, decodedCursor)) : sorted;
   const items = pageBase.slice(0, 100);
   const hasNext = pageBase.length > 100;
-  return { items, nextCursor: hasNext && items.length ? encodeAdminCursor(items[items.length - 1]) : undefined, totalCount: sorted.length };
+  // 有料/上位プランは全ページ横断で別途返す(クライアントの「有料登録のみ」
+  // フィルタが2ページ目以降の有料配信者も絞り込めるようにするため)。
+  const paidItems = sorted.filter((streamer) => streamer.plan_type === "paid" || streamer.plan_type === "boost");
+  return { items, nextCursor: hasNext && items.length ? encodeAdminCursor(items[items.length - 1]) : undefined, totalCount: sorted.length, paidItems };
 }
 
 function normalizePlan(plan: string): PlanType {

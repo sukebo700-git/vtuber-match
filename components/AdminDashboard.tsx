@@ -8,8 +8,17 @@ import type { AdminPlacement, PlanType, Streamer, StreamerApplication, SuperBoos
 type AdminDashboardProps = {
   initialApplications: StreamerApplication[];
   initialStreamers: Streamer[];
+  // 全ページ横断の有料/上位プラン配信者(「有料登録のみ」フィルタが2ページ目
+  // 以降も絞り込めるようにするため。現在ページ分initialStreamersにマージして使う)。
+  initialPaidStreamers?: Streamer[];
   adminKey: string;
 };
+
+// idで重複排除しつつ2つのリストを結合する(先勝ち = a側を優先)。
+function mergeStreamersById(a: Streamer[], b: Streamer[]): Streamer[] {
+  const seen = new Set(a.map((streamer) => streamer.id));
+  return [...a, ...b.filter((streamer) => !seen.has(streamer.id))];
+}
 
 type StreamerView = "application" | "paid" | "boost";
 type EditState = Pick<Streamer, "id" | "name" | "youtube_url" | "youtube_channel_id" | "archive_url" | "description" | "one_liner" | "stream_time" | "plan_type" | "thumbnails" | "categories" | "tags"> & { want_short_video: boolean };
@@ -40,9 +49,14 @@ const SUPER_BOOST_EFFECT_LABELS: Record<SuperBoostEffect, string> = {
   shake: "揺れ",
 };
 
-export function AdminDashboard({ initialApplications, initialStreamers, adminKey }: AdminDashboardProps) {
+export function AdminDashboard({ initialApplications, initialStreamers, initialPaidStreamers = [], adminKey }: AdminDashboardProps) {
   const [applications, setApplications] = useState(initialApplications);
-  const [streamers, setStreamers] = useState(initialStreamers);
+  // 現在ページ分 + 全ページ横断の有料/上位プランをマージして1つの状態にする。
+  // 編集・削除など既存のsetStreamers操作はこの統合リストに対して行われる。
+  const [streamers, setStreamers] = useState(() => mergeStreamersById(initialStreamers, initialPaidStreamers));
+  // デフォルト(申込順)表示は現在ページ分だけに絞るためのID集合。
+  // マージした有料配信者(2ページ目以降)がデフォルト表示に混ざらないようにする。
+  const [pageStreamerIds, setPageStreamerIds] = useState(() => new Set(initialStreamers.map((streamer) => streamer.id)));
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [busyId, setBusyId] = useState("");
   const [bulkBusy, setBulkBusy] = useState(false);
@@ -84,10 +98,12 @@ export function AdminDashboard({ initialApplications, initialStreamers, adminKey
       if (createdDiff) return createdDiff;
       return a.name.localeCompare(b.name, "ja");
     });
+    // 有料/上位フィルタは全ページ横断で絞り込む(マージ済みの全有料配信者が対象)。
     if (streamerView === "paid") return sorted.filter((streamer) => streamer.plan_type === "paid" || streamer.plan_type === "boost");
     if (streamerView === "boost") return sorted.filter((streamer) => streamer.plan_type === "boost");
-    return sorted;
-  }, [applicationById, applicationByStreamerId, streamerView, streamers]);
+    // デフォルト(申込順)は現在ページ分だけに絞る(マージした2ページ目以降の有料は出さない)。
+    return sorted.filter((streamer) => pageStreamerIds.has(streamer.id));
+  }, [applicationById, applicationByStreamerId, streamerView, streamers, pageStreamerIds]);
 
   const editCategoryLimit = editing?.plan_type === "free" ? 1 : 3;
   const editTagLimit = editing?.plan_type === "free" ? 1 : 5;
@@ -490,6 +506,8 @@ export function AdminDashboard({ initialApplications, initialStreamers, adminKey
     }
     if (data.streamer) {
       setStreamers((current) => [data.streamer as Streamer, ...current]);
+      // 新規作成分はデフォルト(申込順)表示にも出るようページ集合へ加える。
+      setPageStreamerIds((current) => new Set(current).add((data.streamer as Streamer).id));
     }
     setCreatedPublicPath(String(data.public_path || ""));
     setPublicImportText("");
