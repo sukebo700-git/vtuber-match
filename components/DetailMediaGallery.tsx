@@ -8,10 +8,9 @@ type DetailMediaGalleryProps = {
   name: string;
   siteLabel: string;
   siteUrl: string;
-  promoVideoId?: string;
 };
 
-export function DetailMediaGallery({ images, name, siteLabel, siteUrl, promoVideoId }: DetailMediaGalleryProps) {
+export function DetailMediaGallery({ images, name, siteLabel, siteUrl }: DetailMediaGalleryProps) {
   const safeImages = images.length ? images.slice(0, 3) : ["/promo/landing-oshi.png"];
   const [activeImage, setActiveImage] = useState<string | null>(null);
 
@@ -29,18 +28,6 @@ export function DetailMediaGallery({ images, name, siteLabel, siteUrl, promoVide
               <img src={image} alt={`${name} 登録画像 ${index + 1}`} loading="lazy" decoding="async" />
             </button>
           ))}
-        </div>
-      )}
-
-      {promoVideoId && (
-        <div className="vtuber-short-embed">
-          <iframe
-            src={`https://www.youtube.com/embed/${encodeURIComponent(promoVideoId)}`}
-            title={`${name} 紹介ショート動画`}
-            loading="lazy"
-            allow="accelerated-sensors; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-            allowFullScreen
-          />
         </div>
       )}
 

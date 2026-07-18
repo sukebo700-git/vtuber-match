@@ -83,7 +83,6 @@ export default async function DetailPage({ params }: { params: { id: string } })
             name={streamer.name}
             siteLabel={siteLabel}
             siteUrl={youtubeSubscribeUrl(streamer.youtube_url)}
-            promoVideoId={streamer.promo_video_id}
           />
 
           <aside className="side-panel">
@@ -137,6 +136,17 @@ export default async function DetailPage({ params }: { params: { id: string } })
                 <span>表示回数</span>
               </div>
             </div>
+            {streamer.promo_video_id && (
+              <div className="vtuber-short-embed">
+                <iframe
+                  src={`https://www.youtube.com/embed/${encodeURIComponent(streamer.promo_video_id)}`}
+                  title={`${streamer.name} 紹介ショート動画`}
+                  loading="lazy"
+                  allow="accelerated-sensors; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                />
+              </div>
+            )}
           </aside>
         </section>
 
