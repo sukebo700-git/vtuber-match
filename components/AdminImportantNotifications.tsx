@@ -13,18 +13,44 @@ export type AdminImportantNotification = {
 
 export function AdminImportantNotifications({ notifications }: { notifications: AdminImportantNotification[] }) {
   const [handledIds, setHandledIds] = useState<string[]>(() => readHandledIds());
+  const [busyId, setBusyId] = useState("");
+  const [errorId, setErrorId] = useState("");
   const visible = useMemo(
     () => notifications.filter((notification) => !handledIds.includes(notification.id)).slice(0, 12),
     [handledIds, notifications]
   );
 
-  function markHandled(id: string) {
+  function dismissLocally(id: string) {
     const next = Array.from(new Set([...handledIds, id]));
     setHandledIds(next);
     try {
       localStorage.setItem("vtuber-match-admin-handled-notifications", JSON.stringify(next.slice(-200)));
     } catch {
       // Local acknowledgement is only a UI convenience.
+    }
+  }
+
+  // short_video通知は「非表示」ではなく実データ(short_video_requests)を
+  // published に更新する。押した瞬間に本当に対応済みにするため。
+  async function markShortVideoHandled(notification: AdminImportantNotification) {
+    const docId = notification.id.replace(/^short_video:/, "");
+    setBusyId(notification.id);
+    setErrorId("");
+    try {
+      const response = await fetch(`/api/admin/short-video-requests/${encodeURIComponent(docId)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "published" }),
+      });
+      if (!response.ok) {
+        setErrorId(notification.id);
+        return;
+      }
+      dismissLocally(notification.id);
+    } catch {
+      setErrorId(notification.id);
+    } finally {
+      setBusyId("");
     }
   }
 
@@ -49,19 +75,27 @@ export function AdminImportantNotifications({ notifications }: { notifications: 
             <div>
               <strong>{notification.title}</strong>
               <p>{notification.body}</p>
-              {notification.type === "short_video" && (
-                <p className="help-text">
-                  この「非表示」はこの画面上だけの表示切り替えです。実際の依頼状況は
-                  「配信者」タブの「紹介ショート動画の依頼」から変更してください。
-                </p>
+              {errorId === notification.id && (
+                <p className="form-status">更新に失敗しました。時間をおいて再度お試しください。</p>
               )}
               <small>{formatDate(notification.created_at)}</small>
             </div>
             <div className="admin-important-actions">
               {notification.href && <a className="secondary-button" href={notification.href}>確認</a>}
-              <button className="secondary-button" type="button" onClick={() => markHandled(notification.id)}>
-                {notification.type === "short_video" ? "この通知を非表示" : "対応済み"}
-              </button>
+              {notification.type === "short_video" ? (
+                <button
+                  className="secondary-button"
+                  type="button"
+                  disabled={busyId === notification.id}
+                  onClick={() => markShortVideoHandled(notification)}
+                >
+                  {busyId === notification.id ? "更新中..." : "対応済みにする"}
+                </button>
+              ) : (
+                <button className="secondary-button" type="button" onClick={() => dismissLocally(notification.id)}>
+                  対応済み
+                </button>
+              )}
             </div>
           </article>
         ))}
