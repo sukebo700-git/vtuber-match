@@ -35,7 +35,6 @@ export function ShortVideoRequestForm() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [existing, setExisting] = useState<ShortVideoRequest | null>(null);
   const [appealPoints, setAppealPoints] = useState("");
-  const [notes, setNotes] = useState("");
   const [status, setStatus] = useState("");
   const [busy, setBusy] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -51,7 +50,6 @@ export function ShortVideoRequestForm() {
         setExisting(request);
         if (request) {
           setAppealPoints(request.appeal_points || "");
-          setNotes(request.notes || "");
         }
       })
       .finally(() => setLoaded(true));
@@ -66,7 +64,7 @@ export function ShortVideoRequestForm() {
       const response = await fetch("/api/short-video-requests", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ appeal_points: appealPoints, notes }),
+        body: JSON.stringify({ appeal_points: appealPoints }),
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
@@ -77,7 +75,7 @@ export function ShortVideoRequestForm() {
         id: current?.id || "",
         status: "open",
         appeal_points: appealPoints,
-        notes,
+        notes: current?.notes || "",
         intro_text: current?.intro_text || "",
         youtube_video_id: current?.youtube_video_id || "",
       }));
@@ -120,7 +118,7 @@ export function ShortVideoRequestForm() {
           {profile.one_liner ? <li>ひとこと: {profile.one_liner}</li> : null}
         </ul>
         <p className="help-text">
-          下の「アピールしたいポイント」が空の場合は、この「ひとこと」がそのまま動画のナレーション・テロップになります。誤字や記載漏れがないようご注意ください。
+          下の「紹介してほしい内容」が空の場合は、この「ひとこと」を紹介文の元情報として使います。
         </p>
         <a className="secondary-button" href="/creator/edit">プロフィールを修正する</a>
       </section>
@@ -147,9 +145,9 @@ export function ShortVideoRequestForm() {
           <h2>{existing ? "依頼内容を修正する" : "紹介ショート動画を依頼する"}</h2>
           <form className="form" onSubmit={submit}>
             <div className="field">
-              <label htmlFor="short_video_appeal">アピールしたいポイント(300文字まで)</label>
+              <label htmlFor="short_video_appeal">紹介してほしい内容(300文字まで)</label>
               <p className="help-text">
-                ここに書いた内容が、そのまま動画のナレーション・テロップになります。誤字や記載漏れがないようご注意ください。
+                活動内容・配信ジャンル・好きなこと・性格など、知ってほしい情報を自由に書いてください。文章として整っていなくても大丈夫です。ここに書いた内容をもとに、AIが動画用の紹介ナレーションを作成します(書かれていない情報が追加されることはありません)。
               </p>
               <textarea
                 id="short_video_appeal"
@@ -158,17 +156,6 @@ export function ShortVideoRequestForm() {
                 rows={5}
                 placeholder="例: 歌枠がメインで、毎週金曜21時から配信しています。落ち着いた雰囲気の雑談も人気です。"
                 onChange={(event) => setAppealPoints(event.target.value.slice(0, 300))}
-              />
-            </div>
-            <div className="field">
-              <label htmlFor="short_video_notes">運営への連絡事項(任意・200文字まで)</label>
-              <textarea
-                id="short_video_notes"
-                value={notes}
-                maxLength={200}
-                rows={3}
-                placeholder="例: この画像は使わないでほしい、名前の読み方 など"
-                onChange={(event) => setNotes(event.target.value.slice(0, 200))}
               />
             </div>
             <button className="primary-button" type="submit" disabled={busy}>
