@@ -108,6 +108,15 @@
   box-shadow: 0 16px 34px rgba(47, 125, 225, 0.14);
 }
 
+/* スマホ幅では300px固定だと余白が目立つため、単一カラムになる
+   900px以下では利用可能な幅いっぱいに広げる。 */
+@media (max-width: 900px) {
+  .vtuber-short-embed {
+    width: 100%;
+    max-width: 420px;
+  }
+}
+
 .vtuber-short-embed iframe {
   width: 100%;
   height: 100%;
