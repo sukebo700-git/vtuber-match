@@ -248,11 +248,18 @@ async function markSubscriptionCanceled(subscription: any) {
 
   const metadata = subscription.metadata || {};
   const applicationId = String(metadata.application_id || "");
-  const streamerId = String(metadata.streamer_id || "");
+  // 新規申込からの初回課金では、チェックアウト作成時点でstreamerがまだ存在せず
+  // サブスクのmetadataにstreamer_idが入らない(application_idのみ)。その結果、
+  // 従来はキャンセル時にapplicationしか更新されず、streamerのplan_typeが
+  // 有料のまま残るバグがあった(2026-07-19、月狼まーにで発覚)。metadataに
+  // streamer_idが無い場合はapplication docのstreamer_idから解決する。
+  let streamerId = String(metadata.streamer_id || "");
   const subscriptionId = String(subscription.id || "");
 
   if (applicationId) {
     const ref = db.collection("applications").doc(applicationId);
+    // このサブスクが既に別の新しいサブスクに置き換わっている場合は、
+    // 古いキャンセル通知でダウングレードしない(アップグレード時の誤動作防止)。
     if (await hasDifferentActiveSubscription(ref, subscriptionId)) return;
     await ref.set({
       payment_state: "active",
@@ -260,6 +267,10 @@ async function markSubscriptionCanceled(subscription: any) {
       canceled_at: FieldValue.serverTimestamp(),
       updated_at: FieldValue.serverTimestamp()
     }, { merge: true });
+    if (!streamerId) {
+      const appDoc = await ref.get();
+      streamerId = String(appDoc.data()?.streamer_id || "");
+    }
   }
   if (streamerId) {
     const ref = db.collection("streamers").doc(streamerId);
@@ -299,7 +310,14 @@ async function markInvoicePaymentState(invoice: any, paymentState: "active" | "p
   };
 
   const applicationId = String(metadata.application_id || "");
-  const streamerId = String(metadata.streamer_id || "");
+  // markSubscriptionCanceledと同じ理由(初回課金時はmetadataにstreamer_idが
+  // 入らない)で、無い場合はapplication docのstreamer_idから解決する。
+  // これがないと初回申込者の支払い失敗(past_due)や保留昇格がstreamerに反映されない。
+  let streamerId = String(metadata.streamer_id || "");
+  if (!streamerId && applicationId) {
+    const appDoc = await db.collection("applications").doc(applicationId).get();
+    streamerId = String(appDoc.data()?.streamer_id || "");
+  }
 
   await Promise.all([
     applicationId ? setIfCurrentSubscription(db.collection("applications").doc(applicationId), subscriptionId, patch) : Promise.resolve(),
