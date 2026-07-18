@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/adminAuth";
 import { FieldValue, getAdminDb, stripUndefined } from "@/lib/firebaseAdmin";
-import { invalidateStreamerCaches } from "@/lib/streamers";
+import { invalidateStreamerCaches, publicStreamerPath } from "@/lib/streamers";
 
 export const dynamic = "force-dynamic";
 
@@ -54,6 +55,13 @@ export async function PATCH(request: Request, { params }: { params: { id: string
         updated_at: FieldValue.serverTimestamp(),
       }, { merge: true });
       invalidateStreamerCaches();
+      // 静的生成された配信者ページ(revalidate=86400)はこのままだと最大24時間
+      // 古い内容のままになるため、公開直後に反映されるよう明示的に再生成する。
+      const streamerDoc = await db.collection("streamers").doc(streamerId).get();
+      const streamerName = String(streamerDoc.data()?.name || requestData.name || "");
+      if (streamerName) {
+        revalidatePath(publicStreamerPath({ id: streamerId, name: streamerName }));
+      }
     }
   }
 
