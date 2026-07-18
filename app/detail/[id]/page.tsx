@@ -83,6 +83,7 @@ export default async function DetailPage({ params }: { params: { id: string } })
             name={streamer.name}
             siteLabel={siteLabel}
             siteUrl={youtubeSubscribeUrl(streamer.youtube_url)}
+            promoVideoId={streamer.promo_video_id}
           />
 
           <aside className="side-panel">
