@@ -136,6 +136,20 @@ export function ShortVideoRequestForm() {
             >
               公開された動画を見る
             </a>
+          ) : existing.status === "open" ? (
+            <>
+              <p className="help-text">
+                Lo-Fi 24時間配信への反映は1〜2日後、紹介ショート動画の公開は1週間後ほどが目安です。公開状況は公式YouTubeチャンネルでも確認できます。
+              </p>
+              <a
+                className="secondary-button"
+                href="https://www.youtube.com/@VtuberMatch"
+                target="_blank"
+                rel="noreferrer"
+              >
+                公式YouTubeチャンネルを見る
+              </a>
+            </>
           ) : null}
         </section>
       ) : null}
