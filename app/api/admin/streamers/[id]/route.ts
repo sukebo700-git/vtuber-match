@@ -5,7 +5,7 @@ import { FieldValue, getAdminDb, stripUndefined } from "@/lib/firebaseAdmin";
 import { adminCookieName, getCookieValue } from "@/lib/adminSession";
 import { deleteLocalStreamer, findLocalStreamer, hasLocalPaymentHistory, updateLocalStreamer } from "@/lib/localStore";
 import { invalidateStreamerCaches, normalizeStreamer, publicStreamerPath } from "@/lib/streamers";
-import { isYouTubeVideoAvailable, parseYouTubeVideoId } from "@/lib/youtube";
+import { parseYouTubeVideoId } from "@/lib/youtube";
 import type { AdminPlacement, PlanType, Streamer } from "@/lib/types";
 
 export async function GET(request: Request, { params }: { params: { id: string } }) {
@@ -63,12 +63,9 @@ export async function PATCH(request: Request, { params }: { params: { id: string
       if (!parsed) {
         return NextResponse.json({ error: "YouTube動画のURLまたはIDを正しく入力してください。" }, { status: 400 });
       }
-      if (!(await isYouTubeVideoAvailable(parsed))) {
-        return NextResponse.json(
-          { error: "指定された動画がYouTube上で見つかりません(削除・非公開の可能性があります)。" },
-          { status: 400 }
-        );
-      }
+      // 保存時点では実在確認をしない(公開予約中・限定公開の動画もoEmbedでは
+      // 404/403になり誤って保存を拒否してしまうため)。表示側(detail page)で
+      // 都度確認し、実際に非公開の間は埋め込みを自動的に隠す設計にしている。
       patch.promo_video_id = parsed;
     }
   }
