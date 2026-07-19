@@ -100,7 +100,7 @@ export default function HomePage() {
           </div>
           <div className="landing-lofi-player" aria-label="Lo-Fi配信ミニプレーヤー">
             <iframe
-              src="https://www.youtube.com/embed/UliB-QSKTi0"
+              src="https://www.youtube.com/embed/0x4LB3r8XFQ"
               title="VtuberMatch Lo-Fi配信"
               loading="lazy"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
