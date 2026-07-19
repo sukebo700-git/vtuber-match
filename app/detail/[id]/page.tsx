@@ -8,7 +8,7 @@ import type { Metadata } from "next";
 import { BadgeCheck, CalendarClock, ExternalLink, Radio } from "lucide-react";
 import { getStreamerById, publicStreamerPath, streamerImagePath } from "@/lib/streamers";
 import { PLAN_LABELS } from "@/lib/constants";
-import { videoSiteLabel, youtubeSubscribeUrl, youtubeWatchUrl } from "@/lib/youtube";
+import { isYouTubeVideoAvailable, videoSiteLabel, youtubeSubscribeUrl, youtubeWatchUrl } from "@/lib/youtube";
 import { absoluteUrl, siteName } from "@/lib/seo";
 import { readUserSession, viewerSessionCookie } from "@/lib/userSession";
 import { cookies } from "next/headers";
@@ -63,6 +63,11 @@ export default async function DetailPage({ params }: { params: { id: string } })
   const canViewXAccount = Boolean(viewerSession?.id);
   const siteLabel = videoSiteLabel(streamer.youtube_url);
   const profileImages = streamer.thumbnails?.length ? streamer.thumbnails : ["/promo/landing-oshi.png"];
+  // YouTube側で削除・非公開化された動画がプロフィールに壊れた埋め込みとして
+  // 残り続けないよう、表示直前に実在確認する(削除時は自動的に非表示になる)
+  const shortVideoAvailable = streamer.promo_video_id
+    ? await isYouTubeVideoAvailable(streamer.promo_video_id)
+    : false;
 
   return (
     <div className="app-shell">
@@ -136,7 +141,7 @@ export default async function DetailPage({ params }: { params: { id: string } })
                 <span>表示回数</span>
               </div>
             </div>
-            {streamer.promo_video_id && (
+            {streamer.promo_video_id && shortVideoAvailable && (
               <div className="vtuber-short-embed">
                 <iframe
                   src={`https://www.youtube.com/embed/${encodeURIComponent(streamer.promo_video_id)}`}

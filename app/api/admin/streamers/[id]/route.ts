@@ -5,6 +5,7 @@ import { FieldValue, getAdminDb, stripUndefined } from "@/lib/firebaseAdmin";
 import { adminCookieName, getCookieValue } from "@/lib/adminSession";
 import { deleteLocalStreamer, findLocalStreamer, hasLocalPaymentHistory, updateLocalStreamer } from "@/lib/localStore";
 import { invalidateStreamerCaches, normalizeStreamer, publicStreamerPath } from "@/lib/streamers";
+import { isYouTubeVideoAvailable, parseYouTubeVideoId } from "@/lib/youtube";
 import type { AdminPlacement, PlanType, Streamer } from "@/lib/types";
 
 export async function GET(request: Request, { params }: { params: { id: string } }) {
@@ -53,6 +54,24 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   if ("youtube_url" in body) patch.youtube_url = clean(body.youtube_url, 240);
   if ("youtube_channel_id" in body) patch.youtube_channel_id = clean(body.youtube_channel_id, 120);
   if ("archive_url" in body) patch.archive_url = clean(body.archive_url, 300);
+  if ("promo_video_id" in body) {
+    const raw = clean(body.promo_video_id, 200);
+    if (!raw) {
+      patch.promo_video_id = "";
+    } else {
+      const parsed = parseYouTubeVideoId(raw);
+      if (!parsed) {
+        return NextResponse.json({ error: "YouTube動画のURLまたはIDを正しく入力してください。" }, { status: 400 });
+      }
+      if (!(await isYouTubeVideoAvailable(parsed))) {
+        return NextResponse.json(
+          { error: "指定された動画がYouTube上で見つかりません(削除・非公開の可能性があります)。" },
+          { status: 400 }
+        );
+      }
+      patch.promo_video_id = parsed;
+    }
+  }
   if ("description" in body) patch.description = clean(body.description, String(body.plan_type || "") === "free" ? 100 : 800);
   if ("one_liner" in body) patch.one_liner = clean(body.one_liner, 20);
   if ("stream_time" in body) patch.stream_time = clean(body.stream_time, 50);

@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/adminAuth";
 import { FieldValue, getAdminDb, stripUndefined } from "@/lib/firebaseAdmin";
 import { invalidateStreamerCaches, publicStreamerPath } from "@/lib/streamers";
+import { parseYouTubeVideoId } from "@/lib/youtube";
 
 export const dynamic = "force-dynamic";
 
@@ -74,12 +75,4 @@ export async function PATCH(request: Request, { params }: { params: { id: string
       youtube_video_id: String(updated.youtube_video_id || ""),
     },
   });
-}
-
-function parseYouTubeVideoId(value: unknown): string | undefined {
-  const raw = String(value || "").trim();
-  if (!raw) return undefined;
-  const urlMatch = /(?:youtube\.com\/(?:watch\?v=|shorts\/)|youtu\.be\/)([\w-]{6,20})/.exec(raw);
-  if (urlMatch) return urlMatch[1];
-  return /^[\w-]{6,20}$/.test(raw) ? raw : undefined;
 }

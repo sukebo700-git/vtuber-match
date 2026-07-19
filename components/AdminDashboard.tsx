@@ -21,7 +21,7 @@ function mergeStreamersById(a: Streamer[], b: Streamer[]): Streamer[] {
 }
 
 type StreamerView = "application" | "paid" | "boost";
-type EditState = Pick<Streamer, "id" | "name" | "youtube_url" | "youtube_channel_id" | "archive_url" | "description" | "one_liner" | "stream_time" | "plan_type" | "thumbnails" | "categories" | "tags"> & { want_short_video: boolean };
+type EditState = Pick<Streamer, "id" | "name" | "youtube_url" | "youtube_channel_id" | "archive_url" | "promo_video_id" | "description" | "one_liner" | "stream_time" | "plan_type" | "thumbnails" | "categories" | "tags"> & { want_short_video: boolean };
 type PublicImportDraft = {
   name: string;
   youtube_url: string;
@@ -244,6 +244,7 @@ export function AdminDashboard({ initialApplications, initialStreamers, initialP
       youtube_url: fullStreamer.youtube_url,
       youtube_channel_id: fullStreamer.youtube_channel_id || "",
       archive_url: fullStreamer.archive_url || "",
+      promo_video_id: fullStreamer.promo_video_id || "",
       description: fullStreamer.description,
       one_liner: fullStreamer.one_liner,
       stream_time: fullStreamer.stream_time || "",
@@ -794,6 +795,13 @@ export function AdminDashboard({ initialApplications, initialStreamers, initialP
           <label>配信URL<input value={editing.youtube_url} onChange={(event) => setEditing({ ...editing, youtube_url: event.target.value })} /></label>
           <label>YouTubeチャンネルID<input value={editing.youtube_channel_id || ""} onChange={(event) => setEditing({ ...editing, youtube_channel_id: event.target.value })} /></label>
           <label>おすすめアーカイブURL<input value={editing.archive_url || ""} onChange={(event) => setEditing({ ...editing, archive_url: event.target.value })} /></label>
+          <label>紹介ショート動画（YouTube URLまたは動画ID、空欄で埋め込み解除）
+            <input
+              value={editing.promo_video_id || ""}
+              placeholder="https://youtube.com/shorts/xxxxxxxxxxx"
+              onChange={(event) => setEditing({ ...editing, promo_video_id: event.target.value })}
+            />
+          </label>
           <label>プラン
             <select value={editing.plan_type} onChange={(event) => setEditPlan(event.target.value as PlanType)}>
               <option value="free">無料</option>

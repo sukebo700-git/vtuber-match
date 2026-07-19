@@ -44,6 +44,28 @@ export function isYouTubeUrl(url: string) {
   }
 }
 
+export function parseYouTubeVideoId(value: unknown): string | undefined {
+  const raw = String(value || "").trim();
+  if (!raw) return undefined;
+  const urlMatch = /(?:youtube\.com\/(?:watch\?v=|shorts\/)|youtu\.be\/)([\w-]{6,20})/.exec(raw);
+  if (urlMatch) return urlMatch[1];
+  return /^[\w-]{6,20}$/.test(raw) ? raw : undefined;
+}
+
+export async function isYouTubeVideoAvailable(videoId: string): Promise<boolean> {
+  try {
+    const url = `https://www.youtube.com/oembed?url=${encodeURIComponent(
+      `https://www.youtube.com/watch?v=${videoId}`
+    )}&format=json`;
+    const response = await fetch(url, { signal: AbortSignal.timeout(3000) });
+    return response.ok;
+  } catch {
+    // oEmbed照会自体が失敗した場合(タイムアウト・ネットワーク不調等)は、
+    // 実際には有効な動画を誤って非表示にしないよう「表示する」側に倒す
+    return true;
+  }
+}
+
 export async function fetchLatestYouTubeVideo(channelId: string) {
   const key = process.env.YOUTUBE_API_KEY;
   if (!key) return null;
