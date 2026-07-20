@@ -89,7 +89,17 @@ export function CreatorProfileEditForm() {
     setVtypeProfile(draft?.vtype_id ? draft : readStoredVtypeProfile());
 
     fetch("/api/profile-edits")
-      .then((response) => response.ok ? response.json() : null)
+      .then((response) => {
+        // セッション切れ(ログインから14日以上経過等)の場合、ここが401になる。
+        // 以前はここで黙って処理を打ち切っていたため、ブラウザに残った古い
+        // キャッシュ(アップグレード前のプラン等)がそのまま表示され続け、
+        // プラン変更が反映されていないように見える不具合があった。
+        if (response.status === 401) {
+          setStatus("ログインの有効期限が切れています。お手数ですが、配信者ログインからもう一度ログインしてください。");
+          return null;
+        }
+        return response.ok ? response.json() : null;
+      })
       .then((data) => {
         const profile = data?.profile as CreatorDraft | undefined;
         if (!profile) return;

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getAdminDb } from "@/lib/firebaseAdmin";
 import { readLocalApplications, readLocalStreamers } from "@/lib/localStore";
 import { hashPassword } from "@/lib/password";
-import { creatorSessionCookie, readUserSession } from "@/lib/userSession";
+import { createUserSession, creatorSessionCookie, readUserSession, userSessionCookieOptions } from "@/lib/userSession";
 import type { StreamerApplication } from "@/lib/types";
 
 type CreatorSession = {
@@ -93,7 +93,7 @@ export async function POST(request: Request) {
     }
     const streamers = await readLocalStreamers();
     const streamer = streamers.find((item) => item.id === application.streamer_id);
-    return NextResponse.json({
+    const response = NextResponse.json({
       application_id: application.id,
       streamer_id: application.streamer_id,
       payer_email: application.email || identity.email,
@@ -101,6 +101,16 @@ export async function POST(request: Request) {
       current_plan: streamer?.plan_type || application.desired_plan || "free",
       source: "local",
     });
+    // アップグレード時点でパスワード照合済みのため、ここでセッションを
+    // 再発行する。既存のセッションが失効していても(古い申込・ログインから
+    // 14日以上経っていても)、決済後にプロフィール編集画面が正しく開けるようにする。
+    response.cookies.set(creatorSessionCookie, createUserSession({
+      application_id: application.id,
+      streamer_id: application.streamer_id || "",
+      creator_login_id: (application as { creator_login_id?: string }).creator_login_id || "",
+      email: application.email || identity.email,
+    }), userSessionCookieOptions());
+    return response;
   }
 
   const candidates: Candidate[] = [];
@@ -144,7 +154,7 @@ export async function POST(request: Request) {
   const streamerData = streamerDoc.data();
   if (streamerData?.plan_type) currentPlan = streamerData.plan_type;
 
-  return NextResponse.json({
+  const response = NextResponse.json({
     application_id: matched.id,
     streamer_id: data.streamer_id,
     payer_email: data.email || identity.email,
@@ -152,4 +162,14 @@ export async function POST(request: Request) {
     current_plan: currentPlan,
     source: "firestore",
   });
+  // アップグレード時点でパスワード照合済みのため、ここでセッションを再発行する。
+  // 既存のセッションが失効していても(古い申込・ログインから14日以上経っていても)、
+  // 決済後にプロフィール編集画面が正しく開けるようにする。
+  response.cookies.set(creatorSessionCookie, createUserSession({
+    application_id: matched.id,
+    streamer_id: String(data.streamer_id || ""),
+    creator_login_id: String((data as { creator_login_id?: string }).creator_login_id || ""),
+    email: String(data.email || identity.email || ""),
+  }), userSessionCookieOptions());
+  return response;
 }
