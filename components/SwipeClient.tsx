@@ -781,6 +781,7 @@ function SwipeCard({
         window.location.assign(`/detail/${streamer.id}`);
       }}
     >
+      <div className="card-blur-bg" style={{ backgroundImage: `url(${thumbnail})` }} aria-hidden="true" />
       {showNewRibbon && <div className="new-ribbon">NEW</div>}
       {superEffect && <div className="super-boost-ribbon">SUPER</div>}
       {visualPlan === "boost" && (

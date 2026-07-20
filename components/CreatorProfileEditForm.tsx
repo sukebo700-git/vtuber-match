@@ -473,30 +473,37 @@ async function fileToDataUrl(file: File) {
   return compressImageDataUrl(dataUrl, 760, 170_000);
 }
 
+// スワイプ画面のカード枠(.deck の aspect-ratio: 0.68)と同じ縦横比で書き出す。
+// 編集画面のプレビューと出力画像の縦横比を揃えることで、編集画面で見たとおりに
+// スワイプ画面へ反映される(以前は正方形で書き出していたため、縦長のカード枠で
+// 余白ができていた)。
+const CARD_ASPECT_RATIO = 0.68;
+
 async function renderEditedImage(src: string, edit: ImageEdit) {
   const image = await loadImage(src);
-  const size = 620;
+  const outWidth = 620;
+  const outHeight = Math.round(outWidth / CARD_ASPECT_RATIO);
   const canvas = document.createElement("canvas");
-  canvas.width = size;
-  canvas.height = size;
+  canvas.width = outWidth;
+  canvas.height = outHeight;
   const context = canvas.getContext("2d");
   if (!context) return src;
 
   context.fillStyle = "#ffffff";
-  context.fillRect(0, 0, size, size);
+  context.fillRect(0, 0, outWidth, outHeight);
 
-  const baseScale = Math.min(size / image.naturalWidth, size / image.naturalHeight);
+  const baseScale = Math.min(outWidth / image.naturalWidth, outHeight / image.naturalHeight);
   const drawWidth = image.naturalWidth * baseScale * edit.scale;
   const drawHeight = image.naturalHeight * baseScale * edit.scale;
-  const maxOffsetX = Math.max(0, (drawWidth - size) / 2);
-  const maxOffsetY = Math.max(0, (drawHeight - size) / 2);
+  const maxOffsetX = Math.max(0, (drawWidth - outWidth) / 2);
+  const maxOffsetY = Math.max(0, (drawHeight - outHeight) / 2);
   const offsetX = maxOffsetX * (edit.x / 40);
   const offsetY = maxOffsetY * (edit.y / 40);
 
   context.drawImage(
     image,
-    (size - drawWidth) / 2 + offsetX,
-    (size - drawHeight) / 2 + offsetY,
+    (outWidth - drawWidth) / 2 + offsetX,
+    (outHeight - drawHeight) / 2 + offsetY,
     drawWidth,
     drawHeight,
   );

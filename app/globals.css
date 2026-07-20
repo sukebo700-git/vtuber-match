@@ -1301,7 +1301,14 @@ button {
   pointer-events: none;
 }
 
+/* 配信者本人が編集画面で620×620の正方形にトリミング済みの画像を、
+   正方形ではない縦長カード枠に表示する。cover にすると本人が意図して
+   フレーミングした写真の左右が切れてしまうため、写真自体は contain で
+   一切トリミングせず、余白は .card-blur-bg (同じ画像をぼかして敷いた
+   背景層)で自然に埋める。 */
 .card img {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: contain;
@@ -1309,6 +1316,19 @@ button {
   display: block;
   pointer-events: none;
   transform: translateZ(0);
+}
+
+.card-blur-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  filter: blur(28px) brightness(0.75) saturate(1.15);
+  transform: scale(1.15);
+  pointer-events: none;
 }
 
 .super-effect {
@@ -2416,8 +2436,10 @@ button {
 }
 
 .image-editor-preview {
-  width: 142px;
-  height: 142px;
+  /* スワイプ画面のカード枠(.deck の aspect-ratio: 0.68)と同じ縦横比にして、
+     実際にどう表示されるかそのまま編集画面で確認できるようにする */
+  width: 121px;
+  height: 178px;
   display: grid;
   place-items: center;
   overflow: hidden;
