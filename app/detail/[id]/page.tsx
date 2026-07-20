@@ -7,7 +7,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { BadgeCheck, CalendarClock, ExternalLink, Radio } from "lucide-react";
 import { getStreamerById, publicStreamerPath, streamerImagePath } from "@/lib/streamers";
-import { PLAN_LABELS } from "@/lib/constants";
+import { PLAN_LABELS, virtualRegionLabel } from "@/lib/constants";
 import { isYouTubeVideoAvailable, videoSiteLabel, youtubeSubscribeUrl, youtubeWatchUrl } from "@/lib/youtube";
 import { absoluteUrl, siteName } from "@/lib/seo";
 import { readUserSession, viewerSessionCookie } from "@/lib/userSession";
@@ -155,9 +155,10 @@ export default async function DetailPage({ params }: { params: { id: string } })
           </aside>
         </section>
 
-        {(streamer.one_liner || streamer.stream_time || streamer.vtype_name || (isPaidOrPremium && streamer.tags.length > 0)) && (
+        {(streamer.one_liner || streamer.stream_time || streamer.region || streamer.vtype_name || (isPaidOrPremium && streamer.tags.length > 0)) && (
           <section className="status-band">
             <h2>プロフィール情報</h2>
+            {streamer.region && <p>活動地域: {virtualRegionLabel(streamer.region)}</p>}
             {streamer.vtype_name && <p>VTYPE診断: {streamer.vtype_code} {streamer.vtype_name}</p>}
             {isPaidOrPremium && streamer.tags.length > 0 && (
               <div className="pill-row">

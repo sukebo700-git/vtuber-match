@@ -2,7 +2,7 @@
 
 import { useMemo, useState, type ChangeEvent } from "react";
 import { BadgeCheck, Copy, Edit3, ExternalLink, Eye, EyeOff, Heart, Save, Trash2, X } from "lucide-react";
-import { CATEGORIES, PLAN_LABELS, TAGS } from "@/lib/constants";
+import { CATEGORIES, PLAN_LABELS, REGIONS, TAGS } from "@/lib/constants";
 import type { AdminPlacement, PlanType, Streamer, StreamerApplication, SuperBoostEffect } from "@/lib/types";
 
 type AdminDashboardProps = {
@@ -21,7 +21,7 @@ function mergeStreamersById(a: Streamer[], b: Streamer[]): Streamer[] {
 }
 
 type StreamerView = "application" | "paid" | "boost";
-type EditState = Pick<Streamer, "id" | "name" | "youtube_url" | "youtube_channel_id" | "archive_url" | "promo_video_id" | "description" | "one_liner" | "stream_time" | "plan_type" | "thumbnails" | "categories" | "tags"> & { want_short_video: boolean };
+type EditState = Pick<Streamer, "id" | "name" | "youtube_url" | "youtube_channel_id" | "archive_url" | "promo_video_id" | "description" | "one_liner" | "stream_time" | "region" | "plan_type" | "thumbnails" | "categories" | "tags"> & { want_short_video: boolean };
 type PublicImportDraft = {
   name: string;
   youtube_url: string;
@@ -248,6 +248,7 @@ export function AdminDashboard({ initialApplications, initialStreamers, initialP
       description: fullStreamer.description,
       one_liner: fullStreamer.one_liner,
       stream_time: fullStreamer.stream_time || "",
+      region: fullStreamer.region || "",
       plan_type: fullStreamer.plan_type,
       thumbnails: fullStreamer.thumbnails || [],
       categories: fullStreamer.categories || [],
@@ -811,6 +812,14 @@ export function AdminDashboard({ initialApplications, initialStreamers, initialP
           </label>
           <label>今日のひとこと<input maxLength={20} value={editing.one_liner || ""} onChange={(event) => setEditing({ ...editing, one_liner: event.target.value.slice(0, 20) })} /></label>
           <label>配信時間帯<input maxLength={50} value={editing.stream_time || ""} onChange={(event) => setEditing({ ...editing, stream_time: event.target.value.slice(0, 50) })} /></label>
+          <label>活動地域
+            <select value={editing.region || ""} onChange={(event) => setEditing({ ...editing, region: event.target.value })}>
+              <option value="">未設定</option>
+              {REGIONS.map((r) => (
+                <option key={r} value={r}>バーチャル{r}</option>
+              ))}
+            </select>
+          </label>
           <label>自己紹介<textarea value={editing.description || ""} onChange={(event) => setEditing({ ...editing, description: event.target.value })} /></label>
           <label className="choice">
             <input

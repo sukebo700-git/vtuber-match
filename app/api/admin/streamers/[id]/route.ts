@@ -6,6 +6,7 @@ import { adminCookieName, getCookieValue } from "@/lib/adminSession";
 import { deleteLocalStreamer, findLocalStreamer, hasLocalPaymentHistory, updateLocalStreamer } from "@/lib/localStore";
 import { invalidateStreamerCaches, normalizeStreamer, publicStreamerPath } from "@/lib/streamers";
 import { parseYouTubeVideoId } from "@/lib/youtube";
+import { REGIONS } from "@/lib/constants";
 import type { AdminPlacement, PlanType, Streamer } from "@/lib/types";
 
 export async function GET(request: Request, { params }: { params: { id: string } }) {
@@ -72,6 +73,10 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   if ("description" in body) patch.description = clean(body.description, String(body.plan_type || "") === "free" ? 100 : 800);
   if ("one_liner" in body) patch.one_liner = clean(body.one_liner, 20);
   if ("stream_time" in body) patch.stream_time = clean(body.stream_time, 50);
+  if ("region" in body) {
+    const raw = clean(body.region, 20);
+    patch.region = REGIONS.includes(raw) ? raw : "";
+  }
   if ("categories" in body) patch.categories = sanitizeArray(body.categories).slice(0, 3);
   if ("tags" in body) patch.tags = sanitizeArray(body.tags).slice(0, 3);
   if ("thumbnails" in body) patch.thumbnails = sanitizeArray(body.thumbnails).slice(0, 5);

@@ -2,7 +2,7 @@
 
 import { BadgeCheck, ChevronDown, ExternalLink, Heart, Info, Search, Sparkles, Star, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { CATEGORIES } from "@/lib/constants";
+import { CATEGORIES, REGIONS, virtualRegionLabel } from "@/lib/constants";
 import { diagnosisTypes } from "@/lib/diagnosis";
 import { viewerVtypeStorageKey, type VtypeProfileFields } from "@/lib/diagnosisProfile";
 import { ensureAnonymousUser } from "@/lib/firebase";
@@ -32,8 +32,10 @@ export function SwipeClient({ initialStreamers }: SwipeClientProps) {
   const [index, setIndex] = useState(0);
   const [loopCount, setLoopCount] = useState(0);
   const [categoryFilter, setCategoryFilter] = useState("");
+  const [regionFilter, setRegionFilter] = useState("");
   const [shuffleSeed, setShuffleSeed] = useState("initial");
   const [filterOpen, setFilterOpen] = useState(false);
+  const [regionFilterOpen, setRegionFilterOpen] = useState(false);
   const [likedStreamer, setLikedStreamer] = useState<Streamer | null>(null);
   const [superBoostStreamer, setSuperBoostStreamer] = useState<Streamer | null>(null);
   const [limitReached, setLimitReached] = useState(false);
@@ -45,12 +47,17 @@ export function SwipeClient({ initialStreamers }: SwipeClientProps) {
   const streamers = useMemo(
     () => prioritizeSameVtype(
       shuffleEqualPriorityGroups(
-        categoryFilter ? initialStreamers.filter((streamer) => streamer.categories.includes(categoryFilter)) : initialStreamers,
+        (categoryFilter || regionFilter)
+          ? initialStreamers.filter((streamer) => (
+              (!categoryFilter || streamer.categories.includes(categoryFilter)) &&
+              (!regionFilter || streamer.region === regionFilter)
+            ))
+          : initialStreamers,
         shuffleSeed,
       ),
       viewerVtypeId,
     ),
-    [categoryFilter, initialStreamers, shuffleSeed, viewerVtypeId],
+    [categoryFilter, regionFilter, initialStreamers, shuffleSeed, viewerVtypeId],
   );
   const current = streamers.length ? streamers[index % streamers.length] : undefined;
   const next = streamers.length ? streamers[(index + 1) % streamers.length] : undefined;
@@ -77,7 +84,7 @@ export function SwipeClient({ initialStreamers }: SwipeClientProps) {
     setLikedStreamer(null);
     setSwipeNotice("");
     setMoreOpen(false);
-  }, [categoryFilter, shuffleSeed]);
+  }, [categoryFilter, regionFilter, shuffleSeed]);
 
   useEffect(() => {
     setShuffleSeed(createSwipeShuffleSeed());
@@ -259,12 +266,41 @@ export function SwipeClient({ initialStreamers }: SwipeClientProps) {
               ))}
             </div>
           )}
+          <button className="mini-button" type="button" onClick={() => setRegionFilterOpen((value) => !value)}>
+            <Search size={16} />
+            活動地域検索
+          </button>
+          {regionFilter && (
+            <button className="mini-button clear-filter" type="button" onClick={() => setRegionFilter("")}>
+              {virtualRegionLabel(regionFilter)}を解除
+            </button>
+          )}
+          {regionFilterOpen && (
+            <div className="category-popover">
+              <button type="button" className={!regionFilter ? "selected" : ""} onClick={() => { setRegionFilter(""); setRegionFilterOpen(false); }}>
+                すべて
+              </button>
+              {REGIONS.map((region) => (
+                <button
+                  type="button"
+                  className={regionFilter === region ? "selected" : ""}
+                  key={region}
+                  onClick={() => {
+                    setRegionFilter(region);
+                    setRegionFilterOpen(false);
+                  }}
+                >
+                  {virtualRegionLabel(region)}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {!current ? (
           <div className="status-band">
             <h2>該当する配信者がいません</h2>
-            <p>カテゴリを変更するか、検索を解除してください。</p>
+            <p>カテゴリや活動地域を変更するか、検索を解除してください。</p>
           </div>
         ) : (
           <>
@@ -676,7 +712,7 @@ function SwipeCard({
   const superEffect = isActiveSuperBoost(streamer.super_boost_until) ? streamer.super_boost_effect || "shine" : "";
   const premiumVisual = streamer.plan_type === "boost";
   const visualPlan = premiumVisual ? "boost" : streamer.plan_type;
-  const showTopPills = streamer.plan_type !== "free" || streamer.categories.length > 0 || streamer.tags.length > 0;
+  const showTopPills = streamer.plan_type !== "free" || streamer.categories.length > 0 || streamer.tags.length > 0 || Boolean(streamer.region);
   const vtypeLabel = streamer.vtype_name ? `VTYPE ${streamer.vtype_code ? `${streamer.vtype_code} ` : ""}${streamer.vtype_name}` : "";
 
   useEffect(() => {
@@ -776,6 +812,9 @@ function SwipeCard({
             {streamer.categories.slice(0, 1).map((category) => (
               <UiBadge key={category}>{category}</UiBadge>
             ))}
+            {streamer.region && (
+              <UiBadge>{virtualRegionLabel(streamer.region)}</UiBadge>
+            )}
             {streamer.tags.slice(0, 3).map((tag) => (
               <UiBadge key={tag}>#{tag}</UiBadge>
             ))}

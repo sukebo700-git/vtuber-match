@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { RotateCcw, Save } from "lucide-react";
-import { CATEGORIES, TAGS } from "@/lib/constants";
+import { CATEGORIES, REGIONS, TAGS } from "@/lib/constants";
 import { diagnosisTypes } from "@/lib/diagnosis";
 import { creatorVtypeStorageKey, type VtypeProfileFields } from "@/lib/diagnosisProfile";
 
@@ -14,6 +14,7 @@ type CreatorDraft = VtypeProfileFields & {
   description?: string;
   one_liner?: string;
   stream_time?: string;
+  region?: string;
   image?: string;
   images?: string[];
   categories?: string[];
@@ -54,6 +55,7 @@ export function CreatorProfileEditForm() {
   const [yomi, setYomi] = useState("");
   const [oneLiner, setOneLiner] = useState("");
   const [streamTime, setStreamTime] = useState("");
+  const [region, setRegion] = useState("");
   const [categories, setCategories] = useState<string[]>([]);
   const [tags, setTags] = useState<string[]>([]);
   const [images, setImages] = useState<string[]>(makeImageSlots());
@@ -78,6 +80,7 @@ export function CreatorProfileEditForm() {
     setYomi(draft?.yomi || "");
     setOneLiner(draft?.one_liner || "");
     setStreamTime(draft?.stream_time || "");
+    setRegion(draft?.region || "");
     setImages(draftImages);
     setSourceImages(draftImages);
     setImageEdits(makeImageEdits());
@@ -98,6 +101,7 @@ export function CreatorProfileEditForm() {
         setYomi(profile.yomi || "");
         setOneLiner((profile.one_liner || "").slice(0, 20));
         setStreamTime(profile.stream_time || "");
+        setRegion(profile.region || "");
         setImages(nextImages);
         setSourceImages(nextImages);
         setImageEdits(makeImageEdits());
@@ -138,6 +142,7 @@ export function CreatorProfileEditForm() {
         description: form.get("description"),
         one_liner: form.get("one_liner"),
         stream_time: String(form.get("stream_time") || "").slice(0, 50),
+        region: String(form.get("region") || ""),
         image: thumbnails[0] || "",
         thumbnails,
         categories,
@@ -160,6 +165,7 @@ export function CreatorProfileEditForm() {
       description: String(form.get("description") || "").slice(0, planType === "free" ? 100 : 500),
       one_liner: String(form.get("one_liner") || ""),
       stream_time: String(form.get("stream_time") || "").slice(0, 50),
+      region: String(form.get("region") || ""),
       image: thumbnails[0] || "",
       images: thumbnails,
       categories,
@@ -255,6 +261,16 @@ export function CreatorProfileEditForm() {
       <div className="field">
         <label htmlFor="edit_stream_time">配信時間帯</label>
         <input id="edit_stream_time" name="stream_time" value={streamTime} maxLength={50} onChange={(event) => setStreamTime(event.target.value.slice(0, 50))} placeholder="例: 平日22時から24時" />
+      </div>
+
+      <div className="field">
+        <label htmlFor="edit_region">活動地域</label>
+        <select id="edit_region" name="region" value={region} onChange={(event) => setRegion(event.target.value)}>
+          <option value="">未設定</option>
+          {REGIONS.map((r) => (
+            <option key={r} value={r}>バーチャル{r}</option>
+          ))}
+        </select>
       </div>
 
       <div className="field">

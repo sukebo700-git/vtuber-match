@@ -5,6 +5,7 @@ import { diagnosisTypes } from "@/lib/diagnosis";
 import { autoApproveLocalApplication, readLocalApplications, readLocalStreamers, updateLocalStreamer } from "@/lib/localStore";
 import { hashPassword } from "@/lib/password";
 import { invalidateStreamerCaches, publicStreamerPath } from "@/lib/streamers";
+import { REGIONS } from "@/lib/constants";
 import { creatorSessionCookie, readUserSession } from "@/lib/userSession";
 import type { PlanType, Streamer, StreamerApplication } from "@/lib/types";
 
@@ -231,6 +232,7 @@ async function resolveFirestoreStreamerId(db: Firestore, match: ApplicationMatch
     description: match.data.description || "",
     one_liner: String(match.data.one_liner || match.data.description || "").slice(0, 20),
     stream_time: match.data.stream_time || "",
+    region: match.data.region || "",
     plan_type: match.data.desired_plan || "free",
     subscription_status: match.data.subscription_status || null,
     stripe_subscription_id: match.data.stripe_subscription_id || null,
@@ -328,6 +330,7 @@ function buildStreamerPatch(body: Record<string, unknown>, plan: PlanType): Part
   setIfPresent(patch, "description", clean(body.description, plan === "free" ? 100 : 500));
   setIfPresent(patch, "one_liner", clean(body.one_liner, 20));
   setIfPresent(patch, "stream_time", clean(body.stream_time, 50));
+  setIfPresent(patch, "region", validRegion(body.region));
   if ("thumbnails" in body || "image" in body) patch.thumbnails = thumbnails;
 
   return patch;
@@ -350,6 +353,7 @@ function buildApplicationPatch(body: Record<string, unknown>, plan: PlanType) {
   setIfPresent(patch, "description", clean(body.description, plan === "free" ? 100 : 500));
   setIfPresent(patch, "one_liner", clean(body.one_liner, 20));
   setIfPresent(patch, "stream_time", clean(body.stream_time, 50));
+  setIfPresent(patch, "region", validRegion(body.region));
   if ("thumbnails" in body || "image" in body) patch.thumbnails = thumbnails;
 
   return patch;
@@ -357,6 +361,11 @@ function buildApplicationPatch(body: Record<string, unknown>, plan: PlanType) {
 
 function setIfPresent(target: Record<string, unknown>, key: string, value: string) {
   if (value) target[key] = value;
+}
+
+function validRegion(value: unknown) {
+  const raw = String(value || "").trim();
+  return REGIONS.includes(raw) ? raw : "";
 }
 
 function clean(value: unknown, max: number) {
@@ -454,6 +463,7 @@ function buildProfileResponse(streamer?: Partial<Streamer>, application?: Partia
     description: streamer?.description || application?.description || "",
     one_liner: streamer?.one_liner || application?.one_liner || "",
     stream_time: streamer?.stream_time || application?.stream_time || "",
+    region: streamer?.region || application?.region || "",
     plan_type: streamer?.plan_type || application?.desired_plan || "free",
     image: streamer?.thumbnails?.[0] || application?.thumbnails?.[0] || "",
     images: streamer?.thumbnails || application?.thumbnails || [],

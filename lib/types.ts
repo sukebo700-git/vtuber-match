@@ -28,6 +28,7 @@ export type Streamer = VtypeProfileFields & {
   description: string;
   one_liner: string;
   stream_time?: string;
+  region?: string;
   latest_video_id?: string;
   last_video_date?: string;
   last_youtube_checked_at?: string;
@@ -86,6 +87,7 @@ export type StreamerApplication = VtypeProfileFields & {
   description: string;
   one_liner: string;
   stream_time?: string;
+  region?: string;
   desired_plan: PlanType;
   payment_status?: "not_required" | "pending" | "paid";
   status: ApplicationStatus;
