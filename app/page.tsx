@@ -49,10 +49,6 @@ export default function HomePage() {
               <span>直感で</span>
               <span>出会える。</span>
             </h1>
-            <p className="landing-hero-lead">
-              <span>VTuberとリスナーを繋ぐマッチングサイト</span>
-              <span>新しい出会いの形</span>
-            </p>
             <div className="landing-actions">
               <UiButton className="landing-primary-cta" href="/swipe">
                 VTuberを探す
@@ -78,7 +74,6 @@ export default function HomePage() {
             <div className="landing-promo-banner-copy">
               <span className="landing-promo-banner-kicker">ショート動画&amp;24時間宣伝企画</span>
               <strong>Lo-Fi配信への掲載・紹介ショート動画・無料掲載ページ、すべて0円</strong>
-              <p>無料プランに申し込むだけで、3つの宣伝をまとめて利用できます。</p>
             </div>
             <span className="landing-promo-banner-cta">無料で宣伝を申し込む</span>
           </a>
