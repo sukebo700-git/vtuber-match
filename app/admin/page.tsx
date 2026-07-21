@@ -189,6 +189,14 @@ async function readImportantNotifications(): Promise<AdminImportantNotification[
   ]);
 
   const items: AdminImportantNotification[] = [];
+  // 退会申請・支払い失敗は申込(applications)と配信者(streamers)の両方の
+  // ドキュメントに同時にフラグが立つため、素朴に両コレクションを走査すると
+  // 同一の1件が2件の通知として表示されてしまう。streamer側の
+  // source_application_id を突き合わせ、application側で既に通知済みの
+  // イベントはstreamer側でスキップして重複を防ぐ。
+  const notifiedApplicationWithdrawalIds = new Set<string>();
+  const notifiedApplicationPaymentFailedIds = new Set<string>();
+
   passwordResets.docs.forEach((doc) => {
     const data = doc.data();
     if (data.status === "completed") return;
@@ -204,6 +212,7 @@ async function readImportantNotifications(): Promise<AdminImportantNotification[
   applicationDocs.docs.forEach((doc) => {
     const data = doc.data();
     if (data.withdrawal_status === "requested") {
+      notifiedApplicationWithdrawalIds.add(doc.id);
       items.push({
         id: `application_withdrawal:${doc.id}`,
         type: "withdrawal",
@@ -214,6 +223,7 @@ async function readImportantNotifications(): Promise<AdminImportantNotification[
       });
     }
     if (data.payment_state === "past_due") {
+      notifiedApplicationPaymentFailedIds.add(doc.id);
       items.push({
         id: `application_payment_failed:${doc.id}`,
         type: "payment_failed",
@@ -226,7 +236,8 @@ async function readImportantNotifications(): Promise<AdminImportantNotification[
   });
   streamerDocs.docs.forEach((doc) => {
     const data = doc.data();
-    if (data.withdrawal_status === "requested") {
+    const sourceApplicationId = String(data.source_application_id || "");
+    if (data.withdrawal_status === "requested" && !notifiedApplicationWithdrawalIds.has(sourceApplicationId)) {
       items.push({
         id: `streamer_withdrawal:${doc.id}`,
         type: "withdrawal",
@@ -236,7 +247,7 @@ async function readImportantNotifications(): Promise<AdminImportantNotification[
         href: "/admin?tab=streamers",
       });
     }
-    if (data.payment_state === "past_due") {
+    if (data.payment_state === "past_due" && !notifiedApplicationPaymentFailedIds.has(sourceApplicationId)) {
       items.push({
         id: `streamer_payment_failed:${doc.id}`,
         type: "payment_failed",

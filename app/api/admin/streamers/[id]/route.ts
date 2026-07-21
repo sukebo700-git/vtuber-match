@@ -77,6 +77,10 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     const raw = clean(body.region, 20);
     patch.region = REGIONS.includes(raw) ? raw : "";
   }
+  if ("withdrawal_status" in body && body.withdrawal_status === "none") {
+    // 重要通知の「退会申請」を対応済みにする用途のみ想定(noneへ戻す一方向)。
+    patch.withdrawal_status = "none";
+  }
   if ("categories" in body) patch.categories = sanitizeArray(body.categories).slice(0, 3);
   if ("tags" in body) patch.tags = sanitizeArray(body.tags).slice(0, 3);
   if ("thumbnails" in body) patch.thumbnails = sanitizeArray(body.thumbnails).slice(0, 5);

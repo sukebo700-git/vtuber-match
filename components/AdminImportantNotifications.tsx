@@ -54,6 +54,36 @@ export function AdminImportantNotifications({ notifications }: { notifications: 
     }
   }
 
+  // withdrawal通知は application_withdrawal:{申込ID} / streamer_withdrawal:{配信者ID}
+  // の2種類のidを取り得る(重複排除後、通常は前者が優先される)。それぞれ対応する
+  // APIでwithdrawal_statusを"none"に戻す。実際の退会処理(非表示化・削除)は
+  // 管理画面の配信者管理から個別に行う想定で、ここでは行わない。
+  async function markWithdrawalHandled(notification: AdminImportantNotification) {
+    const isApplication = notification.id.startsWith("application_withdrawal:");
+    const docId = notification.id.replace(/^(application|streamer)_withdrawal:/, "");
+    const url = isApplication
+      ? `/api/admin/applications/${encodeURIComponent(docId)}/withdrawal`
+      : `/api/admin/streamers/${encodeURIComponent(docId)}`;
+    setBusyId(notification.id);
+    setErrorId("");
+    try {
+      const response = await fetch(url, {
+        method: isApplication ? "POST" : "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: isApplication ? undefined : JSON.stringify({ withdrawal_status: "none" }),
+      });
+      if (!response.ok) {
+        setErrorId(notification.id);
+        return;
+      }
+      dismissLocally(notification.id);
+    } catch {
+      setErrorId(notification.id);
+    } finally {
+      setBusyId("");
+    }
+  }
+
   if (!visible.length) {
     return (
       <section className="admin-important-notices is-empty">
@@ -88,6 +118,15 @@ export function AdminImportantNotifications({ notifications }: { notifications: 
                   type="button"
                   disabled={busyId === notification.id}
                   onClick={() => markShortVideoHandled(notification)}
+                >
+                  {busyId === notification.id ? "更新中..." : "対応済みにする"}
+                </button>
+              ) : notification.type === "withdrawal" ? (
+                <button
+                  className="secondary-button"
+                  type="button"
+                  disabled={busyId === notification.id}
+                  onClick={() => markWithdrawalHandled(notification)}
                 >
                   {busyId === notification.id ? "更新中..." : "対応済みにする"}
                 </button>
