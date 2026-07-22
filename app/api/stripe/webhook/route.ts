@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { getPlanAmount, isOneTimePlan, isPaidPlan, isStreamerPaidPlan } from "@/lib/billing";
 import type { PlanType } from "@/lib/types";
 import { FieldValue, getAdminDb } from "@/lib/firebaseAdmin";
+import { markOrderExpired, markOrderPaidAndGenerateAssets, markOrderRefundedByPaymentIntent } from "@/lib/tshirt/orders";
 
 export const dynamic = "force-dynamic";
 
@@ -30,12 +31,73 @@ export async function POST(request: Request) {
     return NextResponse.json({ received: true });
   }
 
+  // Tシャツ注文: チェックアウト未完了のまま期限切れ → pending注文を整理する。
+  if (event.type === "checkout.session.expired") {
+    const expired = event.data?.object || {};
+    if (String(expired.metadata?.order_type || "") === "tshirt_kit") {
+      const db = getAdminDb();
+      if (!db) return NextResponse.json({ received: true, skipped: "firestore not configured" });
+      if (!(await reserveStripeEvent(db, String(event.id || "")))) return NextResponse.json({ received: true, duplicate: true });
+      await markOrderExpired(db, String(expired.metadata?.tshirt_order_id || ""));
+    }
+    return NextResponse.json({ received: true });
+  }
+
+  // Tシャツ注文: Stripe側で返金されたら paymentStatus:refunded にする（payment_intentで突合）。
+  if (event.type === "charge.refunded") {
+    const charge = event.data?.object || {};
+    const paymentIntentId = String(charge.payment_intent || "");
+    if (paymentIntentId) {
+      const db = getAdminDb();
+      if (!db) return NextResponse.json({ received: true, skipped: "firestore not configured" });
+      if (!(await reserveStripeEvent(db, String(event.id || "")))) return NextResponse.json({ received: true, duplicate: true });
+      await markOrderRefundedByPaymentIntent(db, paymentIntentId);
+    }
+    return NextResponse.json({ received: true });
+  }
+
   if (event.type !== "checkout.session.completed") {
     return NextResponse.json({ received: true });
   }
 
   const session = event.data?.object || {};
   const metadata = session.metadata || {};
+
+  // Tシャツキット注文（mode=payment・order_type=tshirt_kit）は既存のプラン/スーパーライク
+  // 処理とは別系統。ここで早期に分岐し、入金確定時にカット用SVGを生成する。
+  if (String(metadata.order_type || "") === "tshirt_kit") {
+    const tshirtDb = getAdminDb();
+    if (!tshirtDb) return NextResponse.json({ received: true, skipped: "firestore not configured" });
+    if (!(await reserveStripeEvent(tshirtDb, String(event.id || "")))) {
+      return NextResponse.json({ received: true, duplicate: true });
+    }
+    const tshirtPaid = String(session.payment_status || "");
+    if (tshirtPaid !== "paid" && tshirtPaid !== "no_payment_required") {
+      return NextResponse.json({ received: true, skipped: "payment not confirmed" });
+    }
+    const orderId = String(metadata.tshirt_order_id || "");
+    if (!orderId) return NextResponse.json({ error: "missing tshirt_order_id" }, { status: 400 });
+    const shipping = session.shipping_details || session.shipping || {};
+    const shipAddr = shipping.address || {};
+    await markOrderPaidAndGenerateAssets(tshirtDb, {
+      orderId,
+      sessionId: String(session.id || ""),
+      paymentIntentId: String(session.payment_intent || ""),
+      payerEmail: String(session.customer_details?.email || session.customer_email || metadata.payer_email || ""),
+      shipping: {
+        name: String(shipping.name || session.customer_details?.name || ""),
+        phone: String(session.customer_details?.phone || ""),
+        postalCode: String(shipAddr.postal_code || ""),
+        state: String(shipAddr.state || ""),
+        city: String(shipAddr.city || ""),
+        line1: String(shipAddr.line1 || ""),
+        line2: String(shipAddr.line2 || ""),
+        country: String(shipAddr.country || ""),
+      },
+    });
+    return NextResponse.json({ received: true });
+  }
+
   const planType = String(metadata.plan_type || "");
   const currentPlan = String(metadata.current_plan || "free") as PlanType;
   const applicationId = String(metadata.application_id || "");

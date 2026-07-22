@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { HeaderAuthStatus } from "@/components/HeaderAuthStatus";
+import { getTShirtSettings } from "@/lib/tshirt/config";
 
 export const dynamic = "force-dynamic";
 
@@ -10,6 +11,7 @@ const phone = process.env.NEXT_PUBLIC_LEGAL_PHONE || "07090493193";
 const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "vtubermatch@gmail.com";
 
 export default function CommercialDisclosurePage() {
+  const tshirt = getTShirtSettings();
   return (
     <div className="app-shell">
       <header className="topbar">
@@ -50,6 +52,30 @@ export default function CommercialDisclosurePage() {
           <DisclosureRow title="動作環境">最新のChrome、Safari、Edgeなどの主要ブラウザを推奨します。</DisclosureRow>
           <DisclosureRow title="表現および効果に関する注意">本サービスは登録者数、再生数、収益、チャンネル成長などの成果を保証するものではありません。</DisclosureRow>
         </section>
+
+        {tshirt.enabled && (
+          <section className="legal-table">
+            <h2 style={{ marginTop: 24 }}>オリジナルネームTシャツ作成キット（物販）について</h2>
+            <DisclosureRow title="商品内容">
+              5.6オンスヘビーウェイトTシャツ、カット済み・カス取り前の熱転写シート、圧着方法の説明書、ワンポイント用ミニ熱転写パーツをセットにした作成キットです。完成品Tシャツではありません。
+            </DisclosureRow>
+            <DisclosureRow title="販売価格">
+              1着 {tshirt.basePrice.toLocaleString("ja-JP")}円（税込）。ゴールド・シルバーの特殊色シートは1着につき+{tshirt.specialColorFee.toLocaleString("ja-JP")}円。表示価格は税込です。
+            </DisclosureRow>
+            <DisclosureRow title="送料">
+              全国一律{tshirt.shippingFee.toLocaleString("ja-JP")}円（税込）。{tshirt.freeShippingQuantity}着以上のご注文で送料無料です。
+            </DisclosureRow>
+            <DisclosureRow title="支払方法・支払時期">クレジットカード決済（Stripe）。ご注文時に決済が行われます。</DisclosureRow>
+            <DisclosureRow title="引渡し時期">ご注文（決済確認）後、通常5〜10営業日以内に発送します。制作状況により前後する場合があります。</DisclosureRow>
+            <DisclosureRow title="返品・キャンセル">
+              お客様が入力した文字・フォント・色・サイズをもとに個別制作する受注生産品のため、お客様都合による返品・交換・キャンセルはお受けできません。
+              万一、商品に不良や配送中の破損があった場合は、商品到着後7日以内にお問い合わせいただければ、代替品の送付または返金にて対応します。
+            </DisclosureRow>
+            <DisclosureRow title="ご注意">
+              熱転写シートはカス取り前の状態でお届けします。カス取り・配置・熱圧着はお客様ご自身で行っていただきます。仕上がりはお客様の作業により異なります。
+            </DisclosureRow>
+          </section>
+        )}
       </main>
     </div>
   );

@@ -3,6 +3,7 @@ import { AuthVisibility } from "@/components/AuthVisibility";
 import { CreatorSuperBoostNotice } from "@/components/CreatorSuperBoostNotice";
 import { LofiPlanBenefits } from "@/components/LofiPlanBenefits";
 import { CreatorProfileSharePanel } from "@/components/CreatorProfileSharePanel";
+import { getTShirtSettings } from "@/lib/tshirt/config";
 import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
@@ -17,6 +18,7 @@ export const metadata: Metadata = {
 };
 
 export default function CreatorPage() {
+  const goodsEnabled = getTShirtSettings().enabled;
   return (
     <div className="app-shell">
       <header className="topbar">
@@ -77,6 +79,12 @@ export default function CreatorPage() {
               <strong>アップグレード</strong>
               <span>上位表示、公式紹介、Lo-Fi配信での紹介特典を確認できます。</span>
             </a>
+            {goodsEnabled && (
+              <a className="creator-action-card" href="/creator/goods">
+                <strong>オリジナルグッズ作成支援</strong>
+                <span>VTuber限定。オリジナルネームTシャツ作成キットなどを注文できます。</span>
+              </a>
+            )}
           </section>
         </AuthVisibility>
 
