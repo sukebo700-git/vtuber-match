@@ -389,6 +389,18 @@ export function CreatorProfileEditForm() {
         </div>
       </div>
 
+      <div className="field">
+        <label>タグ {tags.length}/3</label>
+        <div className="choice-grid dense">
+          {TAGS.map((tag) => (
+            <label className="choice" key={tag}>
+              <input type="checkbox" checked={tags.includes(tag)} onChange={() => toggle(tags, setTags, tag, 3)} />
+              {tag}
+            </label>
+          ))}
+        </div>
+      </div>
+
       <div className="field consent-field">
         <label className="choice consent-choice">
           <input
@@ -404,18 +416,6 @@ export function CreatorProfileEditForm() {
             ? "作成依頼は運営に届いています。順次対応します。"
             : "チェックして更新すると、紹介動画の作成依頼が運営に届きます(プラン問わず任意)。チェックがない場合、動画は作成されません。"}
         </p>
-      </div>
-
-      <div className="field">
-        <label>タグ {tags.length}/3</label>
-        <div className="choice-grid dense">
-          {TAGS.map((tag) => (
-            <label className="choice" key={tag}>
-              <input type="checkbox" checked={tags.includes(tag)} onChange={() => toggle(tags, setTags, tag, 3)} />
-              {tag}
-            </label>
-          ))}
-        </div>
       </div>
 
       <button className="primary-button" type="submit">

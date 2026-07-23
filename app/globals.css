@@ -2322,6 +2322,38 @@ button {
   margin-right: 6px;
 }
 
+.consent-field {
+  border: 2px solid rgba(242, 56, 120, 0.4);
+  border-radius: 16px;
+  padding: 16px;
+  background: linear-gradient(135deg, rgba(255, 79, 151, 0.1) 0%, rgba(255, 106, 82, 0.1) 100%);
+  box-shadow: 0 10px 24px rgba(242, 56, 120, 0.12);
+}
+
+.consent-choice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+  border-radius: 0;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+  font-weight: 950;
+  font-size: 15px;
+  line-height: 1.5;
+  color: #7a1044;
+}
+
+.consent-choice input {
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  margin-top: 2px;
+  margin-right: 0;
+  accent-color: var(--pink);
+}
+
 .image-preview-row {
   display: flex;
   flex-wrap: wrap;
