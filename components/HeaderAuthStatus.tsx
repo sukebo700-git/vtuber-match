@@ -123,7 +123,6 @@ export function HeaderAuthStatus() {
   const menuItems = useMemo(() => {
     if (login?.type === "creator") {
       return [
-        { href: "/creator", label: "配信者用ページ" },
         { href: "/creator/edit", label: "プロフィール" },
         { href: "/creator/upgrade", label: "アップグレード" },
       ];
