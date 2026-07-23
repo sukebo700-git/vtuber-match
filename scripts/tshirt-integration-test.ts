@@ -110,7 +110,6 @@ const baseInput = (over: Partial<CreateOrderInput> = {}): CreateOrderInput => ({
   shirtSize: "XL",
   sheetColor: "black",
   quantity: 1,
-  rightsConfirmed: true,
   finalConfirmationAccepted: true,
   payerEmail: "mika@example.com",
   ...over,

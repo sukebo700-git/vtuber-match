@@ -77,8 +77,22 @@ export async function POST(request: Request) {
     }
     const orderId = String(metadata.tshirt_order_id || "");
     if (!orderId) return NextResponse.json({ error: "missing tshirt_order_id" }, { status: 400 });
-    const shipping = session.shipping_details || session.shipping || {};
-    const shipAddr = shipping.address || {};
+    // Stripeの配送先情報の置き場所はAPIバージョンで変わってきた経緯があるため、
+    // 新しい順に複数の場所を確認し、最後は customer_details にフォールバックする
+    // (実際にテスト決済して確認: 現行APIでは session.collected_information.shipping_details)。
+    const shipping =
+      session.collected_information?.shipping_details ||
+      session.shipping_details ||
+      session.shipping ||
+      {};
+    const shipAddr = shipping.address || session.customer_details?.address || {};
+    // 建物名・部屋番号は必須のカスタム項目(building_room)で別途確認している
+    // (Stripe標準の住所2行目は任意入力のため、記入漏れ防止のためこちらを正とする)。
+    const buildingRoomField = (session.custom_fields || []).find(
+      (f: { key?: string }) => f?.key === "building_room",
+    );
+    const buildingRoomRaw = String(buildingRoomField?.text?.value || "").trim();
+    const buildingRoom = /^(なし|無し|ナシ|none)$/i.test(buildingRoomRaw) ? "" : buildingRoomRaw;
     await markOrderPaidAndGenerateAssets(tshirtDb, {
       orderId,
       sessionId: String(session.id || ""),
@@ -91,7 +105,7 @@ export async function POST(request: Request) {
         state: String(shipAddr.state || ""),
         city: String(shipAddr.city || ""),
         line1: String(shipAddr.line1 || ""),
-        line2: String(shipAddr.line2 || ""),
+        line2: buildingRoom || String(shipAddr.line2 || ""),
         country: String(shipAddr.country || ""),
       },
     });

@@ -63,10 +63,11 @@ export default async function AdminTShirtOrdersPage() {
           paymentStatus: String(d.paymentStatus || ""),
           productionStatus: String(d.productionStatus || ""),
           trackingNumber: String(d.trackingNumber || ""),
+          // 一般的な配送先表記の順(郵便番号→住所→氏名→電話番号)に揃える。
           shipTo: [
-            String(d.shippingName || ""),
             d.shippingPostalCode ? `〒${d.shippingPostalCode}` : "",
             [d.shippingState, d.shippingCity, d.shippingLine1, d.shippingLine2].filter(Boolean).join(""),
+            String(d.shippingName || ""),
             d.shippingPhone ? `☎${d.shippingPhone}` : "",
           ].filter(Boolean).join(" / "),
         };

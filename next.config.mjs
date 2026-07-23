@@ -1,11 +1,14 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  // Tシャツのカット用SVG生成(opentype.js)はサーバー側でttfを読むため、
-  // 該当ルートのサーバーレスバンドルにフォントファイルを同梱する。
-  outputFileTracingIncludes: {
-    "/api/stripe/webhook": ["./lib/tshirt/fontfiles/**", "./public/tshirt-fonts/**"],
-    "/api/admin/tshirt-orders/**": ["./lib/tshirt/fontfiles/**", "./public/tshirt-fonts/**"],
+  experimental: {
+    // Tシャツのカット用SVG生成(opentype.js)はサーバー側でttfを読むため、
+    // 該当ルートのサーバーレスバンドルにフォントファイルを同梱する。
+    // Next.js 14ではexperimental配下でないと認識されない(トップレベル指定は無視される)。
+    outputFileTracingIncludes: {
+      "/api/stripe/webhook": ["./lib/tshirt/fontfiles/**", "./public/tshirt-fonts/**"],
+      "/api/admin/tshirt-orders/**": ["./lib/tshirt/fontfiles/**", "./public/tshirt-fonts/**"],
+    },
   },
   images: {
     formats: ["image/avif", "image/webp"],

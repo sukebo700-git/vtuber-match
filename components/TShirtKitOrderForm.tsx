@@ -56,8 +56,31 @@ const CONFIRM_ITEMS = [
   "カス取りが必要な商品であることを理解しました",
   "自分で熱圧着する商品であることを理解しました",
   "注文確定後は変更できないことに同意します",
-  "入力した名称等を利用する権利があります",
 ];
+
+// 途中入力の下書き保存。誤ってページを閉じたり再読み込みしても内容が消えないようにする。
+// 確認チェックボックス(CONFIRM_ITEMS)はここに含めない — 再訪時は必ず再度チェックし直させる
+// (同意の実効性を保つため、チェック済み状態を勝手に復元しない)。
+const DRAFT_KEY = "vtuber-match-tshirt-order-draft";
+
+type TShirtDraft = {
+  inputText: string;
+  fontId: string;
+  designSize: TShirtDesignSize;
+  shirtColor: TShirtShirtColor;
+  shirtSize: TShirtShirtSize;
+  sheetColor: TShirtSheetColor;
+  quantity: number;
+};
+
+function readDraft(): Partial<TShirtDraft> | null {
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
 
 export function TShirtKitOrderForm({ settings }: { settings: TShirtKitSettings }) {
   const [inputText, setInputText] = useState("");
@@ -68,15 +91,40 @@ export function TShirtKitOrderForm({ settings }: { settings: TShirtKitSettings }
   const [sheetColor, setSheetColor] = useState<TShirtSheetColor>("black");
   const [quantity, setQuantity] = useState(1);
   const [checks, setChecks] = useState<boolean[]>(() => CONFIRM_ITEMS.map(() => false));
-  const [payerEmail, setPayerEmail] = useState("");
   const [status, setStatus] = useState("");
   const [busy, setBusy] = useState(false);
   const [fontsReady, setFontsReady] = useState(false);
+  const [draftRestored, setDraftRestored] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
+  // 下書き復元。
   useEffect(() => {
-    setPayerEmail(localStorage.getItem("vtuber-match-creator-email") || "");
+    const draft = readDraft();
+    if (draft) {
+      if (typeof draft.inputText === "string") setInputText(draft.inputText);
+      if (typeof draft.fontId === "string" && FONTS.some((f) => f.id === draft.fontId)) setFontId(draft.fontId);
+      if (draft.designSize === "S" || draft.designSize === "M" || draft.designSize === "L") setDesignSize(draft.designSize);
+      if (draft.shirtColor === "white" || draft.shirtColor === "black") setShirtColor(draft.shirtColor);
+      if (draft.shirtSize === "M" || draft.shirtSize === "L" || draft.shirtSize === "XL") setShirtSize(draft.shirtSize);
+      if (typeof draft.sheetColor === "string") setSheetColor(draft.sheetColor as TShirtSheetColor);
+      if (typeof draft.quantity === "number" && draft.quantity >= 1) setQuantity(draft.quantity);
+    }
+    setDraftRestored(true);
   }, []);
+
+  // 内容欄が変わるたびに下書きを保存する(確認チェックボックスの状態は含めない)。
+  // 初回マウント時の復元が終わるまでは、空の初期値で上書きしないよう保存をスキップする。
+  useEffect(() => {
+    if (!draftRestored) return;
+    const draft: TShirtDraft = {
+      inputText, fontId, designSize, shirtColor, shirtSize, sheetColor, quantity,
+    };
+    try {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+    } catch {
+      // 保存容量オーバー等は無視(下書き保存は補助機能のため)。
+    }
+  }, [draftRestored, inputText, fontId, designSize, shirtColor, shirtSize, sheetColor, quantity]);
 
   // 選択フォントのttfをFontFaceで読み込む（プレビュー用。SVG生成と同一ファイル）。
   useEffect(() => {
@@ -183,9 +231,7 @@ export function TShirtKitOrderForm({ settings }: { settings: TShirtKitSettings }
           shirtSize,
           sheetColor,
           quantity,
-          rightsConfirmed: checks[7] === true,
           finalConfirmationAccepted: checks[6] === true,
-          payerEmail,
         }),
       });
       const data = await response.json().catch(() => ({}));
@@ -204,7 +250,78 @@ export function TShirtKitOrderForm({ settings }: { settings: TShirtKitSettings }
 
   return (
     <form className="tshirt-form" onSubmit={submit} style={{ display: "grid", gap: 20 }}>
-      {/* 1. 文字入力 */}
+      {/* 1. Tシャツ色・サイズ */}
+      <section className="status-band" style={{ display: "grid", gap: 12 }}>
+        <div style={{ display: "grid", gap: 6 }}>
+          <span className="field-label">Tシャツ色</span>
+          <div style={{ display: "flex", gap: 8 }}>
+            {settings.availableShirtColors.map((c) => (
+              <label key={c} style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                <input type="radio" name="shirtColor" value={c} checked={shirtColor === c} onChange={() => setShirtColor(c)} />
+                {SHIRT_COLOR_LABELS[c]}
+              </label>
+            ))}
+          </div>
+        </div>
+        <div style={{ display: "grid", gap: 6 }}>
+          <span className="field-label">Tシャツサイズ（おすすめ: XL）</span>
+          <div style={{ display: "flex", gap: 8 }}>
+            {settings.availableShirtSizes.map((s) => (
+              <label key={s} style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                <input type="radio" name="shirtSize" value={s} checked={shirtSize === s} onChange={() => setShirtSize(s)} />
+                {s}
+              </label>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 2. 数量 */}
+      <section className="status-band" style={{ display: "grid", gap: 6 }}>
+        <label className="field-label" htmlFor="tshirt_qty">数量（1〜{settings.maxQuantity}着 / 5着以上で送料無料）</label>
+        <input
+          id="tshirt_qty"
+          type="number"
+          min={1}
+          max={settings.maxQuantity}
+          value={quantity}
+          onChange={(e) => setQuantity(Math.max(1, Math.min(settings.maxQuantity, Math.floor(Number(e.target.value) || 1))))}
+          style={{ padding: "8px 10px", width: 120, fontSize: 16 }}
+        />
+      </section>
+
+      {/* 3. シート色 */}
+      <section className="status-band" style={{ display: "grid", gap: 6 }}>
+        <span className="field-label">熱転写シート色</span>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+          {settings.availableSheetColors.map((c) => {
+            const conflict = isSameColorConflict(shirtColor, c);
+            const selected = sheetColor === c;
+            return (
+              <button
+                type="button"
+                key={c}
+                disabled={conflict}
+                onClick={() => setSheetColor(c)}
+                title={conflict ? "Tシャツと同色のため選択できません。" : ""}
+                style={{
+                  display: "flex", gap: 6, alignItems: "center", padding: "6px 10px", borderRadius: 8,
+                  border: selected ? "2px solid #1e5bd6" : "1px solid #ccc",
+                  background: conflict ? "#f0f0f0" : "#fff",
+                  color: conflict ? "#999" : "#222",
+                  cursor: conflict ? "not-allowed" : "pointer",
+                }}
+              >
+                <span style={{ width: 16, height: 16, borderRadius: "50%", background: SHEET_SWATCH[c], border: "1px solid #999" }} />
+                {SHEET_COLOR_LABELS[c]}
+              </button>
+            );
+          })}
+        </div>
+        {sameColor && <p style={{ color: "#d32f2f", margin: 0 }}>Tシャツと同色のシートは選べません。別の色を選んでください。</p>}
+      </section>
+
+      {/* 4. 文字入力 */}
       <section className="status-band" style={{ display: "grid", gap: 8 }}>
         <label className="field-label" htmlFor="tshirt_text">プリントする文字（2〜15文字・英数字と & - . と半角スペース）</label>
         <input
@@ -213,7 +330,7 @@ export function TShirtKitOrderForm({ settings }: { settings: TShirtKitSettings }
           value={inputText}
           maxLength={20}
           onChange={(e) => setInputText(e.target.value)}
-          placeholder="Keisuke Family"
+          placeholder="VtuberMatch Sample"
           style={{ padding: "10px 12px", fontSize: 16 }}
         />
         {inputText && !textValidation.ok && (
@@ -221,7 +338,7 @@ export function TShirtKitOrderForm({ settings }: { settings: TShirtKitSettings }
         )}
       </section>
 
-      {/* 2. フォント */}
+      {/* 5. フォント選択 */}
       <section className="status-band" style={{ display: "grid", gap: 10 }}>
         <span className="field-label">フォント</span>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 10 }}>
@@ -253,98 +370,28 @@ export function TShirtKitOrderForm({ settings }: { settings: TShirtKitSettings }
         </div>
       </section>
 
-      {/* 3. サイズ・シート色 */}
-      <section className="status-band" style={{ display: "grid", gap: 12 }}>
-        <div style={{ display: "grid", gap: 6 }}>
-          <span className="field-label">デザインサイズ</span>
-          {(["S", "M", "L"] as TShirtDesignSize[]).map((s) => {
-            const allowed = font ? isSizeAllowedForFont(font, s, charCount || 2) : false;
-            return (
-              <label key={s} style={{ display: "flex", gap: 8, alignItems: "center", opacity: allowed ? 1 : 0.45 }}>
-                <input
-                  type="radio"
-                  name="designSize"
-                  value={s}
-                  checked={designSize === s}
-                  disabled={!allowed}
-                  onChange={() => setDesignSize(s)}
-                />
-                <span>{SIZE_LABELS[s]}{!allowed && "（このフォント/文字数では選べません）"}</span>
-              </label>
-            );
-          })}
-        </div>
-
-        <div style={{ display: "grid", gap: 6 }}>
-          <span className="field-label">熱転写シート色</span>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-            {settings.availableSheetColors.map((c) => {
-              const conflict = isSameColorConflict(shirtColor, c);
-              const selected = sheetColor === c;
-              return (
-                <button
-                  type="button"
-                  key={c}
-                  disabled={conflict}
-                  onClick={() => setSheetColor(c)}
-                  title={conflict ? "Tシャツと同色のため選択できません。" : ""}
-                  style={{
-                    display: "flex", gap: 6, alignItems: "center", padding: "6px 10px", borderRadius: 8,
-                    border: selected ? "2px solid #1e5bd6" : "1px solid #ccc",
-                    background: conflict ? "#f0f0f0" : "#fff",
-                    color: conflict ? "#999" : "#222",
-                    cursor: conflict ? "not-allowed" : "pointer",
-                  }}
-                >
-                  <span style={{ width: 16, height: 16, borderRadius: "50%", background: SHEET_SWATCH[c], border: "1px solid #999" }} />
-                  {SHEET_COLOR_LABELS[c]}
-                </button>
-              );
-            })}
-          </div>
-          {sameColor && <p style={{ color: "#d32f2f", margin: 0 }}>Tシャツと同色のシートは選べません。別の色を選んでください。</p>}
-        </div>
+      {/* 6. フォントサイズ（デザインサイズ） */}
+      <section className="status-band" style={{ display: "grid", gap: 6 }}>
+        <span className="field-label">フォントサイズ（デザインサイズ）</span>
+        {(["S", "M", "L"] as TShirtDesignSize[]).map((s) => {
+          const allowed = font ? isSizeAllowedForFont(font, s, charCount || 2) : false;
+          return (
+            <label key={s} style={{ display: "flex", gap: 8, alignItems: "center", opacity: allowed ? 1 : 0.45 }}>
+              <input
+                type="radio"
+                name="designSize"
+                value={s}
+                checked={designSize === s}
+                disabled={!allowed}
+                onChange={() => setDesignSize(s)}
+              />
+              <span>{SIZE_LABELS[s]}{!allowed && "（このフォント/文字数では選べません）"}</span>
+            </label>
+          );
+        })}
       </section>
 
-      {/* 4. Tシャツ色・サイズ・数量 */}
-      <section className="status-band" style={{ display: "grid", gap: 12 }}>
-        <div style={{ display: "grid", gap: 6 }}>
-          <span className="field-label">Tシャツ色</span>
-          <div style={{ display: "flex", gap: 8 }}>
-            {settings.availableShirtColors.map((c) => (
-              <label key={c} style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                <input type="radio" name="shirtColor" value={c} checked={shirtColor === c} onChange={() => setShirtColor(c)} />
-                {SHIRT_COLOR_LABELS[c]}
-              </label>
-            ))}
-          </div>
-        </div>
-        <div style={{ display: "grid", gap: 6 }}>
-          <span className="field-label">Tシャツサイズ（おすすめ: XL）</span>
-          <div style={{ display: "flex", gap: 8 }}>
-            {settings.availableShirtSizes.map((s) => (
-              <label key={s} style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                <input type="radio" name="shirtSize" value={s} checked={shirtSize === s} onChange={() => setShirtSize(s)} />
-                {s}
-              </label>
-            ))}
-          </div>
-        </div>
-        <div style={{ display: "grid", gap: 6 }}>
-          <label className="field-label" htmlFor="tshirt_qty">数量（1〜{settings.maxQuantity}着 / 5着以上で送料無料）</label>
-          <input
-            id="tshirt_qty"
-            type="number"
-            min={1}
-            max={settings.maxQuantity}
-            value={quantity}
-            onChange={(e) => setQuantity(Math.max(1, Math.min(settings.maxQuantity, Math.floor(Number(e.target.value) || 1))))}
-            style={{ padding: "8px 10px", width: 120, fontSize: 16 }}
-          />
-        </div>
-      </section>
-
-      {/* 5. プレビュー・料金 */}
+      {/* 7. プレビュー・料金 */}
       <section className="status-band" style={{ display: "grid", gap: 12 }}>
         <span className="field-label">プレビュー（完成イメージ・配置は中央固定）</span>
         <canvas ref={canvasRef} width={640} height={360} style={{ width: "100%", maxWidth: 420, borderRadius: 10, border: "1px solid #ddd" }} />
@@ -374,15 +421,6 @@ export function TShirtKitOrderForm({ settings }: { settings: TShirtKitSettings }
             <span>{label}</span>
           </label>
         ))}
-        <label className="field-label" htmlFor="tshirt_email" style={{ marginTop: 8 }}>連絡先メール（任意）</label>
-        <input
-          id="tshirt_email"
-          type="email"
-          value={payerEmail}
-          onChange={(e) => setPayerEmail(e.target.value)}
-          placeholder="you@example.com"
-          style={{ padding: "8px 10px", fontSize: 16 }}
-        />
       </section>
 
       <button type="submit" className="primary-button" disabled={!canOrder} style={{ padding: "12px 20px", fontSize: 16 }}>

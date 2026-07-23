@@ -169,7 +169,7 @@ function normalizeAdminTab(value: string | undefined): AdminTab {
 async function readImportantNotifications(): Promise<AdminImportantNotification[]> {
   const db = getAdminDb();
   if (!db) return [];
-  const [passwordResets, applicationDocs, streamerDocs, shortVideoDocs] = await Promise.all([
+  const [passwordResets, applicationDocs, streamerDocs, shortVideoDocs, tshirtOrderDocs] = await Promise.all([
     db.collection("password_reset_requests")
       .select("email", "name", "user_type", "status", "created_at", "updated_at")
       .limit(40)
@@ -185,6 +185,13 @@ async function readImportantNotifications(): Promise<AdminImportantNotification[
     db.collection("short_video_requests")
       .select("name", "email", "streamer_id", "application_id", "status", "requested_at", "updated_at", "form_url")
       .limit(80)
+      .get(),
+    // Tシャツ注文: 入金確定+カット用SVG生成済み(svg_generated)でまだ着手(cutting以降)されて
+    // いないものを「新規注文」として通知する。管理画面で対応を始めると自然に一覧から消える。
+    db.collection("orders")
+      .where("order_type", "==", "tshirt_kit")
+      .where("productionStatus", "==", "svg_generated")
+      .limit(40)
       .get(),
   ]);
 
@@ -268,6 +275,19 @@ async function readImportantNotifications(): Promise<AdminImportantNotification[
       body: `${data.name || data.email || data.streamer_id || data.application_id || doc.id} が無料ショート動画作成を希望しています。`,
       created_at: timestampToIso(data.requested_at ?? data.updated_at),
       href: "/admin?tab=streamers",
+    });
+  });
+  tshirtOrderDocs.docs.forEach((doc) => {
+    const data = doc.data();
+    const label = [data.fontDisplayName, data.designSize].filter(Boolean).join("・");
+    items.push({
+      id: `tshirt_order:${doc.id}`,
+      type: "tshirt_order",
+      title: "Tシャツ注文",
+      body: `注文番号 ${data.orderNumber || doc.id} / 「${data.inputText || ""}」(${label}) × ${data.quantity || 1}着 / ¥${Number(data.totalAmount || 0).toLocaleString("ja-JP")}`,
+      created_at: timestampToIso(data.paidAt ?? data.createdAt),
+      href: "/admin/tshirt-orders",
+      svg_href: `/api/admin/tshirt-orders/${doc.id}/svg?variant=mirror`,
     });
   });
 

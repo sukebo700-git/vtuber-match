@@ -95,9 +95,8 @@ export async function POST(request: Request) {
     );
   }
 
-  const rightsConfirmed = body.rightsConfirmed === true;
   const finalConfirmationAccepted = body.finalConfirmationAccepted === true;
-  if (!rightsConfirmed || !finalConfirmationAccepted) {
+  if (!finalConfirmationAccepted) {
     return NextResponse.json({ error: "確認事項へのチェックが必要です。" }, { status: 400 });
   }
 
@@ -114,7 +113,6 @@ export async function POST(request: Request) {
   const userId = String(
     session.streamer_id || session.application_id || session.creator_login_id || session.email || "",
   );
-  const payerEmail = String(body.payerEmail || session.email || "");
 
   // 金額はサーバーで再計算（createPendingOrder内でも計算）。
   const price = calcTShirtTotal({ quantity, sheetColor }, settings);
@@ -128,9 +126,7 @@ export async function POST(request: Request) {
     shirtSize,
     sheetColor,
     quantity,
-    rightsConfirmed,
     finalConfirmationAccepted,
-    payerEmail,
   });
 
   // Stripe Checkout（mode=payment・動的金額）。既存 checkout/session と同じ生fetch方式。
@@ -141,18 +137,35 @@ export async function POST(request: Request) {
   params.set("line_items[0][price_data][product_data][name]", "VTuberオリジナルネームTシャツ作成キット");
   params.set("line_items[0][price_data][unit_amount]", String(price.total));
   params.set("line_items[0][quantity]", "1");
-  params.set("success_url", `${appUrl}/checkout/success?role=creator&notify=1&session_id={CHECKOUT_SESSION_ID}`);
+  // flow/order_numberを渡し、成功ページでプラン決済用の汎用文言(Lo-Fi掲載フォーム等)ではなく
+  // Tシャツ注文専用の確認表示を出せるようにする。
+  params.set(
+    "success_url",
+    `${appUrl}/checkout/success?role=creator&flow=tshirt_kit&order_number=${encodeURIComponent(created.orderNumber)}&notify=1&session_id={CHECKOUT_SESSION_ID}`,
+  );
   params.set("cancel_url", `${appUrl}/creator/tshirt?canceled=1`);
   // 物理商品のため配送先住所と電話番号を必須収集する（日本国内）。
   params.set("shipping_address_collection[allowed_countries][0]", "JP");
   params.set("phone_number_collection[enabled]", "true");
+  // Stripeの住所欄2行目(建物名・部屋番号)は仕様上「任意」で、未入力のまま送信できてしまう。
+  // マンション等で部屋番号の記入漏れがあると配送不可になるため、別途「必須」のカスタム項目として
+  // 明示的に確認する(記入不要なら「なし」と書いてもらう=無回答での送信は不可にする)。
+  params.set("custom_fields[0][key]", "building_room");
+  params.set("custom_fields[0][label][type]", "custom");
+  params.set(
+    "custom_fields[0][label][custom]",
+    "建物名・部屋番号（マンション名・号室など。ない場合は「なし」とご入力ください）",
+  );
+  params.set("custom_fields[0][type]", "text");
+  params.set("custom_fields[0][text][minimum_length]", "1");
+  params.set("custom_fields[0][optional]", "false");
   // 注文確認メールはStripeの決済レシート（Stripeダッシュボードの「メールでレシートを送信」を
   // 有効化）でまかなう。独自の注文確認メール送信は課金・依存を増やすため現時点では未実装。
+  // customer_emailはあえて渡さない — 渡すとStripe側の欄がロックされ編集不可になるため、
+  // 住所・氏名と同じエリアにStripe標準の必須メール入力欄をそのまま表示させる。
   params.set("metadata[order_type]", "tshirt_kit");
   params.set("metadata[tshirt_order_id]", created.orderId);
   params.set("metadata[order_number]", created.orderNumber);
-  params.set("metadata[payer_email]", payerEmail);
-  if (payerEmail) params.set("customer_email", payerEmail);
 
   const response = await fetch("https://api.stripe.com/v1/checkout/sessions", {
     method: "POST",

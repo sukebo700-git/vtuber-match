@@ -26,7 +26,6 @@ export type CreateOrderInput = {
   shirtSize: TShirtShirtSize;
   sheetColor: TShirtSheetColor;
   quantity: number;
-  rightsConfirmed: boolean;
   finalConfirmationAccepted: boolean;
   payerEmail?: string;
 };
@@ -86,7 +85,6 @@ export async function createPendingOrder(db: Db, input: CreateOrderInput): Promi
     specialColorFeePerUnit: price.specialColorFeePerUnit,
     shippingFee: price.shippingFee,
     totalAmount: price.total,
-    rightsConfirmed: input.rightsConfirmed,
     finalConfirmationAccepted: input.finalConfirmationAccepted,
     paymentStatus: "pending",
     productionStatus: "waiting",

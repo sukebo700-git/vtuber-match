@@ -4,11 +4,12 @@ import { useMemo, useState } from "react";
 
 export type AdminImportantNotification = {
   id: string;
-  type: "password_reset" | "withdrawal" | "payment_started" | "payment_ended" | "payment_failed" | "subscription_canceled" | "short_video" | "other";
+  type: "password_reset" | "withdrawal" | "payment_started" | "payment_ended" | "payment_failed" | "subscription_canceled" | "short_video" | "tshirt_order" | "other";
   title: string;
   body: string;
   created_at?: string;
   href?: string;
+  svg_href?: string;
 };
 
 export function AdminImportantNotifications({ notifications }: { notifications: AdminImportantNotification[] }) {
@@ -84,6 +85,31 @@ export function AdminImportantNotifications({ notifications }: { notifications: 
     }
   }
 
+  // Tシャツ注文通知の「対応済みにする」は、実際にカット作業を開始した扱いにする
+  // (productionStatusをcuttingへ進める)。これにより本クエリ(svg_generated)から
+  // 自然に外れ、以降の工程は /admin/tshirt-orders 側の状態遷移ボタンで続ける。
+  async function markTshirtOrderHandled(notification: AdminImportantNotification) {
+    const docId = notification.id.replace(/^tshirt_order:/, "");
+    setBusyId(notification.id);
+    setErrorId("");
+    try {
+      const response = await fetch(`/api/admin/tshirt-orders/${encodeURIComponent(docId)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "cutting" }),
+      });
+      if (!response.ok) {
+        setErrorId(notification.id);
+        return;
+      }
+      dismissLocally(notification.id);
+    } catch {
+      setErrorId(notification.id);
+    } finally {
+      setBusyId("");
+    }
+  }
+
   if (!visible.length) {
     return (
       <section className="admin-important-notices is-empty">
@@ -112,7 +138,21 @@ export function AdminImportantNotifications({ notifications }: { notifications: 
             </div>
             <div className="admin-important-actions">
               {notification.href && <a className="secondary-button" href={notification.href}>確認</a>}
-              {notification.type === "short_video" ? (
+              {notification.svg_href && (
+                <a className="secondary-button" href={notification.svg_href} target="_blank" rel="noreferrer">
+                  カット用データをダウンロード
+                </a>
+              )}
+              {notification.type === "tshirt_order" ? (
+                <button
+                  className="secondary-button"
+                  type="button"
+                  disabled={busyId === notification.id}
+                  onClick={() => markTshirtOrderHandled(notification)}
+                >
+                  {busyId === notification.id ? "更新中..." : "対応済みにする"}
+                </button>
+              ) : notification.type === "short_video" ? (
                 <button
                   className="secondary-button"
                   type="button"

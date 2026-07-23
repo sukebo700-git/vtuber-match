@@ -83,7 +83,6 @@ export type TShirtKitOrder = {
   shippingFee: number;
   totalAmount: number;
 
-  rightsConfirmed: boolean;
   finalConfirmationAccepted: boolean;
 
   paymentStatus: TShirtPaymentStatus;
