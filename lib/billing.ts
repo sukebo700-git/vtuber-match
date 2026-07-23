@@ -10,6 +10,12 @@ export const PLAN_AMOUNTS: Record<CheckoutPlanType, number> = {
   super_boost_1: 220,
 };
 
+export const PLAN_LABELS: Record<CheckoutPlanType, string> = {
+  paid: "ベーシックプラン",
+  boost: "プレミアムプラン",
+  super_boost_1: "スーパーいいね",
+};
+
 export function getStripePriceId(planType: CheckoutPlanType, currentPlan?: PlanType) {
   if (planType === "super_boost_1") return process.env.STRIPE_PRICE_SUPER_BOOST_1;
   if (planType === "boost" && currentPlan === "paid") {

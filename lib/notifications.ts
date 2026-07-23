@@ -79,6 +79,50 @@ export async function notifyAdminNewApplication(input: {
   });
 }
 
+export async function notifyAdminPaymentSucceeded(input: {
+  planLabel: string;
+  amount: number;
+  payerLabel: string;
+}) {
+  const db = getAdminDb();
+  const app = getAdminApp();
+  if (!db || !app) return;
+
+  const tokens = await readAdminTokens();
+  const title = "課金がありました";
+  const body = `${input.payerLabel} が${input.planLabel}を購入しました(¥${input.amount.toLocaleString("ja-JP")})`;
+
+  await db.collection("notifications").doc().set({
+    target_type: "admin",
+    type: "PAYMENT_SUCCEEDED",
+    plan_label: input.planLabel,
+    amount: input.amount,
+    payer_label: input.payerLabel,
+    created_at: FieldValue.serverTimestamp(),
+    delivered: tokens.length > 0,
+  });
+
+  if (!tokens.length) return;
+
+  await app.messaging().sendEachForMulticast({
+    tokens,
+    notification: { title, body },
+    webpush: {
+      notification: {
+        title,
+        body,
+        icon: "/icon.svg",
+        badge: "/icon.svg",
+      },
+      fcmOptions: { link: "/admin" },
+    },
+    data: {
+      type: "PAYMENT_SUCCEEDED",
+      url: "/admin",
+    },
+  });
+}
+
 async function readAdminTokens() {
   const db = getAdminDb();
   if (!db) return [];

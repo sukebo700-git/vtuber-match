@@ -1,9 +1,10 @@
 import crypto from "crypto";
 import { NextResponse } from "next/server";
-import { getPlanAmount, isOneTimePlan, isPaidPlan, isStreamerPaidPlan } from "@/lib/billing";
+import { getPlanAmount, isOneTimePlan, isPaidPlan, isStreamerPaidPlan, PLAN_LABELS } from "@/lib/billing";
 import type { PlanType } from "@/lib/types";
 import { FieldValue, getAdminDb } from "@/lib/firebaseAdmin";
 import { markOrderExpired, markOrderPaidAndGenerateAssets, markOrderRefundedByPaymentIntent } from "@/lib/tshirt/orders";
+import { notifyAdminPaymentSucceeded } from "@/lib/notifications";
 
 export const dynamic = "force-dynamic";
 
@@ -136,6 +137,7 @@ export async function POST(request: Request) {
   if (isOneTimePlan(planType)) {
     if (!streamerId || !viewerId || !effect) return NextResponse.json({ error: "invalid super like metadata" }, { status: 400 });
     if (!paymentConfirmed) return NextResponse.json({ received: true, skipped: "payment not confirmed" });
+    const payerEmail = String(metadata.payer_email || session.customer_details?.email || session.customer_email || "");
     const activated = await activateSuperBoostFromCheckout(db, {
       eventId: String(event.id || ""),
       sessionId: String(session.id || ""),
@@ -143,9 +145,14 @@ export async function POST(request: Request) {
       viewerId,
       effect,
       planType,
-      payerEmail: String(metadata.payer_email || session.customer_details?.email || session.customer_email || ""),
+      payerEmail,
     });
     if (!activated) return NextResponse.json({ received: true, duplicate: true });
+    await notifyAdminPaymentSucceeded({
+      planLabel: PLAN_LABELS[planType],
+      amount: getPlanAmount(planType),
+      payerLabel: payerEmail || viewerId,
+    }).catch((error) => console.error("notifyAdminPaymentSucceeded (super_boost) failed:", error));
     return NextResponse.json({ received: true });
   }
 
@@ -238,6 +245,14 @@ export async function POST(request: Request) {
       }, { merge: true });
     }
   });
+
+  if (paymentConfirmed) {
+    await notifyAdminPaymentSucceeded({
+      planLabel: PLAN_LABELS[planType],
+      amount: getPlanAmount(planType, currentPlan),
+      payerLabel: String(session.customer_details?.email || session.customer_email || applicationId || streamerId || ""),
+    }).catch((error) => console.error("notifyAdminPaymentSucceeded (subscription) failed:", error));
+  }
 
   return NextResponse.json({ received: true });
 }

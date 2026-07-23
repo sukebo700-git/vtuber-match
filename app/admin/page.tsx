@@ -9,6 +9,7 @@ import { AdminAnalyticsPanel } from "@/components/AdminAnalyticsPanel";
 import { AdminImportantNotifications, type AdminImportantNotification } from "@/components/AdminImportantNotifications";
 import { emptyAdminAnalyticsSummary, type AdminAnalyticsSummary } from "@/lib/analytics";
 import { adminCookieName, verifyAdminSession } from "@/lib/adminSession";
+import { PLAN_LABELS } from "@/lib/billing";
 import { getAdminDb } from "@/lib/firebaseAdmin";
 import { readAllLocalStreamers, readLocalAnalyticsSummary, readLocalApplications, readLocalPasswordResetRequests, readLocalReports, readLocalViewerProfilesWithStats, readLocalVisitSourceStats, readLocalVisitStats, summarizeVisits } from "@/lib/localStore";
 import { normalizeStreamer } from "@/lib/streamers";
@@ -169,7 +170,7 @@ function normalizeAdminTab(value: string | undefined): AdminTab {
 async function readImportantNotifications(): Promise<AdminImportantNotification[]> {
   const db = getAdminDb();
   if (!db) return [];
-  const [passwordResets, applicationDocs, streamerDocs, shortVideoDocs, tshirtOrderDocs] = await Promise.all([
+  const [passwordResets, applicationDocs, streamerDocs, shortVideoDocs, tshirtOrderDocs, paymentDocs] = await Promise.all([
     db.collection("password_reset_requests")
       .select("email", "name", "user_type", "status", "created_at", "updated_at")
       .limit(40)
@@ -191,6 +192,12 @@ async function readImportantNotifications(): Promise<AdminImportantNotification[
     db.collection("orders")
       .where("order_type", "==", "tshirt_kit")
       .where("productionStatus", "==", "svg_generated")
+      .limit(40)
+      .get(),
+    // 課金(プラン加入・アップグレード・スーパーいいね購入)の通知。status絞り込みは
+    // 複合indexを避けるためJS側で行う(既存の他クエリと同じ方針)。
+    db.collection("payments")
+      .orderBy("created_at", "desc")
       .limit(40)
       .get(),
   ]);
@@ -288,6 +295,19 @@ async function readImportantNotifications(): Promise<AdminImportantNotification[
       created_at: timestampToIso(data.paidAt ?? data.createdAt),
       href: "/admin/tshirt-orders",
       svg_href: `/api/admin/tshirt-orders/${doc.id}/svg?variant=mirror`,
+    });
+  });
+  paymentDocs.docs.forEach((doc) => {
+    const data = doc.data();
+    if (data.status !== "paid") return;
+    const planLabel = (PLAN_LABELS as Record<string, string>)[String(data.plan_type || "")] || String(data.plan_type || "不明なプラン");
+    items.push({
+      id: `payment_ended:${doc.id}`,
+      type: "payment_ended",
+      title: "課金がありました",
+      body: `${data.payer_email || data.streamer_id || data.viewer_id || doc.id} が${planLabel}を購入しました(¥${Number(data.amount || 0).toLocaleString("ja-JP")})`,
+      created_at: timestampToIso(data.created_at),
+      href: "/admin?tab=sales",
     });
   });
 
