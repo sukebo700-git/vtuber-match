@@ -44,7 +44,7 @@ export default function CreatorGoodsPage() {
           <h2 style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0 0 0 0)" }}>
             VTuber限定 オリジナルグッズ作成支援ページ
           </h2>
-          <Banner src="/goods/hero.webp" alt="VTuber限定 オリジナルグッズ作成支援。あなたの活動名で、世界に1枚のTシャツをVTuber自身の手で" />
+          <Banner src="/goods/hero.png" alt="VTuber限定 オリジナルグッズ作成支援。あなたの活動名で、世界に1枚のTシャツをVTuber自身の手で" />
         </section>
 
         {/* 商品: オリジナルネームTシャツ作成キット（説明は画像で行う） */}
@@ -55,10 +55,17 @@ export default function CreatorGoodsPage() {
           <Banner src="/goods/tshirt-hero.webp" alt="オリジナルネームTシャツ作成キット。1着1,980円（税込）。選べるシートカラー、ゴールド・シルバーは+300円" />
           <Banner src="/goods/included.webp" alt="セット内容: 5.6オンスヘビーウェイトTシャツ、カット済みの熱転写シート（カス取り前）、圧着方法の説明書、ワンポイント用ミニ熱転写パーツ" />
 
-          <div style={{ display: "grid", gap: 12 }}>
-            <Banner src="/goods/step1.webp" alt="STEP1 カス取り: 文字以外の余分なシートを、付属の枠を目印にはがします" />
-            <Banner src="/goods/step2.webp" alt="STEP2 配置: Tシャツの好きな位置に文字を置きます（位置はご自由に）" />
-            <Banner src="/goods/step3.webp" alt="STEP3 熱圧着: アイロンまたはヒートプレスで圧着。温度・時間は説明書のとおりに" />
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+              gap: 12,
+            }}
+          >
+            <Banner src="/goods/step1.png" alt="STEP1 カス取り: 文字以外の余分なシートを、付属の枠を目印にはがします" />
+            <Banner src="/goods/step2.png" alt="STEP2 配置: Tシャツの好きな位置に文字を置きます（位置はご自由に）" />
+            <Banner src="/goods/step3.png" alt="STEP3 熱圧着: アイロンまたはヒートプレスで圧着。温度・時間は説明書のとおりに" />
+            <Banner src="/goods/step4.png" alt="STEP4 デコる: 仕上げに、ミニパーツで自由にデコれます（ランダムな図柄が複数種類入っています）" />
           </div>
 
           {/* 申し込み導線 */}
