@@ -14,6 +14,10 @@ const popupVersion = "20260702-top-restore";
 const popupDismissedUntilKey = `vtuber-match-short-video-campaign-dismissed-until-${popupVersion}`;
 const popupDismissDaysMs = 7 * 24 * 60 * 60 * 1000;
 const shortVideoRequestPath = "/creator/short-video";
+// ページ遷移のたびに再表示され続けるとうるさいため、配信者(未ログイン時はブラウザ)
+// ごとに1日あたりの表示回数を制限する。
+const popupShownCountKeyPrefix = "vtuber-match-short-video-campaign-shown-count-";
+const popupMaxShowsPerDay = 2;
 
 export function ShortVideoCampaignPopup() {
   const [open, setOpen] = useState(false);
@@ -27,9 +31,26 @@ export function ShortVideoCampaignPopup() {
     } catch {
       // Keep the campaign usable even when storage is blocked.
     }
-    setCreator(readCreatorAuth());
+    const auth = readCreatorAuth();
+    setCreator(auth);
+
+    const creatorKey = auth?.id || auth?.streamer_id || auth?.application_id || auth?.email || "guest";
+    const countKey = `${popupShownCountKeyPrefix}${creatorKey}-${new Date().toDateString()}`;
+    let shownToday = 0;
+    try {
+      shownToday = Number(localStorage.getItem(countKey) || "0");
+    } catch {
+      // Keep the campaign usable even when storage is blocked.
+    }
+    if (shownToday >= popupMaxShowsPerDay) return;
+
     const timer = window.setTimeout(() => {
       setOpen(true);
+      try {
+        localStorage.setItem(countKey, String(shownToday + 1));
+      } catch {
+        // Ignore storage failures.
+      }
     }, 1400);
     return () => window.clearTimeout(timer);
   }, []);
