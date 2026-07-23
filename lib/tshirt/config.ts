@@ -10,7 +10,7 @@ import type {
 export const TSHIRT_DEFAULTS = {
   basePrice: 1980,
   specialColorFee: 300,
-  shippingFee: 430,
+  shippingFee: 500,
   freeShippingQuantity: 5,
   maxQuantity: 10,
 } as const;

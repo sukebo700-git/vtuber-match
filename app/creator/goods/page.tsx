@@ -84,7 +84,7 @@ export default function CreatorGoodsPage() {
             </a>
             {settings.enabled ? (
               <span style={{ color: "#555" }}>
-                1着 {settings.basePrice.toLocaleString("ja-JP")}円（税込）〜 / 5着以上で送料無料
+                1着 {settings.basePrice.toLocaleString("ja-JP")}円（税込）〜 / {settings.freeShippingQuantity}着以上で送料無料
               </span>
             ) : (
               <span style={{ color: "#a00" }}>現在受付を停止しています。</span>
