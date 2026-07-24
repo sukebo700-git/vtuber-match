@@ -410,10 +410,25 @@ async function readFirestoreReports(): Promise<StreamerReport[]> {
   }).sort(sortByCreatedDesc).slice(0, 120);
 }
 
+// 一覧表示は上限件数付きで取得するため、そのまま件数を数えると上限を超えた分の
+// 増加が反映されなくなる(例: 500件を超えた視聴者が増え続けても頭打ちに見える)。
+// 総数はFirestoreの.count()集計(ドキュメント本体を読まない軽量クエリ)で
+// 上限なく正確に数え、is_deletedはtrue/falseで2回に分けて数えて引き算する
+// (Firestoreの不等号フィルタはフィールド未設定のドキュメントを除外してしまうため、
+// !=true では数えられない)。
+async function readFirestoreActiveCount(db: FirebaseFirestore.Firestore, collectionName: string): Promise<number> {
+  const [totalSnap, deletedSnap] = await Promise.all([
+    db.collection(collectionName).count().get(),
+    db.collection(collectionName).where("is_deleted", "==", true).count().get(),
+  ]);
+  return Math.max(0, totalSnap.data().count - deletedSnap.data().count);
+}
+
 async function readFirestoreViewerProfiles({ cursor }: { cursor?: string }): Promise<PagedResult<ViewerProfileWithStats>> {
   const db = getAdminDb();
   if (!db) return { items: [] };
-  const profileSnapshot = await db.collection("viewer_profiles")
+  const [profileSnapshot, totalCount] = await Promise.all([
+    db.collection("viewer_profiles")
     .select(
       "display_name",
       "youtube_display_name",
@@ -442,7 +457,9 @@ async function readFirestoreViewerProfiles({ cursor }: { cursor?: string }): Pro
       "last_viewer_login_at",
     )
     .limit(500)
-    .get();
+    .get(),
+    readFirestoreActiveCount(db, "viewer_profiles"),
+  ]);
   const decodedCursor = decodeAdminCursor(cursor);
   const sorted = profileSnapshot.docs
     .filter((doc) => doc.data().is_deleted !== true)
@@ -451,7 +468,7 @@ async function readFirestoreViewerProfiles({ cursor }: { cursor?: string }): Pro
   const pageBase = decodedCursor ? sorted.filter((viewer) => isViewerAfterAdminCursor(viewer, decodedCursor)) : sorted;
   const items = pageBase.slice(0, 100);
   const hasNext = pageBase.length > 100;
-  return { items, nextCursor: hasNext && items.length ? encodeViewerAdminCursor(items[items.length - 1]) : undefined, totalCount: sorted.length };
+  return { items, nextCursor: hasNext && items.length ? encodeViewerAdminCursor(items[items.length - 1]) : undefined, totalCount };
 }
 
 function viewerDocToAdminRow(id: string, data: ViewerProfile & Record<string, unknown>, documentCreatedAt?: string): ViewerProfileWithStats {
@@ -648,7 +665,10 @@ async function readAllFirestoreStreamers({ cursor, xFilter }: { cursor?: string;
       "source_application_id",
     )
     .limit(300);
-  const snapshot = await query.get();
+  const [snapshot, activeCount] = await Promise.all([
+    query.get(),
+    xFilter === "all" ? readFirestoreActiveCount(db, "streamers") : Promise.resolve(null),
+  ]);
   const decodedCursor = decodeAdminCursor(cursor);
   const sorted = snapshot.docs
     .filter((doc) => doc.data().is_deleted !== true)
@@ -670,7 +690,7 @@ async function readAllFirestoreStreamers({ cursor, xFilter }: { cursor?: string;
   // 有料/上位プランは全ページ横断で別途返す(クライアントの「有料登録のみ」
   // フィルタが2ページ目以降の有料配信者も絞り込めるようにするため)。
   const paidItems = sorted.filter((streamer) => streamer.plan_type === "paid" || streamer.plan_type === "boost");
-  return { items, nextCursor: hasNext && items.length ? encodeAdminCursor(items[items.length - 1]) : undefined, totalCount: sorted.length, paidItems };
+  return { items, nextCursor: hasNext && items.length ? encodeAdminCursor(items[items.length - 1]) : undefined, totalCount: activeCount ?? sorted.length, paidItems };
 }
 
 function normalizePlan(plan: string): PlanType {
