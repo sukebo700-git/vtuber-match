@@ -141,6 +141,8 @@ export type ViewerProfile = VtypeProfileFields & {
   youtube_display_name?: string;
   twitter_id?: string;
   registration_source?: string;
+  x_campaign_entry?: boolean;
+  x_campaign_entered_at?: string;
   one_liner?: string;
   image?: string;
   profile?: string;

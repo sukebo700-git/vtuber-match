@@ -52,7 +52,9 @@ export function ViewerAdminPanel({ viewers }: { viewers: ViewerProfileWithStats[
               <div className="viewer-admin-summary-grid" aria-label="視聴者の利用状況">
                 <span className="state pending">無料</span>
                 {viewer.is_admin_viewer && <span className="state pending">匿名テスト</span>}
-                {viewer.registration_source === "x_campaign" && <span className="state approved">Xキャンペーン経由</span>}
+                {(viewer.registration_source === "x_campaign" || viewer.x_campaign_entry) && (
+                  <span className="state approved">Xキャンペーン応募済み</span>
+                )}
                 <span className={`state email-state ${hasEmail ? "email-registered" : "email-missing"}`}>
                   {hasEmail ? "メール登録済み" : "メール未登録"}
                 </span>
@@ -74,6 +76,7 @@ export function ViewerAdminPanel({ viewers }: { viewers: ViewerProfileWithStats[
                   <div><dt>表示名</dt><dd>{viewer.display_name || viewer.youtube_display_name || "未入力"}</dd></div>
                   <div><dt>Xアカウント</dt><dd>{viewer.twitter_id || "未入力"}</dd></div>
                   <div><dt>登録経路</dt><dd>{viewer.registration_source === "x_campaign" ? "Xキャンペーン" : "通常"}</dd></div>
+                  <div><dt>Xキャンペーン応募</dt><dd>{viewer.registration_source === "x_campaign" || viewer.x_campaign_entry ? "応募済み" : "未応募"}</dd></div>
                   <div><dt>スーパーいいね購入履歴</dt><dd>{viewer.has_paid_history ? "あり" : "なし"}</dd></div>
                   <div><dt>スーパーいいね購入数</dt><dd>{superLikePurchases}回</dd></div>
                   <div><dt>通知</dt><dd>{viewer.notification_enabled ? "ON" : "OFF"}</dd></div>

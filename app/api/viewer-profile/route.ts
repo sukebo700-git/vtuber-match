@@ -68,6 +68,7 @@ export async function POST(request: Request) {
     display_name: clean(body.display_name, 40),
     youtube_display_name: clean(body.youtube_display_name, 60),
     twitter_id: clean(body.twitter_id, 40),
+    x_campaign_entry: existing?.x_campaign_entry === true || Boolean(body.x_campaign_entry),
     one_liner: clean(body.one_liner, 20),
     image: clean(body.image, 400000),
     profile: clean(body.profile, 400),
@@ -84,6 +85,7 @@ export async function POST(request: Request) {
   await db.collection("viewer_profiles").doc(id).set({
     ...stripUndefined(profile),
     ...(existing ? {} : { created_at: FieldValue.serverTimestamp(), registered_at: FieldValue.serverTimestamp() }),
+    ...(profile.x_campaign_entry && existing?.x_campaign_entry !== true ? { x_campaign_entered_at: FieldValue.serverTimestamp() } : {}),
     updated_at: FieldValue.serverTimestamp()
   }, { merge: true });
 
