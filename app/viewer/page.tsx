@@ -35,7 +35,7 @@ export default function ViewerPage() {
           <section className="status-band push-notice-card push-onboarding-card">
             <div>
               <h2>無料登録でプロフィールを保存できます</h2>
-              <p>名前やアイコンを保存して、VTuber探しを続けられます。</p>
+              <p>無料登録でスワイプ回数無制限</p>
             </div>
             <p className="inline-actions">
               <a className="primary-button" href="/viewer/register">無料登録する</a>

@@ -1,5 +1,6 @@
 import { HeaderAuthStatus } from "@/components/HeaderAuthStatus";
 import { LandingRandomVtuberImage } from "@/components/LandingRandomVtuberImage";
+import { SmartPromoLink } from "@/components/SmartPromoLink";
 import { UiButton } from "@/components/ui/UiButton";
 import { UiPanel } from "@/components/ui/UiPanel";
 import type { Metadata } from "next";
@@ -70,13 +71,21 @@ export default function HomePage() {
             </div>
           </div>
 
-          <a className="landing-promo-banner" href="/creator/apply">
+          <SmartPromoLink kind="creator-promo" className="landing-promo-banner">
             <div className="landing-promo-banner-copy">
               <span className="landing-promo-banner-kicker">ショート動画&amp;24時間宣伝企画</span>
               <strong>Lo-Fi配信への掲載・紹介ショート動画・無料掲載ページ、すべて0円</strong>
             </div>
             <span className="landing-promo-banner-cta">無料で宣伝を申し込む</span>
-          </a>
+          </SmartPromoLink>
+
+          <SmartPromoLink kind="x-campaign" className="landing-promo-banner landing-x-campaign-banner">
+            <div className="landing-promo-banner-copy">
+              <span className="landing-promo-banner-kicker">期間限定キャンペーン</span>
+              <strong>Amazonギフトカード10,000円分プレゼント</strong>
+            </div>
+            <span className="landing-promo-banner-cta">Xのキャンペーンに応募する</span>
+          </SmartPromoLink>
 
           <a className="landing-scroll-cue landing-refresh-scroll" href="#lofi-benefits">
             <span>Lo-Fi配信特典を見る</span>
@@ -103,7 +112,9 @@ export default function HomePage() {
             />
           </div>
           <div className="landing-campaign-actions">
-            <UiButton href="/creator/apply">無料で宣伝を申し込む</UiButton>
+            <SmartPromoLink kind="creator-promo" className="primary-button">
+              無料で宣伝を申し込む
+            </SmartPromoLink>
             <UiButton variant="secondary" href="/creator">
               Lo-Fi特典を見る
             </UiButton>

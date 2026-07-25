@@ -93,7 +93,7 @@ export function ShortVideoCampaignPopup() {
         </p>
 
         <div className="campaign-popup-actions">
-          <a className="primary-button" href="/creator/apply">無料で宣伝を申し込む</a>
+          <a className="primary-button" href={isCreator ? "/creator" : "/creator/apply"}>無料で宣伝を申し込む</a>
           <a className="secondary-button" href="/creator">内容を見る</a>
         </div>
 

@@ -245,6 +245,12 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
   return (
     <form className="form application-form" onSubmit={submit}>
       <section className="status-band">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/promo/x-campaign-gift.png"
+          alt="Xキャンペーン: フォロー&amp;リポスト&amp;無料登録でAmazonギフトカード10,000円分が当たる"
+          style={{ display: "block", width: "100%", height: "auto", borderRadius: 12, marginBottom: 16 }}
+        />
         <h2>プランの違い</h2>
         <div className="plan-table">
           {planRows.map((plan) => (

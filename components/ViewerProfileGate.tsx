@@ -19,11 +19,14 @@ export function ViewerProfileGate() {
   if (!loggedIn) {
     return (
       <section className="status-band">
-        <h2>無料登録でプロフィールを保存できます</h2>
-        <p>プロフィールや画像、スーパーいいね履歴は無料登録後に利用できます。</p>
-        <p style={{ marginTop: 12 }}>
-          <a className="primary-button" href="/viewer/register">無料登録する</a>
-        </p>
+        <a href="/viewer/register">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/promo/x-campaign-gift.png"
+            alt="Xキャンペーン: フォロー&amp;リポスト&amp;無料登録でAmazonギフトカード10,000円分が当たる"
+            style={{ display: "block", width: "100%", height: "auto", borderRadius: 12 }}
+          />
+        </a>
       </section>
     );
   }
