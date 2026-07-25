@@ -14,7 +14,13 @@ export const metadata: Metadata = {
   },
 };
 
-export default function ViewerPage() {
+export default function ViewerPage({
+  searchParams,
+}: {
+  searchParams: { [key: string]: string | string[] | undefined };
+}) {
+  const isXCampaignEntry = searchParams.campaign === "1";
+
   return (
     <div className="app-shell">
       <header className="topbar">
@@ -23,6 +29,15 @@ export default function ViewerPage() {
       </header>
 
       <main className="main grid-page">
+        {isXCampaignEntry && (
+          <section className="status-band push-notice-card" style={{ background: "#fff3cd", borderColor: "#ffe08a" }}>
+            <div>
+              <h2>応募完了しました</h2>
+              <p>掲載期間は8月1日までです。抽選結果をお待ちください。</p>
+            </div>
+          </section>
+        )}
+
         <section className="status-band">
           <h1>視聴者用ページ</h1>
           <p>気になるVTuberを探したり、自分のプロフィールを登録したりできます。</p>

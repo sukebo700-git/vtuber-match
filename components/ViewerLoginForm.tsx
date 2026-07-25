@@ -60,7 +60,8 @@ export function ViewerLoginForm({ initialMode = "login" }: ViewerLoginFormProps)
     }));
     window.dispatchEvent(new Event("vtuber-match-auth-changed"));
     setStatus(data.auth_action === "created" ? "新規登録しました。通知設定へ移動します。" : "ログインしました。通知設定へ移動します。");
-    window.location.assign("/viewer?notify=1");
+    const isXCampaignRegistration = mode === "register" && data.auth_action === "created" && readRegistrationSource() === "x_campaign";
+    window.location.assign(isXCampaignRegistration ? "/viewer?notify=1&campaign=1" : "/viewer?notify=1");
   }
 
   return (
