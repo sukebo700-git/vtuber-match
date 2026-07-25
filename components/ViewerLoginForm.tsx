@@ -9,9 +9,16 @@ type ViewerLoginFormProps = {
   initialMode?: "login" | "register";
 };
 
+// 新規登録リンクに付与された ?src=x_campaign を読み取り、Xキャンペーン経由の
+// 登録であることをサーバーへ伝える(registration_sourceとして保存される)。
+function readRegistrationSource(): string {
+  if (typeof window === "undefined") return "";
+  return new URLSearchParams(window.location.search).get("src") || "";
+}
+
 export function ViewerLoginForm({ initialMode = "login" }: ViewerLoginFormProps) {
   const [mode, setMode] = useState<"login" | "register">(initialMode);
-  const [form, setForm] = useState({ email: "", password: "" });
+  const [form, setForm] = useState({ email: "", password: "", twitterId: "" });
   const [status, setStatus] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -27,7 +34,10 @@ export function ViewerLoginForm({ initialMode = "login" }: ViewerLoginFormProps)
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        ...form,
+        email: form.email,
+        password: form.password,
+        twitter_id: form.twitterId,
+        registration_source: mode === "register" ? readRegistrationSource() : "",
         mode,
         anonymous_viewer_id: localStorage.getItem(anonymousViewerIdKey) || "",
       })
@@ -67,6 +77,13 @@ export function ViewerLoginForm({ initialMode = "login" }: ViewerLoginFormProps)
         <label htmlFor="viewer_password">パスワード</label>
         <input id="viewer_password" type="password" value={form.password} onChange={(event) => update("password", event.target.value)} required minLength={8} autoComplete="current-password" />
       </div>
+      {mode === "register" && (
+        <div className="field">
+          <label htmlFor="viewer_twitter_id">Xアカウント（任意）</label>
+          <input id="viewer_twitter_id" placeholder="@vtubermatch" value={form.twitterId} onChange={(event) => update("twitterId", event.target.value)} />
+          <p className="help-text">Xキャンペーンにご応募の方は、フォロー・リポストに使ったアカウントをご入力ください。</p>
+        </div>
+      )}
       <p className="help-text">
         {mode === "register"
           ? "視聴者アカウントを作成します。登録後は、気になるVTuberの詳細を見られます。"

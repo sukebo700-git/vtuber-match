@@ -19,7 +19,7 @@ export function ViewerProfileGate() {
   if (!loggedIn) {
     return (
       <section className="status-band">
-        <a href="/viewer/register">
+        <a href="/viewer/register?src=x_campaign">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/promo/x-campaign-gift.png"

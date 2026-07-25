@@ -28,7 +28,10 @@ function readLoginKind(): "creator" | "viewer" | null {
 function resolveHref(kind: SmartPromoLinkKind, loginKind: "creator" | "viewer" | null): string {
   if (loginKind === "creator") return "/creator";
   if (kind === "x-campaign" && loginKind === "viewer") return "/viewer";
-  return kind === "creator-promo" ? "/creator/apply" : "/viewer/register";
+  if (kind === "creator-promo") return "/creator/apply";
+  // Xキャンペーン経由での新規登録を後で識別できるよう、遷移先にsrcを付与する
+  // (ViewerLoginFormがこのクエリパラメータを読み取りregistration_sourceとして保存する)。
+  return "/viewer/register?src=x_campaign";
 }
 
 export function SmartPromoLink({
@@ -40,7 +43,7 @@ export function SmartPromoLink({
   className?: string;
   children: ReactNode;
 }) {
-  const [href, setHref] = useState(() => (kind === "creator-promo" ? "/creator/apply" : "/viewer/register"));
+  const [href, setHref] = useState(() => (kind === "creator-promo" ? "/creator/apply" : "/viewer/register?src=x_campaign"));
 
   useEffect(() => {
     setHref(resolveHref(kind, readLoginKind()));

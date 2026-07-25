@@ -11,6 +11,8 @@ export async function POST(request: Request) {
     const email = String(body.email || "").trim().toLowerCase();
     const password = String(body.password || "");
     const displayName = String(body.display_name || "").trim().slice(0, 40);
+    const twitterId = String(body.twitter_id || "").trim().slice(0, 60);
+    const registrationSource = String(body.registration_source || "").trim().slice(0, 60);
     const anonymousViewerId = String(body.anonymous_viewer_id || "").trim().slice(0, 120);
     const mode = body.mode === "register" ? "register" : "login";
 
@@ -56,6 +58,8 @@ export async function POST(request: Request) {
         subscription_status: "canceled",
         stripe_subscription_id: "",
         display_name: displayName || existing?.display_name || "",
+        twitter_id: twitterId || existing?.twitter_id || "",
+        registration_source: existing?.registration_source || registrationSource || "",
         visible_to_matched_streamers: existing?.visible_to_matched_streamers !== false,
         last_viewer_login_at: now,
         is_deleted: false
@@ -97,7 +101,8 @@ export async function POST(request: Request) {
       stripe_subscription_id: "",
       display_name: displayName || existing?.display_name || "",
       youtube_display_name: existing?.youtube_display_name || "",
-      twitter_id: existing?.twitter_id || "",
+      twitter_id: twitterId || existing?.twitter_id || "",
+      registration_source: existing?.registration_source || registrationSource || "",
       one_liner: existing?.one_liner || "",
       image: existing?.image || "",
       profile: existing?.profile || "",
