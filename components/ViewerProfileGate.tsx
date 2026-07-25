@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { ViewerProfileForm } from "@/components/ViewerProfileForm";
+import { isXCampaignActive } from "@/lib/campaign";
 
 const authKey = "vtuber-match-viewer-auth";
 
@@ -16,7 +17,7 @@ export function ViewerProfileGate() {
 
   if (!checked) return null;
 
-  if (!loggedIn) {
+  if (!loggedIn && isXCampaignActive()) {
     return (
       <section className="status-band">
         <a href="/viewer/register?src=x_campaign">
@@ -30,6 +31,8 @@ export function ViewerProfileGate() {
       </section>
     );
   }
+
+  if (!loggedIn) return null;
 
   return <ViewerProfileForm />;
 }

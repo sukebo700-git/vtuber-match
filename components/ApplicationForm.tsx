@@ -6,6 +6,7 @@ import { PLAN_FEATURES } from "@/lib/constants";
 import { LofiPlanBenefits } from "@/components/LofiPlanBenefits";
 import { diagnosisTypes } from "@/lib/diagnosis";
 import { creatorVtypeStorageKey, type VtypeProfileFields } from "@/lib/diagnosisProfile";
+import { isXCampaignActive } from "@/lib/campaign";
 
 type ApplicationFormProps = {
   categories: string[];
@@ -55,6 +56,7 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
   const [completion, setCompletion] = useState<CompletionInfo | null>(null);
   const [vtypeProfile, setVtypeProfile] = useState<VtypeProfileFields | null>(null);
   const [busy, setBusy] = useState(false);
+  const [showXCampaignBanner, setShowXCampaignBanner] = useState(true);
 
   const isFree = selectedPlan === "free";
   const categoryLimit = 3;
@@ -64,6 +66,7 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
   useEffect(() => {
     const stored = readStoredVtypeProfile();
     if (stored?.vtype_id) setVtypeProfile(stored);
+    if (!isXCampaignActive()) setShowXCampaignBanner(false);
   }, []);
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
@@ -245,12 +248,14 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
   return (
     <form className="form application-form" onSubmit={submit}>
       <section className="status-band">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/promo/x-campaign-gift.png"
-          alt="Xキャンペーン: フォロー&amp;リポスト&amp;無料登録でAmazonギフトカード10,000円分が当たる"
-          style={{ display: "block", width: "100%", height: "auto", borderRadius: 12, marginBottom: 16 }}
-        />
+        {showXCampaignBanner && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src="/promo/x-campaign-gift.png"
+            alt="Xキャンペーン: フォロー&amp;リポスト&amp;無料登録でAmazonギフトカード10,000円分が当たる"
+            style={{ display: "block", width: "100%", height: "auto", borderRadius: 12, marginBottom: 16 }}
+          />
+        )}
         <h2>プランの違い</h2>
         <div className="plan-table">
           {planRows.map((plan) => (
