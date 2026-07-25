@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
+import { isXCampaignActive } from "@/lib/campaign";
 
 // ログイン状態に応じて遷移先を出し分けるリンク。
 // - creator-promo(無料で宣伝を申し込む等): 配信者ログイン中は/creator(マイページ)へ、
@@ -44,10 +45,14 @@ export function SmartPromoLink({
   children: ReactNode;
 }) {
   const [href, setHref] = useState(() => (kind === "creator-promo" ? "/creator/apply" : "/viewer/register?src=x_campaign"));
+  const [visible, setVisible] = useState(true);
 
   useEffect(() => {
     setHref(resolveHref(kind, readLoginKind()));
+    if (kind === "x-campaign" && !isXCampaignActive()) setVisible(false);
   }, [kind]);
+
+  if (kind === "x-campaign" && !visible) return null;
 
   return (
     <a className={className} href={href}>

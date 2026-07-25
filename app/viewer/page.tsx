@@ -2,6 +2,7 @@ import { HeaderAuthStatus } from "@/components/HeaderAuthStatus";
 import { AuthVisibility } from "@/components/AuthVisibility";
 import { ViewerProfileGate } from "@/components/ViewerProfileGate";
 import { ViewerSuperBoostWallet } from "@/components/ViewerSuperBoostWallet";
+import { isXCampaignActive } from "@/lib/campaign";
 import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
@@ -19,7 +20,7 @@ export default function ViewerPage({
 }: {
   searchParams: { [key: string]: string | string[] | undefined };
 }) {
-  const isXCampaignEntry = searchParams.campaign === "1";
+  const isXCampaignEntry = searchParams.campaign === "1" && isXCampaignActive();
 
   return (
     <div className="app-shell">
@@ -33,7 +34,7 @@ export default function ViewerPage({
           <section className="status-band push-notice-card" style={{ background: "#fff3cd", borderColor: "#ffe08a" }}>
             <div>
               <h2>応募完了しました</h2>
-              <p>掲載期間は8月1日までです。抽選結果をお待ちください。</p>
+              <p>抽選結果をお待ちください。</p>
             </div>
           </section>
         )}
