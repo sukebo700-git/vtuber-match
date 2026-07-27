@@ -711,6 +711,9 @@ export function AdminDashboard({ initialApplications, initialStreamers, initialP
                 <span>{PLAN_LABELS[streamer.plan_type]}</span>
                 <span>{ADMIN_PLACEMENT_LABELS[streamer.admin_placement || "normal"]}</span>
                 <span className={streamer.x_introduced_at ? "x-introduced" : "x-unintroduced"}>{streamer.x_introduced_at ? "X紹介済み" : "X未紹介"}</span>
+                {(application?.registration_source === "x_campaign" || application?.x_campaign_entry) && (
+                  <span className="state approved">Xキャンペーン応募済み</span>
+                )}
                 {streamer.is_dummy && <span className="dummy-flag">非実在/テスト</span>}
                 {streamer.super_boost_until && isFuture(streamer.super_boost_until) && <span>スーパー中</span>}
                 {streamer.has_payment_history && <span>課金履歴</span>}
@@ -763,6 +766,8 @@ export function AdminDashboard({ initialApplications, initialStreamers, initialP
                   <div><dt>最終ログイン</dt><dd>{formatDateMinute(streamer.last_creator_login_at)}</dd></div>
                   <div><dt>退会申請</dt><dd>{streamer.withdrawal_status === "requested" ? `申請あり ${formatDate(streamer.withdrawal_requested_at)}` : "なし"}</dd></div>
                   <div><dt>非実在/テスト</dt><dd>{streamer.is_dummy ? `はい ${streamer.dummy_reason || ""}` : "いいえ"}</dd></div>
+                  <div><dt>登録経路</dt><dd>{application?.registration_source === "x_campaign" ? "Xキャンペーン" : "通常"}</dd></div>
+                  <div><dt>Xキャンペーン応募</dt><dd>{application?.registration_source === "x_campaign" || application?.x_campaign_entry ? "応募済み" : "未応募"}</dd></div>
                 </dl>
                 <div className="admin-filter-row">
                   <label>プラン

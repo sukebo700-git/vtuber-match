@@ -1,6 +1,7 @@
 import { HeaderAuthStatus } from "@/components/HeaderAuthStatus";
 import { LandingRandomVtuberImage } from "@/components/LandingRandomVtuberImage";
 import { SmartPromoLink } from "@/components/SmartPromoLink";
+import { XCampaignCreatorEntryLink } from "@/components/XCampaignCreatorEntryLink";
 import { UiButton } from "@/components/ui/UiButton";
 import { UiPanel } from "@/components/ui/UiPanel";
 import type { Metadata } from "next";
@@ -86,6 +87,7 @@ export default function HomePage() {
             </div>
             <span className="landing-promo-banner-cta">Xのキャンペーンに応募する</span>
           </SmartPromoLink>
+          <XCampaignCreatorEntryLink />
 
           <a className="landing-scroll-cue landing-refresh-scroll" href="#lofi-benefits">
             <span>Lo-Fi配信特典を見る</span>

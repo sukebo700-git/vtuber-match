@@ -110,6 +110,9 @@ export type StreamerApplication = VtypeProfileFields & {
   claim_requested_at?: string;
   claim_expires_at?: string;
   claim_verified_at?: string;
+  registration_source?: string;
+  x_campaign_entry?: boolean;
+  x_campaign_entered_at?: string;
 };
 
 export type PaymentRecord = {

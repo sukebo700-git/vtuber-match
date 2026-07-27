@@ -575,6 +575,8 @@ async function readFirestoreApplications(): Promise<StreamerApplication[]> {
       "claim_requested_at",
       "claim_expires_at",
       "claim_verified_at",
+      "registration_source",
+      "x_campaign_entry",
     )
     .limit(160)
     .get();
@@ -614,6 +616,8 @@ async function readFirestoreApplications(): Promise<StreamerApplication[]> {
       claim_requested_at: timestampToIso(data.claim_requested_at),
       claim_expires_at: timestampToIso(data.claim_expires_at),
       claim_verified_at: timestampToIso(data.claim_verified_at),
+      registration_source: data.registration_source || "",
+      x_campaign_entry: data.x_campaign_entry === true,
     };
   }).sort(sortByCreatedDesc).slice(0, 80);
 }

@@ -89,6 +89,7 @@ export async function POST(request: Request) {
     creator_login_id: makeCreatorLoginId(),
     creator_password_hash: hashPassword(String(body.creator_password || "")),
     admin_note: "",
+    registration_source: String(body.registration_source || "").trim().slice(0, 60),
     ...buildVtypePatch(body),
   };
 

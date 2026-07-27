@@ -5,6 +5,7 @@ import { RotateCcw, Save } from "lucide-react";
 import { CATEGORIES, REGIONS, TAGS } from "@/lib/constants";
 import { diagnosisTypes } from "@/lib/diagnosis";
 import { creatorVtypeStorageKey, type VtypeProfileFields } from "@/lib/diagnosisProfile";
+import { isXCampaignActive } from "@/lib/campaign";
 
 type CreatorDraft = VtypeProfileFields & {
   name?: string;
@@ -21,6 +22,7 @@ type CreatorDraft = VtypeProfileFields & {
   tags?: string[];
   plan_type?: string;
   want_short_video?: boolean;
+  x_campaign_entry?: boolean;
 };
 
 const creatorDraftKey = "vtuber-match-creator-profile-draft";
@@ -63,11 +65,14 @@ export function CreatorProfileEditForm() {
   const [imageEdits, setImageEdits] = useState<ImageEdit[]>(makeImageEdits());
   const [planType, setPlanType] = useState("free");
   const [wantShortVideo, setWantShortVideo] = useState(false);
+  const [xCampaignEntry, setXCampaignEntry] = useState(false);
+  const [showXCampaignOptIn, setShowXCampaignOptIn] = useState(true);
   const [vtypeProfile, setVtypeProfile] = useState<VtypeProfileFields | null>(null);
   const [status, setStatus] = useState("");
   const visibleImages = images.slice(0, planImageLimit(planType));
 
   useEffect(() => {
+    if (!isXCampaignActive()) setShowXCampaignOptIn(false);
     const draft = safeParseDraft(localStorage.getItem(creatorDraftKey));
     const draftImages = makeImageSlots(draft?.images?.length ? draft.images : draft?.image ? [draft.image] : []);
     const storedPlan = localStorage.getItem("vtuber-match-creator-plan") || "free";
@@ -121,6 +126,7 @@ export function CreatorProfileEditForm() {
         const nextPlan = profile.plan_type || localStorage.getItem("vtuber-match-creator-plan") || storedPlan;
         setPlanType(nextPlan);
         setWantShortVideo(Boolean(profile.want_short_video));
+        setXCampaignEntry(Boolean(profile.x_campaign_entry));
         localStorage.setItem("vtuber-match-creator-plan", nextPlan);
         localStorage.setItem(creatorDraftKey, JSON.stringify(profile));
       })
@@ -158,6 +164,7 @@ export function CreatorProfileEditForm() {
         categories,
         tags,
         want_short_video: wantShortVideo,
+        x_campaign_entry: xCampaignEntry,
         ...vtypePayload(vtypeProfile),
       }),
     });
@@ -417,6 +424,25 @@ export function CreatorProfileEditForm() {
             : "チェックして更新すると、紹介動画の作成依頼が運営に届きます(プラン問わず任意)。チェックがない場合、動画は作成されません。"}
         </p>
       </div>
+
+      {(showXCampaignOptIn || xCampaignEntry) && (
+        <div className="field consent-field">
+          <label className="choice consent-choice">
+            <input
+              type="checkbox"
+              checked={xCampaignEntry}
+              disabled={xCampaignEntry}
+              onChange={(event) => setXCampaignEntry(event.target.checked)}
+            />
+            Xキャンペーンに応募する(@VtuberMatchをフォロー・対象投稿をリポスト済みの方)
+          </label>
+          <p className="help-text">
+            {xCampaignEntry
+              ? "応募済みです。抽選結果をお待ちください。"
+              : "登録済みの方も、フォロー・リポスト後にチェックして保存すると応募できます。Xアカウント欄の入力もお願いします。"}
+          </p>
+        </div>
+      )}
 
       <button className="primary-button" type="submit">
         <Save size={18} />

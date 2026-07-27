@@ -24,6 +24,13 @@ type CompletionInfo = {
 const creatorDraftKey = "vtuber-match-creator-profile-draft";
 const imageSlotCount = 5;
 const maxTotalImagePayload = 700_000;
+
+// 新規登録リンクに付与された ?src=x_campaign を読み取り、Xキャンペーン経由の
+// 登録であることをサーバーへ伝える(registration_sourceとして保存される)。
+function readRegistrationSource(): string {
+  if (typeof window === "undefined") return "";
+  return new URLSearchParams(window.location.search).get("src") || "";
+}
 const maxSingleImagePayload = 130_000;
 
 const planRows = [
@@ -108,6 +115,7 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
       creator_password: password,
       desired_plan: desiredPlan,
       want_short_video: form.get("want_short_video") === "on",
+      registration_source: readRegistrationSource(),
       thumbnails,
       categories: selectedCategories.slice(0, 3),
       tags: selectedTags.slice(0, 3),

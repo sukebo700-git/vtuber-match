@@ -136,7 +136,7 @@ export async function POST(request: Request) {
   }), { merge: true });
 
   await match.ref?.set(stripUndefined({
-    ...buildApplicationPatch(body, plan),
+    ...buildApplicationPatch(body, plan, match.data),
     updated_at: FieldValue.serverTimestamp(),
   }), { merge: true });
 
@@ -336,7 +336,7 @@ function buildStreamerPatch(body: Record<string, unknown>, plan: PlanType): Part
   return patch;
 }
 
-function buildApplicationPatch(body: Record<string, unknown>, plan: PlanType) {
+function buildApplicationPatch(body: Record<string, unknown>, plan: PlanType, existing?: StreamerApplication) {
   const maxCategories = 3;
   const maxTags = 3;
   const thumbnails = normalizeThumbnails(body.thumbnails, body.image, plan);
@@ -355,6 +355,10 @@ function buildApplicationPatch(body: Record<string, unknown>, plan: PlanType) {
   setIfPresent(patch, "stream_time", clean(body.stream_time, 50));
   setIfPresent(patch, "region", validRegion(body.region));
   if ("thumbnails" in body || "image" in body) patch.thumbnails = thumbnails;
+
+  const xCampaignEntry = existing?.x_campaign_entry === true || Boolean(body.x_campaign_entry);
+  patch.x_campaign_entry = xCampaignEntry;
+  if (xCampaignEntry && existing?.x_campaign_entry !== true) patch.x_campaign_entered_at = FieldValue.serverTimestamp();
 
   return patch;
 }
@@ -460,6 +464,7 @@ function buildProfileResponse(streamer?: Partial<Streamer>, application?: Partia
     youtube_url: streamer?.youtube_url || application?.youtube_url || "",
     youtube_channel_id: streamer?.youtube_channel_id || application?.youtube_channel_id || "",
     x_account: streamer?.x_account || application?.x_account || "",
+    x_campaign_entry: application?.x_campaign_entry === true,
     description: streamer?.description || application?.description || "",
     one_liner: streamer?.one_liner || application?.one_liner || "",
     stream_time: streamer?.stream_time || application?.stream_time || "",
