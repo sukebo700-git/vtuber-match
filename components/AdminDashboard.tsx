@@ -4,6 +4,7 @@ import { useMemo, useState, type ChangeEvent } from "react";
 import { BadgeCheck, Copy, Edit3, ExternalLink, Eye, EyeOff, Heart, Save, Trash2, X } from "lucide-react";
 import { CATEGORIES, PLAN_LABELS, REGIONS, TAGS } from "@/lib/constants";
 import type { AdminPlacement, PlanType, Streamer, StreamerApplication, SuperBoostEffect } from "@/lib/types";
+import { extractChannelHandle, parseYouTubeVideoId } from "@/lib/youtube";
 
 type AdminDashboardProps = {
   initialApplications: StreamerApplication[];
@@ -335,16 +336,81 @@ export function AdminDashboard({ initialApplications, initialStreamers, initialP
   }
 
   async function copyStreamerInfo(streamer: Streamer, application?: StreamerApplication) {
-    const xAccount = streamer.x_account || application?.x_account || "";
-    const text = [
-      `名前: ${streamer.name || ""}`,
-      `YouTubeURL: ${streamer.youtube_url || ""}`,
-      `Xアカウント: ${xAccount || "未登録"}`,
-    ].join("\n");
+    // 「＠」(全角)・「@」の重複入力(例: "@@handle"や"＠@handle")が過去のデータに
+    // 混在しているため、一旦すべて取り除いてから "@" を1つだけ付け直す。
+    const normalizeXHandle = (raw: string): string => {
+      const cleaned = raw.trim().replace(/[＠@]+/g, "");
+      return cleaned ? `@${cleaned}` : "";
+    };
+    // promo_video_idはURLそのまま/動画IDのみ どちらの形式でも保存され得るため、
+    // 一度動画IDへ正規化してからshorts URLを組み立てる(壊れたURLの貼り付け事故を防ぐ)。
+    const shortVideoUrl = (rawPromoVideoId: string): string => {
+      const videoId = parseYouTubeVideoId(rawPromoVideoId);
+      return videoId ? `https://youtube.com/shorts/${videoId}?feature=share` : "";
+    };
+    const youtubeChannelUrl = (rawYoutubeUrl: string): string => {
+      const handle = extractChannelHandle(rawYoutubeUrl);
+      return handle ? `https://youtube.com/${handle}` : rawYoutubeUrl.trim();
+    };
+
+    const rawXAccount = streamer.x_account || application?.x_account || "";
+    const xHandle = normalizeXHandle(rawXAccount);
+    const shortUrl = shortVideoUrl(streamer.promo_video_id || "");
+    const ytUrl = youtubeChannelUrl(streamer.youtube_url || "");
+
+    const lines = [
+      "🎉【VTuber紹介ショート公開！】",
+      "",
+      "今回ご紹介するのは、",
+      `**${streamer.name}さん**です✨`,
+      "",
+    ];
+
+    if (shortUrl) {
+      lines.push("紹介ショート動画はこちら👇", `▶️ ${shortUrl}`, "");
+    }
+
+    lines.push(
+      "動画を見て気になった方は、",
+      "XやYouTubeもぜひチェックしてください！",
+      "",
+      `✨ ${streamer.name}さん`,
+      ""
+    );
+
+    if (xHandle) {
+      lines.push("🔹X", xHandle, "");
+    }
+    if (ytUrl) {
+      lines.push("🔹YouTube", ytUrl, "");
+    }
+
+    lines.push(
+      "まだ知られていないVTuberを探すなら👇",
+      "https://vtubermatch.com",
+      "",
+      "📢【VTuberさん募集中】",
+      "",
+      "登録者数は問いません！",
+      "",
+      "✅ 新人VTuber",
+      "✅ 個人VTuber",
+      "✅ 企業所属VTuber",
+      "",
+      "ショート動画やVtuberMatch公式Xで、",
+      "あなたの活動をご紹介します🎥",
+      "",
+      "応募・お問い合わせはこちら👇",
+      "@VtuberMatch",
+      "",
+      "#VTuber #VTuber紹介 #新人VTuber"
+    );
+
+    const text = lines.join("\n");
 
     try {
       await navigator.clipboard.writeText(text);
-      setMessage(`${streamer.name} の紹介用情報をコピーしました。`);
+      setMessage(`${streamer.name} のX紹介文をコピーしました。`);
       showActionFeedback(streamer.id, "コピーしました");
     } catch {
       setMessage("コピーに失敗しました。ブラウザの権限を確認してください。");
@@ -741,7 +807,7 @@ export function AdminDashboard({ initialApplications, initialStreamers, initialP
                 <button className="secondary-button compact-admin-button" type="button" title="スーパーいいねON" disabled={busyId === streamer.id} onClick={() => setSuperBoostState(streamer, true)}>ON</button>
                 <button className="secondary-button compact-admin-button" type="button" title="スーパーいいねOFF" disabled={busyId === streamer.id} onClick={() => setSuperBoostState(streamer, false)}>OFF</button>
                 <button className="secondary-button compact-admin-button" type="button" title="プレビュー" disabled={busyId === streamer.id} onClick={() => startPreview(streamer)}><ExternalLink size={14} />プレ</button>
-                <button className="secondary-button compact-admin-button" type="button" title="名前・YouTubeURL・Xアカウントをコピー" onClick={() => copyStreamerInfo(streamer, application)}><Copy size={14} />コピー</button>
+                <button className="secondary-button compact-admin-button" type="button" title="X投稿用の紹介文をコピー" onClick={() => copyStreamerInfo(streamer, application)}><Copy size={14} />コピー</button>
                 <button className="secondary-button compact-admin-button" type="button" title="匿名いいねを1件送る" disabled={busyId === streamer.id} onClick={() => sendAdminEngagement(streamer, "like")}><Heart size={14} />いい</button>
                 <button className="secondary-button compact-admin-button" type="button" title="表示回数を1件増やす" disabled={busyId === streamer.id} onClick={() => sendAdminEngagement(streamer, "impression")}><Eye size={14} />表示</button>
                 <button className="secondary-button compact-admin-button" type="button" title={streamer.is_dummy ? "実在データとして扱う" : "非実在/テストとして扱う"} disabled={busyId === streamer.id} onClick={() => updateStreamer(streamer.id, { is_dummy: !streamer.is_dummy, is_visible: streamer.is_dummy ? streamer.is_visible : false })}>
