@@ -7,7 +7,7 @@ import { VisitTracker } from "@/components/VisitTracker";
 import { absoluteUrl, getSiteUrl, siteDescription, siteKeywords, siteName } from "@/lib/seo";
 import "./globals.css";
 
-const ogImage = absoluteUrl("/og-image-v2.png?v=20260728-1");
+const ogImage = absoluteUrl("/og-image-v2.jpg?v=20260728-2");
 
 const mobileCriticalCss = `
   @media screen and (max-width: 760px) {
@@ -167,7 +167,7 @@ export const metadata: Metadata = {
         width: 1200,
         height: 630,
         alt: "VtuberMatch",
-        type: "image/png",
+        type: "image/jpeg",
       },
     ],
   },

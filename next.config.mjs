@@ -78,6 +78,18 @@ const nextConfig = {
         ]
       },
       {
+        source: "/og-image.jpg",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=31536000, immutable" }
+        ]
+      },
+      {
+        source: "/og-image-v2.jpg",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=31536000, immutable" }
+        ]
+      },
+      {
         source: "/api/diagnosis/og/:path*",
         headers: [
           { key: "Cache-Control", value: "public, max-age=86400, s-maxage=604800, stale-while-revalidate=2592000" }
