@@ -7,7 +7,7 @@ import { VisitTracker } from "@/components/VisitTracker";
 import { absoluteUrl, getSiteUrl, siteDescription, siteKeywords, siteName } from "@/lib/seo";
 import "./globals.css";
 
-const ogImage = absoluteUrl("/og-image-v2.png?v=20260612-1");
+const ogImage = absoluteUrl("/og-image-v2.png?v=20260728-1");
 
 const mobileCriticalCss = `
   @media screen and (max-width: 760px) {
