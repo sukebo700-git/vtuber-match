@@ -209,7 +209,16 @@ export async function POST(request: Request) {
         plan_type: paymentConfirmed ? planType : "free",
         is_initial_scout: false,
         is_visible: true,
-        ...(existingStreamerId ? {} : { impressions: 0, likes: 0, created_at: FieldValue.serverTimestamp() }),
+        // コラボお誘い機能: 本人が自分の意思で新規登録した場合のみ初期値ON。
+        // existingStreamerIdがある(=既存配信者のプラン変更・アップグレード)場合は
+        // 絶対に含めない — 既存配信者を意図せずONにしてしまう事故になる。
+        ...(existingStreamerId ? {} : {
+          impressions: 0,
+          likes: 0,
+          created_at: FieldValue.serverTimestamp(),
+          collaboration_enabled: true,
+          collaboration_default_on_notice_seen: false,
+        }),
         source_application_id: applicationId,
         payment_state: paymentConfirmed ? "active" : "pending",
         subscription_status: paymentConfirmed ? "active" : "incomplete",

@@ -73,6 +73,8 @@ export type Streamer = VtypeProfileFields & {
   collaboration_email_enabled?: boolean;
   /** コラボお誘い機能: 非公開連絡先(collaboration_contactsコレクション)を1つ以上登録済みか */
   collaboration_contact_ready?: boolean;
+  /** コラボお誘い機能: デフォルトON周知バナーを確認済みか(新規登録者のみ持つフィールド) */
+  collaboration_default_on_notice_seen?: boolean;
   promo_video_id?: string;
 };
 

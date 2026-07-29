@@ -9,6 +9,11 @@ export type CollaborationStreamer = {
   collaboration_enabled: boolean;
   collaboration_email_enabled: boolean;
   collaboration_contact_ready: boolean;
+  // 2026-07-29決定: 新規登録者はcollaboration_enabled初期値ONのため、
+  // 本人が気づけるよう/creatorに一度だけ周知バナーを出す。既存配信者は
+  // フィールド自体を持たないため、以下は「持っていない(=false扱い)」で
+  // 一致する。持っている=新規登録者かつ未確認、という意味になる。
+  collaboration_default_on_notice_seen: boolean;
 };
 
 // コラボ機能における「現在の配信者」の解決はここに集約する。他の場所で解決しないこと。
@@ -43,5 +48,13 @@ export async function resolveCollaborationStreamer(request: Request): Promise<Co
     collaboration_enabled: data.collaboration_enabled === true,
     collaboration_email_enabled: data.collaboration_email_enabled !== false,
     collaboration_contact_ready: data.collaboration_contact_ready === true,
+    collaboration_default_on_notice_seen: data.collaboration_default_on_notice_seen === true,
   };
+}
+
+// /creator の周知バナーを出すべきか(2026-07-29決定: デフォルトONの新規登録者向け)。
+// collaboration_enabledがtrueかつ未確認の場合のみtrue。既存配信者(フィールド無し)は
+// collaboration_enabledがfalseになるため、このバナーは絶対に表示されない。
+export function shouldShowCollaborationDefaultOnNotice(streamer: CollaborationStreamer): boolean {
+  return streamer.collaboration_enabled && !streamer.collaboration_default_on_notice_seen;
 }

@@ -244,6 +244,10 @@ async function resolveFirestoreStreamerId(db: Firestore, match: ApplicationMatch
     likes: 0,
     source_application_id: match.id,
     created_at: FieldValue.serverTimestamp(),
+    // コラボお誘い機能: 本人が自分の意思で新規登録した場合のみ初期値ON。
+    // 既存配信者(この機能追加以前から在籍)は対象外(フィールド未設定=OFF扱い)。
+    collaboration_enabled: true,
+    collaboration_default_on_notice_seen: false,
   }));
   await match.ref?.set(stripUndefined({
     streamer_id: streamerRef.id,

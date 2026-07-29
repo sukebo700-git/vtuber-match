@@ -306,6 +306,10 @@ export function normalizeStreamer(id: string, data: Record<string, any>): Stream
     vtype_mode: typeof data.vtype_mode === "string" ? data.vtype_mode : "",
     vtype_result_id: typeof data.vtype_result_id === "string" ? data.vtype_result_id : "",
     vtype_updated_at: toIso(data.vtype_updated_at),
+    collaboration_enabled: data.collaboration_enabled === true,
+    collaboration_email_enabled: data.collaboration_email_enabled !== false,
+    collaboration_contact_ready: data.collaboration_contact_ready === true,
+    collaboration_default_on_notice_seen: data.collaboration_default_on_notice_seen === true,
   };
 }
 

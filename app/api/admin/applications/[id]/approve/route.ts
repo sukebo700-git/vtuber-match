@@ -81,7 +81,11 @@ export async function POST(request: Request, { params }: { params: { id: string 
         likes: 0,
         source_application_id: params.id,
         registered_at: FieldValue.serverTimestamp(),
-        created_at: FieldValue.serverTimestamp()
+        created_at: FieldValue.serverTimestamp(),
+        // コラボお誘い機能: 本人が自分の意思で申請した場合のみ初期値ON
+        // (このエンドポイントは本人提出のapplicationを管理者が承認するもの)。
+        collaboration_enabled: true,
+        collaboration_default_on_notice_seen: false,
       });
       tx.update(applicationRef, {
         status: "approved",

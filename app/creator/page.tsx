@@ -4,7 +4,9 @@ import { CreatorSuperBoostNotice } from "@/components/CreatorSuperBoostNotice";
 import { LofiPlanBenefits } from "@/components/LofiPlanBenefits";
 import { CreatorProfileSharePanel } from "@/components/CreatorProfileSharePanel";
 import { NotificationInbox } from "@/components/NotificationInbox";
+import { CollaborationDefaultOnBanner } from "@/components/CollaborationDefaultOnBanner";
 import { getTShirtSettings } from "@/lib/tshirt/config";
+import { isCollaborationEnabled } from "@/lib/collaboration/config";
 import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
@@ -20,6 +22,7 @@ export const metadata: Metadata = {
 
 export default function CreatorPage() {
   const goodsEnabled = getTShirtSettings().enabled;
+  const collaborationEnabled = isCollaborationEnabled();
   return (
     <div className="app-shell">
       <header className="topbar">
@@ -67,6 +70,7 @@ export default function CreatorPage() {
 
         <AuthVisibility role="creator" mode="logged-in">
           <NotificationInbox />
+          {collaborationEnabled && <CollaborationDefaultOnBanner />}
           <CreatorProfileSharePanel />
           <section className="creator-action-grid creator-entry-grid">
             <a className="creator-action-card" href="/creator/edit">
@@ -85,6 +89,12 @@ export default function CreatorPage() {
               <a className="creator-action-card" href="/creator/goods">
                 <strong>オリジナルグッズ作成支援</strong>
                 <span>VTuber限定。オリジナルネームTシャツ作成キットなどを注文できます。</span>
+              </a>
+            )}
+            {collaborationEnabled && (
+              <a className="creator-action-card" href="/creator/collaboration/settings">
+                <strong>コラボのお誘い設定</strong>
+                <span>他のVTuberとのコラボ受付・非公開連絡先を設定できます。</span>
               </a>
             )}
           </section>

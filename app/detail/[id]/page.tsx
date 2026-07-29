@@ -11,6 +11,7 @@ import { PLAN_LABELS, virtualRegionLabel } from "@/lib/constants";
 import { isYouTubeVideoAvailable, videoSiteLabel, youtubeSubscribeUrl, youtubeWatchUrl } from "@/lib/youtube";
 import { absoluteUrl, siteName } from "@/lib/seo";
 import { readUserSession, viewerSessionCookie } from "@/lib/userSession";
+import { isCollaborationEnabled } from "@/lib/collaboration/config";
 import { cookies } from "next/headers";
 
 export const dynamic = "force-dynamic";
@@ -100,6 +101,9 @@ export default async function DetailPage({ params }: { params: { id: string } })
                   </span>
                 )}
                 <span className="pill dark">{PLAN_LABELS[streamer.plan_type]}</span>
+                {isCollaborationEnabled() && streamer.collaboration_enabled && (
+                  <span className="pill dark">コラボ募集中</span>
+                )}
                 {streamer.vtype_name && (
                   <span className="pill dark">VTYPE {streamer.vtype_code} {streamer.vtype_name}</span>
                 )}
