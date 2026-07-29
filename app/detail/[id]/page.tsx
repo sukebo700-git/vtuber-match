@@ -112,7 +112,7 @@ export default async function DetailPage({ params }: { params: { id: string } })
                 ))}
               </div>
               <h2>{streamer.name}</h2>
-              <p>{streamer.description || "自己アピールは未入力です。"}</p>
+              <p>{streamer.one_liner || "今日のひとことは未入力です。"}</p>
             </div>
             <DetailLikeButton streamerId={streamer.id} />
             <a className="primary-button" href={youtubeSubscribeUrl(streamer.youtube_url)} target="_blank" rel="noreferrer">
@@ -159,7 +159,7 @@ export default async function DetailPage({ params }: { params: { id: string } })
           </aside>
         </section>
 
-        {(streamer.one_liner || streamer.stream_time || streamer.region || streamer.vtype_name || (isPaidOrPremium && streamer.tags.length > 0)) && (
+        {(streamer.description || streamer.stream_time || streamer.region || streamer.vtype_name || (isPaidOrPremium && streamer.tags.length > 0)) && (
           <section className="status-band">
             <h2>プロフィール情報</h2>
             {streamer.region && <p>活動地域: {virtualRegionLabel(streamer.region)}</p>}
@@ -171,7 +171,7 @@ export default async function DetailPage({ params }: { params: { id: string } })
                 ))}
               </div>
             )}
-            {streamer.one_liner && <p style={{ marginTop: 12 }}>今日のひとこと: {streamer.one_liner}</p>}
+            {streamer.description && <p style={{ marginTop: 12 }}>自己アピール: {streamer.description}</p>}
             {streamer.stream_time && (
               <p style={{ marginTop: 12 }}>
                 <CalendarClock size={16} /> {streamer.stream_time}
