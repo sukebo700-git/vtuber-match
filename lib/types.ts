@@ -67,6 +67,12 @@ export type Streamer = VtypeProfileFields & {
   created_at?: string;
   updated_at?: string;
   source_application_id?: string;
+  /** コラボお誘い機能: 本人が明示的にONにした場合のみ申請を受け付ける。初期値false */
+  collaboration_enabled?: boolean;
+  /** コラボお誘い機能: メール補助通知のON/OFF。初期値true(未設定時はtrue扱い) */
+  collaboration_email_enabled?: boolean;
+  /** コラボお誘い機能: 非公開連絡先(collaboration_contactsコレクション)を1つ以上登録済みか */
+  collaboration_contact_ready?: boolean;
   promo_video_id?: string;
 };
 

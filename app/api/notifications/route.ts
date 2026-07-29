@@ -3,8 +3,10 @@ import { FieldValue, getAdminDb } from "@/lib/firebaseAdmin";
 import { creatorSessionCookie, readUserSession, viewerSessionCookie } from "@/lib/userSession";
 
 type NotificationSession =
-  | { targetType: "streamer"; field: "streamer_id"; id: string }
-  | { targetType: "viewer"; field: "viewer_profile_id"; id: string };
+  // "streamer"/"creator" の両方の値で書き込まれている(履歴的経緯)ため、
+  // 読み取り側は in クエリで両方を拾う。書き込み側はどちらも streamer_id を使う
+  | { targetTypes: ["streamer", "creator"]; field: "streamer_id"; id: string }
+  | { targetTypes: ["viewer"]; field: "viewer_profile_id"; id: string };
 
 export async function GET(request: Request) {
   const session = readNotificationSession(request);
@@ -15,7 +17,7 @@ export async function GET(request: Request) {
 
   try {
     const snapshot = await db.collection("notifications")
-      .where("target_type", "==", session.targetType)
+      .where("target_type", "in", session.targetTypes)
       .where(session.field, "==", session.id)
       .orderBy("created_at", "desc")
       .limit(20)
@@ -46,7 +48,8 @@ export async function PATCH(request: Request) {
   const doc = await ref.get();
   if (!doc.exists) return NextResponse.json({ error: "notification not found" }, { status: 404 });
   const data = doc.data() || {};
-  if (data.target_type !== session.targetType || String(data[session.field] || "") !== session.id) {
+  const targetTypeMatches = (session.targetTypes as readonly string[]).includes(String(data.target_type || ""));
+  if (!targetTypeMatches || String(data[session.field] || "") !== session.id) {
     return NextResponse.json({ error: "notification not found" }, { status: 404 });
   }
 
@@ -61,12 +64,12 @@ export async function PATCH(request: Request) {
 function readNotificationSession(request: Request): NotificationSession | null {
   const creator = readUserSession<{ streamer_id?: string }>(request, creatorSessionCookie);
   if (creator?.streamer_id) {
-    return { targetType: "streamer", field: "streamer_id", id: String(creator.streamer_id) };
+    return { targetTypes: ["streamer", "creator"], field: "streamer_id", id: String(creator.streamer_id) };
   }
 
   const viewer = readUserSession<{ id?: string }>(request, viewerSessionCookie);
   if (viewer?.id) {
-    return { targetType: "viewer", field: "viewer_profile_id", id: String(viewer.id) };
+    return { targetTypes: ["viewer"], field: "viewer_profile_id", id: String(viewer.id) };
   }
 
   return null;

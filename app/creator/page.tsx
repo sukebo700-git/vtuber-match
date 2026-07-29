@@ -3,6 +3,7 @@ import { AuthVisibility } from "@/components/AuthVisibility";
 import { CreatorSuperBoostNotice } from "@/components/CreatorSuperBoostNotice";
 import { LofiPlanBenefits } from "@/components/LofiPlanBenefits";
 import { CreatorProfileSharePanel } from "@/components/CreatorProfileSharePanel";
+import { NotificationInbox } from "@/components/NotificationInbox";
 import { getTShirtSettings } from "@/lib/tshirt/config";
 import type { Metadata } from "next";
 
@@ -65,6 +66,7 @@ export default function CreatorPage() {
         </AuthVisibility>
 
         <AuthVisibility role="creator" mode="logged-in">
+          <NotificationInbox />
           <CreatorProfileSharePanel />
           <section className="creator-action-grid creator-entry-grid">
             <a className="creator-action-card" href="/creator/edit">

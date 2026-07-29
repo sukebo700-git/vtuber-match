@@ -43,5 +43,30 @@ service cloud.firestore {
       allow create: if signedIn() && request.auth.uid == userId;
       allow delete: if false;
     }
+
+    // コラボお誘い機能: 全てサーバーAPI(Admin SDK)経由のみで読み書きする。
+    // クライアントSDKからの直接アクセスは全面拒否(未定義コレクションはデフォルト拒否だが、
+    // 意図を明文化し将来の誤設定を防ぐため明示的に書く)。
+    match /collaboration_requests/{requestId} {
+      allow read, write: if false;
+    }
+    match /collaboration_usage/{usageId} {
+      allow read, write: if false;
+    }
+    match /collaboration_pairs/{pairId} {
+      allow read, write: if false;
+    }
+    match /collaboration_contacts/{streamerId} {
+      allow read, write: if false;
+    }
+    match /collaboration_blocks/{blockId} {
+      allow read, write: if false;
+    }
+    match /collaboration_reports/{reportId} {
+      allow read, write: if false;
+    }
+    match /system_usage/{usageId} {
+      allow read, write: if false;
+    }
   }
 }
