@@ -16,8 +16,12 @@ const popupDismissDaysMs = 7 * 24 * 60 * 60 * 1000;
 const shortVideoRequestPath = "/creator/short-video";
 // ページ遷移のたびに再表示され続けるとうるさいため、配信者(未ログイン時はブラウザ)
 // ごとに1日あたりの表示回数を制限する。
+// あわせて、1日2回までの上限は維持しつつ、短時間に連続して出ると
+// 「連続表示」に感じられるため、前回表示からの最低間隔も設ける(2026-07-29追加)。
 const popupShownCountKeyPrefix = "vtuber-match-short-video-campaign-shown-count-";
 const popupMaxShowsPerDay = 2;
+const popupLastShownAtKeyPrefix = "vtuber-match-short-video-campaign-last-shown-at-";
+const popupMinIntervalMs = 4 * 60 * 60 * 1000;
 
 export function ShortVideoCampaignPopup() {
   const [open, setOpen] = useState(false);
@@ -36,18 +40,23 @@ export function ShortVideoCampaignPopup() {
 
     const creatorKey = auth?.id || auth?.streamer_id || auth?.application_id || auth?.email || "guest";
     const countKey = `${popupShownCountKeyPrefix}${creatorKey}-${new Date().toDateString()}`;
+    const lastShownAtKey = `${popupLastShownAtKeyPrefix}${creatorKey}`;
     let shownToday = 0;
+    let lastShownAt = 0;
     try {
       shownToday = Number(localStorage.getItem(countKey) || "0");
+      lastShownAt = Number(localStorage.getItem(lastShownAtKey) || "0");
     } catch {
       // Keep the campaign usable even when storage is blocked.
     }
     if (shownToday >= popupMaxShowsPerDay) return;
+    if (lastShownAt && Date.now() - lastShownAt < popupMinIntervalMs) return;
 
     const timer = window.setTimeout(() => {
       setOpen(true);
       try {
         localStorage.setItem(countKey, String(shownToday + 1));
+        localStorage.setItem(lastShownAtKey, String(Date.now()));
       } catch {
         // Ignore storage failures.
       }
