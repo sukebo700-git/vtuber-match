@@ -101,10 +101,11 @@ export async function POST(request: Request) {
     if (!match || (passwordHash && match.data.creator_password_hash !== passwordHash)) {
       return NextResponse.json({ error: "メールアドレスまたはパスワードが違います。" }, { status: 401 });
     }
-    const thumbnailError = validateThumbnailCount(body, match.data.desired_plan);
+    const localPlan = await resolveEffectiveLocalPlan(match);
+    const thumbnailError = validateThumbnailCount(body, localPlan);
     if (thumbnailError) return thumbnailError;
     const patch = {
-      ...buildStreamerPatch(body, match.data.desired_plan),
+      ...buildStreamerPatch(body, localPlan),
       updated_at: new Date().toISOString(),
     };
     const resolvedStreamerId = await resolveLocalStreamerId(match);
@@ -121,7 +122,7 @@ export async function POST(request: Request) {
   if (!match || (passwordHash && match.data.creator_password_hash !== passwordHash)) {
     return NextResponse.json({ error: "メールアドレスまたはパスワードが違います。" }, { status: 401 });
   }
-  const plan = match.data.desired_plan || "free";
+  const plan = await resolveEffectiveFirestorePlan(db, match);
   const thumbnailError = validateThumbnailCount(body, plan);
   if (thumbnailError) return thumbnailError;
   const patch = buildStreamerPatch(body, plan);
@@ -166,6 +167,35 @@ export async function POST(request: Request) {
   invalidateStreamerCaches();
   const streamerDoc = await db.collection("streamers").doc(resolvedStreamerId).get();
   return NextResponse.json({ id: resolvedStreamerId, streamer: { id: resolvedStreamerId, ...streamerDoc.data() }, source: "firestore" });
+}
+
+// 申込書(application)のdesired_planは初回申込時点の値のまま更新されない
+// (Stripeアップグレード/管理者付与ではapplication側を更新していないため)。
+// 既にstreamerが紐づいている場合は、そちらのplan_type(実際の現在のプラン)を
+// 正として使う。使わないと、無料で申込→有料/プレミアムへアップグレードした
+// 配信者が、画像枚数・自己アピール文字数などの上限判定で無料プラン扱いに
+// なってしまう(2026-07-29: 実際の有料配信者からの問い合わせで発覚・確認済み。
+// 画像が1枚しか登録できず、自己アピール文が100文字超で静かに切り詰められていた)。
+async function resolveEffectiveFirestorePlan(db: Firestore, match: ApplicationMatch): Promise<PlanType> {
+  const linkedStreamerId = String(match.data.streamer_id || "");
+  if (linkedStreamerId) {
+    const doc = await db.collection("streamers").doc(linkedStreamerId).get();
+    if (doc.exists && isActiveStreamer(doc.data())) {
+      const planType = (doc.data() as Streamer).plan_type;
+      if (planType) return planType;
+    }
+  }
+  return match.data.desired_plan || "free";
+}
+
+async function resolveEffectiveLocalPlan(match: ApplicationMatch): Promise<PlanType> {
+  const linkedStreamerId = String(match.data.streamer_id || "");
+  if (linkedStreamerId) {
+    const streamers = await readLocalStreamers();
+    const linked = streamers.find((streamer) => streamer.id === linkedStreamerId);
+    if (isActiveStreamer(linked) && linked?.plan_type) return linked.plan_type;
+  }
+  return match.data.desired_plan || "free";
 }
 
 async function resolveLocalStreamerId(match: ApplicationMatch) {
