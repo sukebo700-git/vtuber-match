@@ -161,7 +161,7 @@ export function ShortVideoRequestForm() {
             <div className="field">
               <label htmlFor="short_video_appeal">紹介してほしい内容(300文字まで)</label>
               <p className="help-text">
-                活動内容・配信ジャンル・好きなこと・性格など、知ってほしい情報を自由に書いてください。文章として整っていなくても大丈夫です。ここに書いた内容をもとに、動画用の紹介ナレーションを作成します(書かれていない情報が追加されることはありません)。
+                活動内容・配信ジャンル・好きなこと・性格など、知ってほしい情報を自由に書いてください。文章として整っていなくても大丈夫です。ここに書いた内容をもとに、動画用の紹介ナレーションを作成します。
               </p>
               <textarea
                 id="short_video_appeal"
