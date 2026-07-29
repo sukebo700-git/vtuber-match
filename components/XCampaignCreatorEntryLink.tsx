@@ -16,7 +16,7 @@ export function XCampaignCreatorEntryLink() {
   if (!visible) return null;
 
   return (
-    <p style={{ textAlign: "center", marginTop: 8 }}>
+    <p className="landing-x-campaign-entry" style={{ textAlign: "center", marginTop: 8 }}>
       <a className="secondary-button" href="/creator/apply?src=x_campaign">
         配信者としてXキャンペーンに応募する
       </a>

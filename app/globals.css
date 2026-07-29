@@ -6058,12 +6058,19 @@ button {
 
 /* Final top refresh override: remove the old phone-card feel and keep the character as the hero. */
 .landing-refresh-main {
-  width: min(1180px, 100%) !important;
+  /* 従来はmin(1180px, 100%)で1180pxを超える画面幅では一切広がらず、
+     大きなモニターほど中央に小さく固まって見えていた(2026-07-29報告)。
+     clamp()で画面幅に応じて滑らかにスケールさせつつ、上限も1600pxに
+     抑えて「別のモニターでは逆に大きすぎる」ことがないようにする。 */
+  width: clamp(320px, 90vw, 1600px) !important;
   padding-inline: clamp(14px, 3vw, 24px);
 }
 
 .landing-refresh-hero {
-  min-height: min(760px, calc(100svh - 82px)) !important;
+  /* 実際にJSXで使われているのはこちら(.landing-hero単体ではなく
+     .landing-refresh-heroが!important付きで優先されていた)。
+     従来はmin(760px, ...)で画面が大きくても760pxに頭打ちになっていた。 */
+  min-height: calc(100svh - 82px) !important;
   grid-template-columns: minmax(320px, 0.92fr) minmax(360px, 0.98fr) !important;
   align-items: center !important;
   gap: clamp(28px, 5vw, 70px) !important;
@@ -6083,7 +6090,9 @@ button {
 
 .landing-refresh-visual {
   position: relative;
-  min-height: clamp(520px, 62vw, 680px);
+  /* コンテナが広がった分だけキャラクターも大きく表示できるよう上限を引き上げる。
+     vw係数は下げて(62→46)、幅の広いモニターほど際限なく肥大化しないようにする。 */
+  min-height: clamp(520px, 46vw, 780px);
   display: grid !important;
   place-items: center !important;
   transform: none !important;
@@ -6115,8 +6124,10 @@ button {
 .landing-hero-character {
   position: relative;
   z-index: 1;
-  width: min(100%, 560px);
-  min-height: clamp(480px, 58vw, 660px);
+  /* 従来は560px頭打ちで、コンテナを広げてもキャラクターだけ小さいままだった。
+     .landing-refresh-visualと同じ考え方でclamp上限を引き上げる。 */
+  width: min(100%, 680px);
+  min-height: clamp(480px, 44vw, 760px);
   display: grid;
   place-items: end center;
 }
@@ -6124,7 +6135,7 @@ button {
 .landing-hero-character .landing-oshi-frame {
   width: 100% !important;
   height: 100% !important;
-  min-height: clamp(480px, 58vw, 660px) !important;
+  min-height: clamp(480px, 44vw, 760px) !important;
   overflow: visible !important;
   border: 0 !important;
   border-radius: 0 !important;
@@ -6244,6 +6255,15 @@ button {
 
   .landing-hero-mini-actions {
     bottom: 2%;
+  }
+
+  /* 2026-07-29報告: スマホ版は情報量が多すぎる。見出し+CTA+キャラクター+
+     メインの掲載促進バナーだけに絞り、二次的なXキャンペーン導線(バナー+
+     専用リンク)はスマホでは非表示にする(PC版・タブレット版は維持)。
+     視聴者向け登録の主要導線は/viewerや通常のナビゲーションに残っている。 */
+  .landing-x-campaign-banner,
+  .landing-x-campaign-entry {
+    display: none !important;
   }
 }
 
@@ -6843,7 +6863,10 @@ body::after {
 }
 
 .landing-hero {
-  min-height: min(760px, calc(100svh - 84px));
+  /* 従来は min(760px, ...) で画面が大きくても760pxに頭打ちになり、
+     広い画面では余白が余って「画面いっぱいに表示されない」状態だった。
+     ヘッダー分(84px)を引いた実際のビューポート高さいっぱいまで広げる。 */
+  min-height: calc(100svh - 84px);
   grid-template-columns: minmax(300px, 0.94fr) minmax(340px, 0.9fr);
   gap: clamp(22px, 4.4vw, 58px);
   padding: clamp(24px, 4vw, 52px) 0 clamp(10px, 2vw, 22px);
