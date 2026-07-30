@@ -397,11 +397,11 @@ export function CreatorProfileEditForm() {
       </div>
 
       <div className="field">
-        <label>タグ {tags.length}/3</label>
+        <label>タグ {tags.length}/{planTagLimit(planType)}</label>
         <div className="choice-grid dense">
           {TAGS.map((tag) => (
             <label className="choice" key={tag}>
-              <input type="checkbox" checked={tags.includes(tag)} onChange={() => toggle(tags, setTags, tag, 3)} />
+              <input type="checkbox" checked={tags.includes(tag)} onChange={() => toggle(tags, setTags, tag, planTagLimit(planType))} />
               {tag}
             </label>
           ))}
@@ -585,4 +585,10 @@ function planImageLimit(plan: string) {
   if (plan === "free") return 1;
   if (plan === "boost") return 5;
   return 3;
+}
+
+function planTagLimit(plan: string) {
+  if (plan === "free") return 3;
+  if (plan === "boost") return 8;
+  return 5;
 }

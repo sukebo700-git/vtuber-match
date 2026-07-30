@@ -349,7 +349,7 @@ function matchesApplication(application: StreamerApplication, input: { email: st
 
 function buildStreamerPatch(body: Record<string, unknown>, plan: PlanType): Partial<Streamer> {
   const maxCategories = 3;
-  const maxTags = 3;
+  const maxTags = maxTagsForPlan(plan);
   const thumbnails = normalizeThumbnails(body.thumbnails, body.image, plan);
   const patch: Partial<Streamer> = {
     categories: sanitizeArray(body.categories).slice(0, maxCategories),
@@ -372,7 +372,7 @@ function buildStreamerPatch(body: Record<string, unknown>, plan: PlanType): Part
 
 function buildApplicationPatch(body: Record<string, unknown>, plan: PlanType, existing?: StreamerApplication) {
   const maxCategories = 3;
-  const maxTags = 3;
+  const maxTags = maxTagsForPlan(plan);
   const thumbnails = normalizeThumbnails(body.thumbnails, body.image, plan);
   const patch: Record<string, unknown> = {
     categories: sanitizeArray(body.categories).slice(0, maxCategories),
@@ -434,6 +434,10 @@ function recordTime(value: Record<string, unknown>) {
 
 function sanitizeArray(value: unknown) {
   return Array.isArray(value) ? value.map(String).map((item) => item.trim()).filter(Boolean) : [];
+}
+
+function maxTagsForPlan(plan: PlanType) {
+  return plan === "free" ? 3 : plan === "boost" ? 8 : 5;
 }
 
 function validateThumbnailCount(body: Record<string, unknown>, plan: PlanType) {
