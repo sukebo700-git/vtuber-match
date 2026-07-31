@@ -6113,7 +6113,7 @@ button {
   /* 2026-07-31(3回目): 縮小しすぎたため、画面の高さ(svh)基準で
      再度大きくする。svh基準なら横幅の広さに関わらず「モニターの高さ」
      に対して一定の見た目サイズになる。 */
-  min-height: clamp(460px, 71svh, 860px);
+  min-height: clamp(460px, 82svh, 940px);
   display: grid !important;
   place-items: center !important;
   transform: none !important;
@@ -6153,7 +6153,7 @@ button {
   width: auto;
   max-width: 100%;
   aspect-ratio: 0.68;
-  height: clamp(460px, 71svh, 860px);
+  height: clamp(460px, 82svh, 940px);
   display: grid;
   place-items: end center;
 }
