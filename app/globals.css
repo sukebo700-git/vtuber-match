@@ -6100,20 +6100,20 @@ button {
 
 .landing-refresh-copy h1 {
   max-width: 460px !important;
-  /* 2026-07-31: 見出しが画面幅に応じて最大87pxまで拡大しており、
-     ヒーロー全体が肥大化する一因になっていた。モニターが違っても
-     見た目のサイズがほぼ一定になるよう、vwの影響を小さく抑える。 */
-  font-size: clamp(1.7rem, 2.2vw, 2.4rem) !important;
-  line-height: 1.18 !important;
+  /* 2026-07-31(3回目): 固定に近いサイズまで縮小しすぎて、逆にモニターに
+     対して異常に小さく見えるようになってしまった。「無料宣伝バナーが
+     初期表示でちょうど少し見切れる程度」を狙って、画面の高さ(svh)基準で
+     スケールさせる(vw基準だと横に広いだけの画面で縦は詰まったままになる)。 */
+  font-size: clamp(2rem, 6.2svh, 3.6rem) !important;
+  line-height: 1.15 !important;
 }
 
 .landing-refresh-visual {
   position: relative;
-  /* 2026-07-31: 680x1020px相当まで拡大されており、ヒーローが画面を
-     占有して直下の宣伝バナーが初期表示で見えなくなっていた。モニターが
-     違っても見た目のサイズがほぼ一定になるよう、vw係数を大きく下げて
-     コンパクトな固定に近いサイズにする。 */
-  min-height: clamp(280px, 16vw, 380px);
+  /* 2026-07-31(3回目): 縮小しすぎたため、画面の高さ(svh)基準で
+     再度大きくする。svh基準なら横幅の広さに関わらず「モニターの高さ」
+     に対して一定の見た目サイズになる。 */
+  min-height: clamp(460px, 71svh, 860px);
   display: grid !important;
   place-items: center !important;
   transform: none !important;
@@ -6145,11 +6145,15 @@ button {
 .landing-hero-character {
   position: relative;
   z-index: 1;
-  /* 2026-07-31: .landing-refresh-visualと同じ理由でコンパクト化。
-     幅も680px→320pxへ縮小し、モニターが変わっても見た目のサイズが
-     ほぼ一定になるようvw係数を小さくする。 */
-  width: min(100%, 320px);
-  min-height: clamp(280px, 16vw, 380px);
+  /* 2026-07-31(3回目): svh基準のheightに戻すが、幅を固定(320px)のままに
+     すると縦長画像がobject-fit:containで幅基準に縮み、ピラーボックス化
+     して中央に空白ができてしまう(過去に一度発生した不具合)。
+     aspect-ratioで箱自体を画像に近い縦横比にしておき、object-fit:contain
+     の余白(レターボックス/ピラーボックス)がほぼ出ないようにする。 */
+  width: auto;
+  max-width: 100%;
+  aspect-ratio: 0.68;
+  height: clamp(460px, 71svh, 860px);
   display: grid;
   place-items: end center;
 }
@@ -7298,18 +7302,18 @@ body::after {
 }
 
 .landing-hero-badges {
-  width: min(100%, 220px) !important;
+  width: min(100%, 320px) !important;
 }
 
 .landing-hero-milestone {
-  /* 2026-07-31: 見出し・キャラ画像のコンパクト化に合わせてバッジも縮小。 */
+  /* 2026-07-31(3回目): 見出し・キャラ画像と合わせてsvh基準で再度大きくする。 */
   position: relative;
-  width: min(100%, 220px) !important;
-  min-height: clamp(56px, 4vw, 68px);
+  width: min(100%, 320px) !important;
+  min-height: clamp(72px, 8svh, 104px);
   display: grid;
   align-content: center;
   justify-items: start;
-  padding: clamp(8px, 1.2vw, 12px) clamp(12px, 1.6vw, 16px) !important;
+  padding: clamp(12px, 1.6svh, 18px) clamp(16px, 2vw, 24px) !important;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.94) !important;
   background:
@@ -7353,7 +7357,7 @@ body::after {
 }
 
 .landing-hero-milestone strong {
-  font-size: clamp(1.2rem, 1.6vw, 1.5rem) !important;
+  font-size: clamp(1.5rem, 3.4svh, 2.2rem) !important;
   line-height: 1 !important;
 }
 
