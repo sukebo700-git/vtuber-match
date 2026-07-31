@@ -6080,6 +6080,11 @@ button {
 .landing-refresh-copy {
   max-width: 600px !important;
   gap: clamp(13px, 1.8vw, 18px) !important;
+  /* 2026-07-31: キャラ画像側(縦長)がhero行の高さを押し上げるため、
+     align-items:centerのままだとテキスト列がその背の高い行の中央に
+     配置されてCTAボタンがビューポート下端からはみ出ていた。テキスト列
+     だけ行の上端に揃えて、キャラ画像の高さに影響されないようにする。 */
+  align-self: start !important;
 }
 
 .landing-refresh-copy h1 {
@@ -6096,10 +6101,11 @@ button {
   position: relative;
   /* コンテナが広がった分だけキャラクターも大きく表示できるよう上限を引き上げる。
      vw係数は下げて(62→46)、幅の広いモニターほど際限なく肥大化しないようにする。
-     2026-07-31: vwのみだと縦に詰まったモニター(1920x1080等)でこの列がhero行の
-     高さを押し上げ、中央寄せされたテキスト側のCTAがビューポート外に押し出されて
-     いたため、svhも上限に加えて縦方向でも頭打ちにする。 */
-  min-height: clamp(420px, min(46vw, 62svh), 780px);
+     2026-07-31: 縦方向の頭打ちはテキスト列側のalign-self:startで対応する
+     ことにしたため、ここはvw基準の元のサイズに戻す(svh側で縮めると
+     縦長画像がobject-fit:containで横方向に大きく縮み、中央に大きな空白が
+     できてしまうため)。 */
+  min-height: clamp(520px, 46vw, 780px);
   display: grid !important;
   place-items: center !important;
   transform: none !important;
@@ -6132,13 +6138,9 @@ button {
   position: relative;
   z-index: 1;
   /* 従来は560px頭打ちで、コンテナを広げてもキャラクターだけ小さいままだった。
-     .landing-refresh-visualと同じ考え方でclamp上限を引き上げる。
-     2026-07-31: min-heightだけだと、縦長素材はwidth基準でobject-fit:containが
-     縦に伸びてこの高さを超えてしまい(実測1020px超)、結局ヒーロー行全体が
-     縦に詰まったモニターでビューポート外まで押し出されていた。heightを
-     明示して両方向の上限として効かせる。 */
+     .landing-refresh-visualと同じ考え方でclamp上限を引き上げる。 */
   width: min(100%, 680px);
-  height: clamp(400px, min(44vw, 58svh), 760px);
+  min-height: clamp(480px, 44vw, 760px);
   display: grid;
   place-items: end center;
 }
