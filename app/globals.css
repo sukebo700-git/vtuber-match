@@ -6081,13 +6081,15 @@ button {
 }
 
 .landing-refresh-copy {
-  max-width: 600px !important;
+  max-width: 460px !important;
   gap: clamp(13px, 1.8vw, 18px) !important;
-  /* 2026-07-31: キャラ画像側(縦長)がhero行の高さを押し上げるため、
-     align-items:centerのままだとテキスト列がその背の高い行の中央に
-     配置されてCTAボタンがビューポート下端からはみ出ていた。テキスト列
-     だけ行の上端に揃えて、キャラ画像の高さに影響されないようにする。 */
-  align-self: start !important;
+  /* 2026-07-31: キャラ画像を縮小したことで行の高さも小さくなったため、
+     縦方向は元のalign-items:center(中央揃え)に戻して問題ない。
+     さらに、テキスト列の描画幅(460px)より列トラックの方が広く、
+     左端に寄って左に大きな余白が空いて見えていたため、列トラック内で
+     水平方向も中央寄せにする(指示のスクリーンショットに合わせて
+     右・少し下へ移動)。 */
+  justify-self: center !important;
 }
 
 .landing-refresh-copy h1 {
