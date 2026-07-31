@@ -6073,7 +6073,13 @@ button {
      結果としてキャラ画像・見出しが必要以上に巨大化し、直下の宣伝バナーが
      初期表示で完全に隠れてしまう(スクロールしないと存在に気付けない)と
      報告があった。min-heightの強制をやめ、コンテンツ量に応じた自然な
-     高さにする(=画面サイズが違っても見た目のサイズがほぼ一定になる)。 */
+     高さにする(=画面サイズが違っても見た目のサイズがほぼ一定になる)。
+     2026-07-31(続報): ここでmin-heightの宣言を削除しただけでは、同じ要素に
+     付与されている別の.landing-hero(6880行目付近)のmin-height:calc(100svh-84px)
+     が(!important無しのまま)そのまま生き残って効いてしまい、結局グリッド全体が
+     画面いっぱいに引き伸ばされ、各行に余白が配分されて宣伝バナーとの間に
+     大きな空白ができていた。!importantで明示的にautoへ上書きして無効化する。 */
+  min-height: auto !important;
   grid-template-columns: minmax(280px, 0.95fr) minmax(280px, 0.85fr) !important;
   align-items: center !important;
   gap: clamp(20px, 3vw, 40px) !important;
