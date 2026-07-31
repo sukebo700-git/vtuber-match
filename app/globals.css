@@ -6084,15 +6084,22 @@ button {
 
 .landing-refresh-copy h1 {
   max-width: 620px !important;
-  font-size: clamp(3.1rem, 6vw, 5.45rem) !important;
-  line-height: 1.01 !important;
+  /* 2026-07-31: vw基準のみだと横幅は広いが縦は詰まっているモニター
+     (例: 1920x1080、ブラウザのタブ/アドレスバー分だけ実際の可視高さは
+     さらに減る)で見出し4行がビューポート下端からはみ出ていたため、
+     svh(実際の可視高さ)も上限に加えて縦方向でも頭打ちにする。 */
+  font-size: clamp(2.3rem, min(4.4vw, 7.2svh), 4.2rem) !important;
+  line-height: 1.03 !important;
 }
 
 .landing-refresh-visual {
   position: relative;
   /* コンテナが広がった分だけキャラクターも大きく表示できるよう上限を引き上げる。
-     vw係数は下げて(62→46)、幅の広いモニターほど際限なく肥大化しないようにする。 */
-  min-height: clamp(520px, 46vw, 780px);
+     vw係数は下げて(62→46)、幅の広いモニターほど際限なく肥大化しないようにする。
+     2026-07-31: vwのみだと縦に詰まったモニター(1920x1080等)でこの列がhero行の
+     高さを押し上げ、中央寄せされたテキスト側のCTAがビューポート外に押し出されて
+     いたため、svhも上限に加えて縦方向でも頭打ちにする。 */
+  min-height: clamp(420px, min(46vw, 62svh), 780px);
   display: grid !important;
   place-items: center !important;
   transform: none !important;
@@ -6125,9 +6132,13 @@ button {
   position: relative;
   z-index: 1;
   /* 従来は560px頭打ちで、コンテナを広げてもキャラクターだけ小さいままだった。
-     .landing-refresh-visualと同じ考え方でclamp上限を引き上げる。 */
+     .landing-refresh-visualと同じ考え方でclamp上限を引き上げる。
+     2026-07-31: min-heightだけだと、縦長素材はwidth基準でobject-fit:containが
+     縦に伸びてこの高さを超えてしまい(実測1020px超)、結局ヒーロー行全体が
+     縦に詰まったモニターでビューポート外まで押し出されていた。heightを
+     明示して両方向の上限として効かせる。 */
   width: min(100%, 680px);
-  min-height: clamp(480px, 44vw, 760px);
+  height: clamp(400px, min(44vw, 58svh), 760px);
   display: grid;
   place-items: end center;
 }
@@ -6135,7 +6146,6 @@ button {
 .landing-hero-character .landing-oshi-frame {
   width: 100% !important;
   height: 100% !important;
-  min-height: clamp(480px, 44vw, 760px) !important;
   overflow: visible !important;
   border: 0 !important;
   border-radius: 0 !important;
