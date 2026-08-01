@@ -7315,16 +7315,19 @@ body::after {
   justify-items: start;
   padding: clamp(12px, 1.6svh, 18px) clamp(16px, 2vw, 24px) !important;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.94) !important;
+  border: 1px solid rgba(255, 255, 255, 0.95) !important;
+  /* 2026-08-01: 300名突破への更新に合わせて、サイト全体のピンク/紫系配色
+     に埋もれないよう、対比の強い赤〜オレンジ〜ゴールドの配色に変更して
+     より目立たせる。 */
   background:
-    linear-gradient(135deg, rgba(255, 247, 107, 0.96), rgba(255, 92, 158, 0.92) 48%, rgba(255, 138, 82, 0.92)),
+    linear-gradient(135deg, #ff2d55, #ff7a00 52%, #ffd60a),
     rgba(255, 255, 255, 0.9) !important;
   color: #ffffff !important;
   box-shadow:
-    0 20px 42px rgba(255, 92, 158, 0.26),
-    0 0 34px rgba(255, 238, 91, 0.26),
-    0 0 0 6px rgba(255, 255, 255, 0.36) !important;
-  animation: landing-milestone-glow 3.2s ease-in-out infinite;
+    0 22px 48px rgba(255, 45, 85, 0.38),
+    0 0 44px rgba(255, 214, 10, 0.42),
+    0 0 0 6px rgba(255, 255, 255, 0.42) !important;
+  animation: landing-milestone-glow 2.6s ease-in-out infinite;
 }
 
 .landing-hero-milestone::before {

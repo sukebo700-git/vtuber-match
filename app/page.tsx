@@ -40,9 +40,9 @@ export default function HomePage() {
         <section className="landing-hero landing-refresh-hero">
           <div className="landing-copy landing-refresh-copy">
             <div className="landing-hero-badges">
-              <div className="landing-milestone landing-hero-milestone" aria-label="登録者数200名突破">
+              <div className="landing-milestone landing-hero-milestone" aria-label="登録者数300名突破">
                 <span>登録者数</span>
-                <strong>200名突破</strong>
+                <strong>300名突破</strong>
               </div>
             </div>
             <h1>
