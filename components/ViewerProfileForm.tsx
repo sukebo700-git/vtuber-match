@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { CATEGORIES } from "@/lib/constants";
 import { diagnosisTypes } from "@/lib/diagnosis";
 import { viewerVtypeStorageKey, type VtypeProfileFields } from "@/lib/diagnosisProfile";
+import { isXCampaignActive } from "@/lib/campaign";
 import type { ViewerProfile } from "@/lib/types";
 
 const storageKey = "vtuber-match-viewer-profile";
@@ -285,22 +286,24 @@ export function ViewerProfileForm() {
         />
       </div>
 
-      <div className="field consent-field">
-        <label className="choice consent-choice">
-          <input
-            type="checkbox"
-            checked={profile.x_campaign_entry === true}
-            disabled={profile.x_campaign_entry === true}
-            onChange={(event) => update({ x_campaign_entry: event.target.checked })}
-          />
-          Xキャンペーンに応募する(@VtuberMatchをフォロー・対象投稿をリポスト済みの方)
-        </label>
-        <p className="help-text">
-          {profile.x_campaign_entry
-            ? "応募済みです。抽選結果をお待ちください。"
-            : "登録済みの方も、フォロー・リポスト後にチェックして保存すると応募できます。Xアカウント欄の入力もお願いします。"}
-        </p>
-      </div>
+      {(isXCampaignActive() || profile.x_campaign_entry === true) && (
+        <div className="field consent-field">
+          <label className="choice consent-choice">
+            <input
+              type="checkbox"
+              checked={profile.x_campaign_entry === true}
+              disabled={profile.x_campaign_entry === true}
+              onChange={(event) => update({ x_campaign_entry: event.target.checked })}
+            />
+            Xキャンペーンに応募する(@VtuberMatchをフォロー・対象投稿をリポスト済みの方)
+          </label>
+          <p className="help-text">
+            {profile.x_campaign_entry
+              ? "応募済みです。抽選結果をお待ちください。"
+              : "登録済みの方も、フォロー・リポスト後にチェックして保存すると応募できます。Xアカウント欄の入力もお願いします。"}
+          </p>
+        </div>
+      )}
 
       <div className="field">
         <label htmlFor="viewer_one_liner">一言メッセージ {oneLinerLimit}文字まで</label>
