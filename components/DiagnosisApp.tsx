@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import {
   advancedQuestions,
@@ -489,6 +489,9 @@ function DiagnosisShell({ children }: { children: ReactNode }) {
 }
 
 function RadarChart({ scores, mode = "vtuber" }: { scores: DiagnosisScores; mode?: "vtuber" | "viewer" }) {
+  const [zoomed, setZoomed] = useState(false);
+  const [magnified, setMagnified] = useState(false);
+  const zoomViewRef = useRef<HTMLDivElement | null>(null);
   const center = 120;
   const radius = 88;
   const points = diagnosisAxes
@@ -499,7 +502,30 @@ function RadarChart({ scores, mode = "vtuber" }: { scores: DiagnosisScores; mode
     })
     .join(" ");
 
-  return (
+  useEffect(() => {
+    if (!zoomed || typeof window === "undefined") return;
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") closeZoom();
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [zoomed]);
+
+  function closeZoom() {
+    setZoomed(false);
+    setMagnified(false);
+  }
+
+  useEffect(() => {
+    const view = zoomViewRef.current;
+    if (!view) return;
+    view.scrollTo({
+      left: magnified ? (view.scrollWidth - view.clientWidth) / 2 : 0,
+      top: magnified ? (view.scrollHeight - view.clientHeight) / 2 : 0,
+    });
+  }, [magnified]);
+
+  const chart = (
     <div className="diagnosis-radar" aria-label="診断スコアのレーダーチャート">
       <img
         src={mode === "viewer" ? "/diagnosis/ui/viewer-radar-template.webp" : "/diagnosis/ui/radar-template.webp"}
@@ -522,6 +548,43 @@ function RadarChart({ scores, mode = "vtuber" }: { scores: DiagnosisScores; mode
         ))}
         <polygon className="diagnosis-radar-score" points={points} />
       </svg>
+    </div>
+  );
+
+  return (
+    <div className="diagnosis-radar-wrap">
+      <button
+        className="diagnosis-radar-zoom-trigger"
+        type="button"
+        onClick={() => setZoomed(true)}
+        aria-label="レーダーチャートを拡大表示する"
+      >
+        {chart}
+        <span className="diagnosis-radar-zoom-hint">タップで拡大</span>
+      </button>
+      {zoomed ? (
+        <div
+          className="diagnosis-radar-backdrop"
+          role="dialog"
+          aria-modal="true"
+          aria-label="レーダーチャートの拡大表示"
+          onClick={closeZoom}
+        >
+          <div className="diagnosis-radar-modal" onClick={(event) => event.stopPropagation()}>
+            <div className={`diagnosis-radar-modal-view${magnified ? " magnified" : ""}`} ref={zoomViewRef}>
+              {chart}
+            </div>
+            <div className="diagnosis-radar-modal-actions">
+              <button className="diagnosis-secondary-button" type="button" onClick={() => setMagnified((prev) => !prev)}>
+                {magnified ? "縮小する" : "さらに拡大する"}
+              </button>
+              <button className="diagnosis-secondary-button" type="button" onClick={closeZoom}>
+                閉じる
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
