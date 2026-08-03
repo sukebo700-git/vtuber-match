@@ -1,3 +1,4 @@
+import { AuthVisibility } from "@/components/AuthVisibility";
 import { HeaderAuthStatus } from "@/components/HeaderAuthStatus";
 import { LandingRandomVtuberImage } from "@/components/LandingRandomVtuberImage";
 import { SmartPromoLink } from "@/components/SmartPromoLink";
@@ -79,6 +80,15 @@ export default function HomePage() {
             </div>
             <span className="landing-promo-banner-cta">無料で宣伝を申し込む</span>
           </SmartPromoLink>
+
+          <AuthVisibility role="viewer" mode="logged-out">
+            <a className="landing-promo-banner" href="/viewer/register">
+              <div className="landing-promo-banner-copy">
+                <strong>スワイプ回数、マッチング無制限</strong>
+              </div>
+              <span className="landing-promo-banner-cta">リスナー登録無料</span>
+            </a>
+          </AuthVisibility>
 
           <SmartPromoLink kind="x-campaign" className="landing-promo-banner landing-x-campaign-banner">
             <div className="landing-promo-banner-copy">
