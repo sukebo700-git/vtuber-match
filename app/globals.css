@@ -2510,6 +2510,68 @@ button {
   box-shadow: none;
 }
 
+.resume-history-rows {
+  display: grid;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.resume-history-row {
+  display: grid;
+  grid-template-columns: 64px 52px 1fr auto;
+  gap: 6px;
+  align-items: center;
+}
+
+.resume-history-row input {
+  min-width: 0;
+}
+
+.resume-tag-input-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.resume-tag-input-row input {
+  flex: 1;
+}
+
+.resume-tag-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.resume-tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #f1f3f9;
+  font-size: 13px;
+  color: #2d3954;
+}
+
+.resume-tag-chip button {
+  border: none;
+  background: none;
+  color: #8891a3;
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+  padding: 0;
+}
+
+.resume-icon-editor-wrap {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
 .like-choice-backdrop {
   position: fixed;
   inset: 0;

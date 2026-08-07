@@ -6,6 +6,8 @@ import { CATEGORIES, REGIONS, TAGS } from "@/lib/constants";
 import { diagnosisTypes } from "@/lib/diagnosis";
 import { creatorVtypeStorageKey, type VtypeProfileFields } from "@/lib/diagnosisProfile";
 import { isXCampaignActive } from "@/lib/campaign";
+import { RESUME_LIMITS, type ResumeHistoryEntry } from "@/lib/resume/schema";
+import { ResumeIconCropEditor, type ResumeIconCropValue } from "@/components/ResumeIconCropEditor";
 
 type CreatorDraft = VtypeProfileFields & {
   name?: string;
@@ -23,7 +25,28 @@ type CreatorDraft = VtypeProfileFields & {
   plan_type?: string;
   want_short_video?: boolean;
   x_campaign_entry?: boolean;
+  debutDate?: string;
+  birthday?: string;
+  birthdayVisible?: boolean;
+  activityRegion?: string;
+  publicContact?: string;
+  streamingPlatform?: string;
+  personalityType?: string;
+  fanName?: string;
+  fanMark?: string;
+  hashtags?: string[];
+  activityHistory?: ResumeHistoryEntry[];
+  achievements?: ResumeHistoryEntry[];
+  equipment?: ResumeHistoryEntry[];
+  messageToNewcomers?: string;
+  resumePublicOptIn?: boolean;
+  resumeIconZoom?: number;
+  resumeIconPanX?: number;
+  resumeIconPanY?: number;
 };
+
+const emptyHistoryEntry: ResumeHistoryEntry = { year: "", month: "", text: "" };
+const defaultResumeIcon: ResumeIconCropValue = { zoom: 1, panX: 50, panY: 50 };
 
 const creatorDraftKey = "vtuber-match-creator-profile-draft";
 const imageSlotCount = 5;
@@ -70,6 +93,25 @@ export function CreatorProfileEditForm() {
   const [vtypeProfile, setVtypeProfile] = useState<VtypeProfileFields | null>(null);
   const [status, setStatus] = useState("");
   const visibleImages = images.slice(0, planImageLimit(planType));
+
+  // --- VTuber専用履歴書 ---
+  const [debutDate, setDebutDate] = useState("");
+  const [birthday, setBirthday] = useState("");
+  const [birthdayVisible, setBirthdayVisible] = useState(false);
+  const [activityRegion, setActivityRegion] = useState("");
+  const [publicContact, setPublicContact] = useState("");
+  const [streamingPlatform, setStreamingPlatform] = useState("");
+  const [personalityType, setPersonalityType] = useState("");
+  const [fanName, setFanName] = useState("");
+  const [fanMark, setFanMark] = useState("");
+  const [hashtagInput, setHashtagInput] = useState("");
+  const [hashtags, setHashtags] = useState<string[]>([]);
+  const [activityHistory, setActivityHistory] = useState<ResumeHistoryEntry[]>([]);
+  const [achievements, setAchievements] = useState<ResumeHistoryEntry[]>([]);
+  const [equipment, setEquipment] = useState<ResumeHistoryEntry[]>([]);
+  const [messageToNewcomers, setMessageToNewcomers] = useState("");
+  const [resumePublicOptIn, setResumePublicOptIn] = useState(true);
+  const [resumeIcon, setResumeIcon] = useState<ResumeIconCropValue>(defaultResumeIcon);
 
   useEffect(() => {
     if (!isXCampaignActive()) setShowXCampaignOptIn(false);
@@ -127,6 +169,26 @@ export function CreatorProfileEditForm() {
         setPlanType(nextPlan);
         setWantShortVideo(Boolean(profile.want_short_video));
         setXCampaignEntry(Boolean(profile.x_campaign_entry));
+        setDebutDate(profile.debutDate || "");
+        setBirthday(profile.birthday || "");
+        setBirthdayVisible(Boolean(profile.birthdayVisible));
+        setActivityRegion(profile.activityRegion || "");
+        setPublicContact(profile.publicContact || "");
+        setStreamingPlatform(profile.streamingPlatform || "");
+        setPersonalityType(profile.personalityType || "");
+        setFanName(profile.fanName || "");
+        setFanMark(profile.fanMark || "");
+        setHashtags(Array.isArray(profile.hashtags) ? profile.hashtags : []);
+        setActivityHistory(Array.isArray(profile.activityHistory) ? profile.activityHistory : []);
+        setAchievements(Array.isArray(profile.achievements) ? profile.achievements : []);
+        setEquipment(Array.isArray(profile.equipment) ? profile.equipment : []);
+        setMessageToNewcomers(profile.messageToNewcomers || "");
+        setResumePublicOptIn(profile.resumePublicOptIn !== false);
+        setResumeIcon({
+          zoom: profile.resumeIconZoom ?? 1,
+          panX: profile.resumeIconPanX ?? 50,
+          panY: profile.resumeIconPanY ?? 50,
+        });
         localStorage.setItem("vtuber-match-creator-plan", nextPlan);
         localStorage.setItem(creatorDraftKey, JSON.stringify(profile));
       })
@@ -166,6 +228,24 @@ export function CreatorProfileEditForm() {
         want_short_video: wantShortVideo,
         x_campaign_entry: xCampaignEntry,
         ...vtypePayload(vtypeProfile),
+        debutDate,
+        birthday,
+        birthdayVisible,
+        activityRegion,
+        publicContact,
+        streamingPlatform,
+        personalityType,
+        fanName,
+        fanMark,
+        hashtags,
+        activityHistory,
+        achievements,
+        equipment,
+        messageToNewcomers,
+        resumePublicOptIn,
+        resumeIconZoom: resumeIcon.zoom,
+        resumeIconPanX: resumeIcon.panX,
+        resumeIconPanY: resumeIcon.panY,
       }),
     });
 
@@ -229,6 +309,77 @@ export function CreatorProfileEditForm() {
 
   function toggle(list: string[], setList: (value: string[]) => void, value: string, max: number) {
     setList(list.includes(value) ? list.filter((item) => item !== value) : [...list, value].slice(0, max));
+  }
+
+  function addHashtag() {
+    const raw = hashtagInput.trim();
+    if (!raw || hashtags.length >= RESUME_LIMITS.hashtagsMax) return;
+    const normalized = raw.startsWith("#") ? raw : `#${raw}`;
+    if (hashtags.includes(normalized)) {
+      setHashtagInput("");
+      return;
+    }
+    setHashtags([...hashtags, normalized]);
+    setHashtagInput("");
+  }
+
+  function removeHashtag(tag: string) {
+    setHashtags(hashtags.filter((item) => item !== tag));
+  }
+
+  function addHistoryRow(rows: ResumeHistoryEntry[], setRows: (value: ResumeHistoryEntry[]) => void) {
+    if (rows.length >= RESUME_LIMITS.historyRowsMax) return;
+    setRows([...rows, { ...emptyHistoryEntry }]);
+  }
+
+  function updateHistoryRow(
+    rows: ResumeHistoryEntry[],
+    setRows: (value: ResumeHistoryEntry[]) => void,
+    index: number,
+    patch: Partial<ResumeHistoryEntry>
+  ) {
+    setRows(rows.map((row, rowIndex) => (rowIndex === index ? { ...row, ...patch } : row)));
+  }
+
+  function removeHistoryRow(rows: ResumeHistoryEntry[], setRows: (value: ResumeHistoryEntry[]) => void, index: number) {
+    setRows(rows.filter((_, rowIndex) => rowIndex !== index));
+  }
+
+  function renderHistoryRows(label: string, rows: ResumeHistoryEntry[], setRows: (value: ResumeHistoryEntry[]) => void) {
+    return (
+      <div className="field">
+        <span className="field-label">{label} {rows.length}/{RESUME_LIMITS.historyRowsMax}</span>
+        <div className="resume-history-rows">
+          {rows.map((row, index) => (
+            <div className="resume-history-row" key={index}>
+              <input
+                value={row.year}
+                onChange={(event) => updateHistoryRow(rows, setRows, index, { year: event.target.value.slice(0, 10) })}
+                placeholder="年"
+                aria-label={`${label} ${index + 1}行目 年`}
+              />
+              <input
+                value={row.month}
+                onChange={(event) => updateHistoryRow(rows, setRows, index, { month: event.target.value.slice(0, 4) })}
+                placeholder="月"
+                aria-label={`${label} ${index + 1}行目 月`}
+              />
+              <input
+                value={row.text}
+                maxLength={RESUME_LIMITS.historyTextMax}
+                onChange={(event) => updateHistoryRow(rows, setRows, index, { text: event.target.value.slice(0, RESUME_LIMITS.historyTextMax) })}
+                placeholder="内容"
+                aria-label={`${label} ${index + 1}行目 内容`}
+              />
+              <button type="button" className="mini-button" onClick={() => removeHistoryRow(rows, setRows, index)}>削除</button>
+            </div>
+          ))}
+        </div>
+        {rows.length < RESUME_LIMITS.historyRowsMax && (
+          <button type="button" className="mini-button" onClick={() => addHistoryRow(rows, setRows)}>+ 行を追加</button>
+        )}
+      </div>
+    );
   }
 
   return (
@@ -382,6 +533,120 @@ export function CreatorProfileEditForm() {
             );
           })}
         </div>
+      </div>
+
+      <section className="status-band soft">
+        <h2>VTuber専用履歴書</h2>
+        <p>入力した内容は「履歴書を作る」から生成されるPNG画像に反映されます(全プラン無料でご利用いただけます)。</p>
+      </section>
+
+      <div className="field">
+        <label className="choice consent-choice">
+          <input
+            type="checkbox"
+            checked={resumePublicOptIn}
+            onChange={(event) => setResumePublicOptIn(event.target.checked)}
+          />
+          履歴書機能を利用する
+        </label>
+        <p className="help-text">チェックを外すと履歴書は生成できなくなります(既定はON)。</p>
+      </div>
+
+      <div className="field">
+        <span className="field-label">履歴書用アイコンの位置調整</span>
+        <div className="resume-icon-editor-wrap">
+          <ResumeIconCropEditor iconDataUri={images[0] || null} value={resumeIcon} onChange={setResumeIcon} />
+        </div>
+        {!images[0] && <p className="help-text">先にプロフィール画像を1枚以上登録してください。</p>}
+      </div>
+
+      <div className="field">
+        <label htmlFor="resume_debut_date">デビュー日</label>
+        <input id="resume_debut_date" value={debutDate} maxLength={40} onChange={(event) => setDebutDate(event.target.value.slice(0, 40))} placeholder="例: 2024年3月1日" />
+      </div>
+
+      <div className="field">
+        <label htmlFor="resume_birthday">誕生日</label>
+        <input id="resume_birthday" value={birthday} maxLength={40} onChange={(event) => setBirthday(event.target.value.slice(0, 40))} placeholder="例: 1月1日" />
+        <label className="choice" style={{ marginTop: 6 }}>
+          <input type="checkbox" checked={birthdayVisible} onChange={(event) => setBirthdayVisible(event.target.checked)} />
+          履歴書に誕生日を表示する(オフの場合「非公開」と表示されます)
+        </label>
+      </div>
+
+      <div className="field">
+        <label htmlFor="resume_activity_region">活動地域(履歴書用)</label>
+        <input id="resume_activity_region" value={activityRegion} maxLength={40} onChange={(event) => setActivityRegion(event.target.value.slice(0, 40))} />
+      </div>
+
+      <div className="field">
+        <label htmlFor="resume_public_contact">公開用連絡先</label>
+        <input id="resume_public_contact" value={publicContact} maxLength={120} onChange={(event) => setPublicContact(event.target.value.slice(0, 120))} placeholder="任意。ログイン用メールとは別に履歴書へ載せたい連絡先" />
+      </div>
+
+      <div className="field">
+        <label htmlFor="resume_streaming_platform">配信場所</label>
+        <input id="resume_streaming_platform" value={streamingPlatform} maxLength={40} onChange={(event) => setStreamingPlatform(event.target.value.slice(0, 40))} placeholder="例: 自宅スタジオ" />
+      </div>
+
+      <div className="field">
+        <label htmlFor="resume_personality_type">性格タイプ</label>
+        <input id="resume_personality_type" value={personalityType} maxLength={40} onChange={(event) => setPersonalityType(event.target.value.slice(0, 40))} />
+      </div>
+
+      <div className="field">
+        <label htmlFor="resume_fan_name">ファンネーム</label>
+        <input id="resume_fan_name" value={fanName} maxLength={40} onChange={(event) => setFanName(event.target.value.slice(0, 40))} />
+      </div>
+
+      <div className="field">
+        <label htmlFor="resume_fan_mark">ファンマーク</label>
+        <input id="resume_fan_mark" value={fanMark} maxLength={RESUME_LIMITS.fanMarkMax} onChange={(event) => setFanMark(event.target.value.slice(0, RESUME_LIMITS.fanMarkMax))} placeholder="絵文字や記号など(最大4文字)" />
+      </div>
+
+      <div className="field">
+        <label htmlFor="resume_hashtags">ハッシュタグ {hashtags.length}/{RESUME_LIMITS.hashtagsMax}</label>
+        <div className="resume-tag-input-row">
+          <input
+            id="resume_hashtags"
+            value={hashtagInput}
+            onChange={(event) => setHashtagInput(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                addHashtag();
+              }
+            }}
+            placeholder="例: vtuber"
+            disabled={hashtags.length >= RESUME_LIMITS.hashtagsMax}
+          />
+          <button type="button" className="mini-button" onClick={addHashtag} disabled={hashtags.length >= RESUME_LIMITS.hashtagsMax}>追加</button>
+        </div>
+        {hashtags.length > 0 && (
+          <div className="resume-tag-chips">
+            {hashtags.map((tag) => (
+              <span className="resume-tag-chip" key={tag}>
+                {tag}
+                <button type="button" onClick={() => removeHashtag(tag)} aria-label={`${tag}を削除`}>×</button>
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {renderHistoryRows("主な実績・コラボ歴", achievements, setAchievements)}
+      {renderHistoryRows("活動歴・配信歴", activityHistory, setActivityHistory)}
+      {renderHistoryRows("使用機材・配信環境", equipment, setEquipment)}
+
+      <div className="field">
+        <label htmlFor="resume_message_to_newcomers">初見さんへのひとこと / 今後の目標 / 希望する活動</label>
+        <textarea
+          id="resume_message_to_newcomers"
+          value={messageToNewcomers}
+          maxLength={RESUME_LIMITS.messageToNewcomersMax}
+          onChange={(event) => setMessageToNewcomers(event.target.value.slice(0, RESUME_LIMITS.messageToNewcomersMax))}
+        />
+        <p className="help-text">{messageToNewcomers.length}/{RESUME_LIMITS.messageToNewcomersMax}</p>
       </div>
 
       <div className="field">

@@ -7,6 +7,7 @@ import { hashPassword } from "@/lib/password";
 import { invalidateStreamerCaches, publicStreamerPath } from "@/lib/streamers";
 import { REGIONS } from "@/lib/constants";
 import { creatorSessionCookie, readUserSession } from "@/lib/userSession";
+import { normalizeResumeFields, RESUME_LIMITS, type ResumeHistoryEntry } from "@/lib/resume/schema";
 import type { PlanType, Streamer, StreamerApplication } from "@/lib/types";
 
 type ApplicationMatch = {
@@ -366,8 +367,45 @@ function buildStreamerPatch(body: Record<string, unknown>, plan: PlanType): Part
   setIfPresent(patch, "stream_time", clean(body.stream_time, 50));
   setIfPresent(patch, "region", validRegion(body.region));
   if ("thumbnails" in body || "image" in body) patch.thumbnails = thumbnails;
+  Object.assign(patch, buildResumePatch(body));
 
   return patch;
+}
+
+function buildResumePatch(body: Record<string, unknown>): Partial<Streamer> {
+  const raw = {
+    debutDate: clean(body.debutDate, 40),
+    birthday: clean(body.birthday, 40),
+    birthdayVisible: body.birthdayVisible === true,
+    activityRegion: clean(body.activityRegion, 40),
+    publicContact: clean(body.publicContact, 120),
+    streamingPlatform: clean(body.streamingPlatform, 40),
+    personalityType: clean(body.personalityType, 40),
+    fanName: clean(body.fanName, 40),
+    fanMark: clean(body.fanMark, 20),
+    hashtags: sanitizeArray(body.hashtags),
+    activityHistory: sanitizeHistoryEntries(body.activityHistory),
+    achievements: sanitizeHistoryEntries(body.achievements),
+    equipment: sanitizeHistoryEntries(body.equipment),
+    messageToNewcomers: clean(body.messageToNewcomers, 400),
+    resumePublicOptIn: body.resumePublicOptIn !== false,
+    resumeIconZoom: body.resumeIconZoom !== undefined ? Number(body.resumeIconZoom) : undefined,
+    resumeIconPanX: body.resumeIconPanX !== undefined ? Number(body.resumeIconPanX) : undefined,
+    resumeIconPanY: body.resumeIconPanY !== undefined ? Number(body.resumeIconPanY) : undefined,
+  };
+  return normalizeResumeFields(raw) as Partial<Streamer>;
+}
+
+function sanitizeHistoryEntries(value: unknown): ResumeHistoryEntry[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((item) => (item && typeof item === "object" ? (item as Record<string, unknown>) : {}))
+    .map((item) => ({
+      year: clean(item.year, 10),
+      month: clean(item.month, 4),
+      text: clean(item.text, RESUME_LIMITS.historyTextMax),
+    }))
+    .filter((entry) => entry.year || entry.month || entry.text);
 }
 
 function buildApplicationPatch(body: Record<string, unknown>, plan: PlanType, existing?: StreamerApplication) {
@@ -519,5 +557,23 @@ function buildProfileResponse(streamer?: Partial<Streamer>, application?: Partia
     vtype_mode: streamer?.vtype_mode || application?.vtype_mode || "",
     vtype_result_id: streamer?.vtype_result_id || application?.vtype_result_id || "",
     vtype_updated_at: streamer?.vtype_updated_at || application?.vtype_updated_at || "",
+    debutDate: streamer?.debutDate || "",
+    birthday: streamer?.birthday || "",
+    birthdayVisible: streamer?.birthdayVisible === true,
+    activityRegion: streamer?.activityRegion || "",
+    publicContact: streamer?.publicContact || "",
+    streamingPlatform: streamer?.streamingPlatform || "",
+    personalityType: streamer?.personalityType || "",
+    fanName: streamer?.fanName || "",
+    fanMark: streamer?.fanMark || "",
+    hashtags: streamer?.hashtags || [],
+    activityHistory: streamer?.activityHistory || [],
+    achievements: streamer?.achievements || [],
+    equipment: streamer?.equipment || [],
+    messageToNewcomers: streamer?.messageToNewcomers || "",
+    resumePublicOptIn: streamer?.resumePublicOptIn !== false,
+    resumeIconZoom: streamer?.resumeIconZoom ?? 1,
+    resumeIconPanX: streamer?.resumeIconPanX ?? 50,
+    resumeIconPanY: streamer?.resumeIconPanY ?? 50,
   };
 }
