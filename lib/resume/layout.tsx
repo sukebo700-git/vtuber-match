@@ -12,18 +12,21 @@ export interface ResumeSourceStreamer extends StreamerResumeFields {
   timeSlot?: string;
   appeal?: string; // 「推してほしいポイント」欄に流用(実データでは description)
   iconDataUri?: string; // 例: "data:image/png;base64,...."(実データでは thumbnails[0])
+  xAccount?: string;
+  youtubeUrl?: string;
 }
 
+// 公式テンプレート(ユーザー提供の記入用フォーム画像)に合わせた配色。
+// 罫線はすべて黒系の細線のみで、色帯によるヘッダー区別は使わない(印刷用紙のような見た目)。
 const COLOR = {
   ink: "#1a1a1a",
-  line: "#333333",
-  faint: "#888888",
+  line: "#000000",
+  faint: "#666666",
   bg: "#ffffff",
-  accent: "#e8e2d8",
 } as const;
 
-const CANVAS = { width: 1600, height: 1131 };
-const ICON = { width: 130, height: 160 };
+const CANVAS = { width: 1600, height: 1260 };
+const ICON = { width: 190, height: 240 };
 
 function FieldRow({
   label,
@@ -32,7 +35,7 @@ function FieldRow({
   height = 40,
 }: {
   label: string;
-  value: string | (string | JSX.Element)[];
+  value: string | JSX.Element | (string | JSX.Element)[];
   labelWidth?: number;
   height?: number;
 }) {
@@ -50,13 +53,13 @@ function FieldRow({
         style={{
           width: labelWidth,
           fontSize: 15,
+          fontWeight: 700,
           color: COLOR.ink,
           paddingLeft: 10,
           borderRight: `1px solid ${COLOR.line}`,
           height: "100%",
           display: "flex",
           alignItems: "center",
-          backgroundColor: COLOR.accent,
         }}
       >
         {label}
@@ -87,7 +90,6 @@ function HistoryTable({
   rowCount?: number;
 }) {
   const colWidths = [55, 45];
-  const displayRowCount = Math.max(rowCount, rows.length === 0 ? 1 : 0);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", border: `1px solid ${COLOR.line}` }}>
@@ -96,7 +98,6 @@ function HistoryTable({
           display: "flex",
           flexDirection: "row",
           height: 34,
-          backgroundColor: COLOR.accent,
           borderBottom: `1px solid ${COLOR.line}`,
         }}
       >
@@ -104,6 +105,7 @@ function HistoryTable({
           style={{
             width: colWidths[0],
             fontSize: 13,
+            fontWeight: 700,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -116,6 +118,7 @@ function HistoryTable({
           style={{
             width: colWidths[1],
             fontSize: 13,
+            fontWeight: 700,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -124,12 +127,12 @@ function HistoryTable({
         >
           月
         </div>
-        <div style={{ flex: 1, fontSize: 13, display: "flex", alignItems: "center", paddingLeft: 10 }}>
+        <div style={{ flex: 1, fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", paddingLeft: 10 }}>
           {title}
         </div>
       </div>
 
-      {Array.from({ length: Math.max(displayRowCount, rowCount) }).map((_, i) => {
+      {Array.from({ length: rowCount }).map((_, i) => {
         const r = rows[i];
         return (
           <div
@@ -200,9 +203,9 @@ function FreeTextBox({
       <div
         style={{
           fontSize: 13,
+          fontWeight: 700,
           padding: "6px 10px",
           borderBottom: `1px solid ${COLOR.line}`,
-          backgroundColor: COLOR.accent,
           display: "flex",
         }}
       >
@@ -264,15 +267,56 @@ function IconBox({ streamer }: { streamer: ResumeSourceStreamer }) {
             width: "100%",
             height: "100%",
             display: "flex",
+            flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
-            fontSize: 12,
+            fontSize: 13,
             color: COLOR.faint,
+            textAlign: "center",
+            padding: 10,
           }}
         >
-          NO IMAGE
+          立ち絵／アイコン
         </div>
       )}
+    </div>
+  );
+}
+
+function contactLineText(xAccount?: string, youtubeUrl?: string): string {
+  return [xAccount, youtubeUrl].filter(Boolean).join(" / ");
+}
+
+/** フッター: VtuberMatchのロゴ・URLと素材利用条件(画像の再配布・悪用防止のため常に表示)。 */
+function Footer() {
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        borderTop: `1px solid ${COLOR.line}`,
+        paddingTop: 14,
+        marginTop: 16,
+      }}
+    >
+      <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: 10 }}>
+        <div
+          style={{
+            width: 22,
+            height: 22,
+            borderRadius: 999,
+            display: "flex",
+            background: "linear-gradient(135deg, #f23878, #2f7de1)",
+          }}
+        />
+        <div style={{ fontSize: 20, fontWeight: 900, color: "#f23878", display: "flex" }}>VtuberMatch</div>
+        <div style={{ fontSize: 15, color: COLOR.faint, display: "flex" }}>https://www.vtubermatch.com/</div>
+      </div>
+      <div style={{ fontSize: 12, color: COLOR.faint, display: "flex" }}>
+        ・VTuber活動の紹介・投稿用途でご利用ください　・素材の再配布・再販売は禁止　・公序良俗に反する利用は禁止です
+      </div>
     </div>
   );
 }
@@ -313,13 +357,50 @@ export function ResumeDocument({ streamer }: { streamer: ResumeSourceStreamer })
       </div>
 
       {/* main 2-column area */}
-      <div style={{ display: "flex", flexDirection: "row", flex: 1, gap: 20 }}>
+      <div style={{ display: "flex", flexDirection: "row", gap: 20 }}>
         {/* LEFT column */}
         <div style={{ display: "flex", flexDirection: "column", width: 720, gap: 14 }}>
           <div style={{ display: "flex", flexDirection: "row", gap: 14 }}>
             <div style={{ display: "flex", flexDirection: "column", flex: 1, border: `1px solid ${COLOR.line}` }}>
-              <FieldRow label="ふりがな" value={streamer.yomigana ?? ""} labelWidth={90} height={32} />
-              <FieldRow label="活動名" value={streamer.name} labelWidth={90} height={46} />
+              <FieldRow label="ふりがな" value={streamer.yomigana ?? ""} labelWidth={90} height={34} />
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "row",
+                  alignItems: "center",
+                  flex: 1,
+                  borderTop: `1px solid ${COLOR.line}`,
+                }}
+              >
+                <div
+                  style={{
+                    width: 90,
+                    fontSize: 15,
+                    fontWeight: 700,
+                    color: COLOR.ink,
+                    paddingLeft: 10,
+                    borderRight: `1px solid ${COLOR.line}`,
+                    height: "100%",
+                    display: "flex",
+                    alignItems: "center",
+                  }}
+                >
+                  活動名
+                </div>
+                <div
+                  style={{
+                    flex: 1,
+                    display: "flex",
+                    alignItems: "center",
+                    paddingLeft: 12,
+                    fontSize: 24,
+                    fontWeight: 700,
+                    color: COLOR.ink,
+                  }}
+                >
+                  {streamer.name}
+                </div>
+              </div>
             </div>
             <IconBox streamer={streamer} />
           </div>
@@ -329,6 +410,7 @@ export function ResumeDocument({ streamer }: { streamer: ResumeSourceStreamer })
             <FieldRow label="誕生日" value={birthdayValue} />
             <FieldRow label="活動地域" value={streamer.activityRegion ?? ""} />
             <FieldRow label="連絡先" value={streamer.publicContact ?? ""} />
+            <FieldRow label="X/YouTube" value={contactLineText(streamer.xAccount, streamer.youtubeUrl)} />
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", border: `1px solid ${COLOR.line}` }}>
@@ -344,8 +426,7 @@ export function ResumeDocument({ streamer }: { streamer: ResumeSourceStreamer })
 
         {/* RIGHT column */}
         <div style={{ display: "flex", flexDirection: "column", flex: 1, gap: 14 }}>
-          <HistoryTable title="主な実績・コラボ歴" rows={streamer.achievements ?? []} rowCount={4} />
-          <HistoryTable title="活動歴・配信歴" rows={streamer.activityHistory ?? []} rowCount={4} />
+          <HistoryTable title="主な実績・コラボ歴" rows={streamer.achievements ?? []} rowCount={7} />
           <HistoryTable title="使用機材・配信環境" rows={streamer.equipment ?? []} rowCount={3} />
           <FreeTextBox label="推してほしいポイント / 好きなこと / 得意なこと" text={streamer.appeal} height={118} />
           <FreeTextBox
@@ -355,6 +436,15 @@ export function ResumeDocument({ streamer }: { streamer: ResumeSourceStreamer })
           />
         </div>
       </div>
+
+      {/* bottom full-width: 活動歴・配信歴 */}
+      <div style={{ display: "flex", flexDirection: "column", width: "100%", marginTop: 14 }}>
+        <HistoryTable title="活動歴・配信歴(各自まとめて書く)" rows={streamer.activityHistory ?? []} rowCount={7} />
+      </div>
+
+      <div style={{ display: "flex", flex: 1 }} />
+
+      <Footer />
     </div>
   );
 }

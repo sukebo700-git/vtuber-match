@@ -53,6 +53,8 @@ export async function GET(request: NextRequest) {
     timeSlot: data.stream_time || "",
     appeal: data.description || "",
     iconDataUri: Array.isArray(data.thumbnails) ? data.thumbnails[0] : undefined,
+    xAccount: typeof data.x_account === "string" ? data.x_account : "",
+    youtubeUrl: typeof data.youtube_url === "string" ? data.youtube_url : "",
     debutDate: data.debutDate,
     birthday: data.birthday,
     birthdayVisible: data.birthdayVisible === true,
