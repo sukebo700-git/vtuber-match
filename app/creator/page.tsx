@@ -3,6 +3,7 @@ import { AuthVisibility } from "@/components/AuthVisibility";
 import { CreatorSuperBoostNotice } from "@/components/CreatorSuperBoostNotice";
 import { LofiPlanBenefits } from "@/components/LofiPlanBenefits";
 import { CreatorProfileSharePanel } from "@/components/CreatorProfileSharePanel";
+import { ResumeDownloadCard } from "@/components/ResumeDownloadCard";
 import { NotificationInbox } from "@/components/NotificationInbox";
 import { CollaborationDefaultOnBanner } from "@/components/CollaborationDefaultOnBanner";
 import { getTShirtSettings } from "@/lib/tshirt/config";
@@ -77,6 +78,7 @@ export default function CreatorPage() {
               <strong>プロフィール修正</strong>
               <span>掲載中の名前、画像、自己アピール、カテゴリ、タグなどを更新できます。</span>
             </a>
+            <ResumeDownloadCard />
             <a className="creator-action-card featured" href="/creator/short-video">
               <strong>紹介ショート動画を依頼</strong>
               <span>公式YouTubeチャンネルで公開する紹介ショート動画を無料で依頼できます。</span>
