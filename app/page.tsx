@@ -1,6 +1,7 @@
 import { AuthVisibility } from "@/components/AuthVisibility";
 import { HeaderAuthStatus } from "@/components/HeaderAuthStatus";
 import { LandingRandomVtuberImage } from "@/components/LandingRandomVtuberImage";
+import { ResumeDownloadButton } from "@/components/ResumeDownloadButton";
 import { SmartPromoLink } from "@/components/SmartPromoLink";
 import { XCampaignCreatorEntryLink } from "@/components/XCampaignCreatorEntryLink";
 import { UiButton } from "@/components/ui/UiButton";
@@ -52,24 +53,24 @@ export default function HomePage() {
               <span>直感で</span>
               <span>出会える。</span>
             </h1>
-            <div className="landing-actions">
-              <UiButton className="landing-primary-cta" href="/swipe">
+            <div className="landing-actions landing-actions-2row">
+              <UiButton className="landing-primary-cta landing-actions-row1" href="/swipe">
                 VTuberを探す
               </UiButton>
-              <UiButton variant="secondary" className="landing-secondary-cta" href="/diagnosis">
-                VTYPE診断をする
-              </UiButton>
+              <div className="landing-actions-row2">
+                <UiButton variant="secondary" className="landing-secondary-cta" href="/diagnosis">
+                  VTYPE診断をする
+                </UiButton>
+                <ResumeDownloadButton className="secondary-button landing-secondary-cta">
+                  履歴書を作る
+                </ResumeDownloadButton>
+              </div>
             </div>
           </div>
 
           <div className="landing-visual landing-refresh-visual" aria-label="VTuberビジュアル">
             <div className="landing-hero-character">
               <LandingRandomVtuberImage randomize variant="hero" />
-            </div>
-            <div className="landing-hero-mini-actions" aria-label="トップの主要導線">
-              <a href="/swipe">探す</a>
-              <a href="/diagnosis">診断</a>
-              <a href="/creator/apply">掲載</a>
             </div>
           </div>
 
