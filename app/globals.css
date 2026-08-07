@@ -7161,7 +7161,7 @@ body::after {
 .resume-preview-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 90;
+  z-index: 10010;
   display: grid;
   place-items: center;
   padding: 20px;

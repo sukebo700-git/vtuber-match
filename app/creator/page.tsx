@@ -102,6 +102,10 @@ export default function CreatorPage() {
                 <span>他のVTuberとのコラボ受付・非公開連絡先を設定できます。</span>
               </a>
             )}
+            <a className="creator-action-card" href="/diagnosis">
+              <strong>VTYPE診断</strong>
+              <span>視聴者との相性がわかる16タイプ診断を受けられます。</span>
+            </a>
           </section>
         </AuthVisibility>
 
