@@ -8,6 +8,7 @@ const nextConfig = {
     outputFileTracingIncludes: {
       "/api/stripe/webhook": ["./lib/tshirt/fontfiles/**", "./public/tshirt-fonts/**"],
       "/api/admin/tshirt-orders/**": ["./lib/tshirt/fontfiles/**", "./public/tshirt-fonts/**"],
+      "/api/resume/generate": ["./lib/resume/fonts/**"],
     },
   },
   images: {

@@ -1,3 +1,5 @@
+import type { StreamerResumeFields } from "./resume/schema";
+
 export type PlanType = "free" | "paid" | "boost";
 export type StreamerPlanType = PlanType;
 export type AdminPlacement = "top" | "normal" | "bottom";
@@ -13,7 +15,7 @@ export type VtypeProfileFields = {
   vtype_updated_at?: string;
 };
 
-export type Streamer = VtypeProfileFields & {
+export type Streamer = VtypeProfileFields & Partial<StreamerResumeFields> & {
   id: string;
   name: string;
   yomi?: string;
