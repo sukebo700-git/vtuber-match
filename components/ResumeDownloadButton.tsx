@@ -7,9 +7,11 @@ type Status = "idle" | "loading" | "preview" | "error";
 
 export function ResumeDownloadButton({
   className,
+  id,
   children = "履歴書を作る",
 }: {
   className?: string;
+  id?: string;
   children?: ReactNode;
 }) {
   const [status, setStatus] = useState<Status>("idle");
@@ -80,7 +82,7 @@ export function ResumeDownloadButton({
 
   return (
     <>
-      <button type="button" className={className} onClick={openPreview} disabled={status === "loading"}>
+      <button type="button" id={id} className={className} onClick={openPreview} disabled={status === "loading"}>
         {status === "loading" ? "生成中..." : children}
       </button>
 

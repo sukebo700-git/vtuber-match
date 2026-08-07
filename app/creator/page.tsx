@@ -4,6 +4,7 @@ import { CreatorSuperBoostNotice } from "@/components/CreatorSuperBoostNotice";
 import { LofiPlanBenefits } from "@/components/LofiPlanBenefits";
 import { CreatorProfileSharePanel } from "@/components/CreatorProfileSharePanel";
 import { ResumeDownloadButton } from "@/components/ResumeDownloadButton";
+import { ResumeHighlightScroll } from "@/components/ResumeHighlightScroll";
 import { NotificationInbox } from "@/components/NotificationInbox";
 import { CollaborationDefaultOnBanner } from "@/components/CollaborationDefaultOnBanner";
 import { getTShirtSettings } from "@/lib/tshirt/config";
@@ -21,9 +22,15 @@ export const metadata: Metadata = {
   },
 };
 
-export default function CreatorPage() {
+export default function CreatorPage({
+  searchParams,
+}: {
+  searchParams?: { highlight?: string };
+}) {
   const goodsEnabled = getTShirtSettings().enabled;
   const collaborationEnabled = isCollaborationEnabled();
+  const highlightResume = searchParams?.highlight === "resume";
+  const resumeHighlightClass = highlightResume ? " creator-action-card-highlight" : "";
   return (
     <div className="app-shell">
       <header className="topbar">
@@ -40,6 +47,7 @@ export default function CreatorPage() {
       </header>
 
       <main className="main grid-page creator-page-main">
+        {highlightResume && <ResumeHighlightScroll />}
         <CreatorSuperBoostNotice />
 
         <section className="status-band creator-hero-panel">
@@ -62,9 +70,9 @@ export default function CreatorPage() {
               <strong>無料で宣伝を申し込む</strong>
               <span>Lo-Fi 24時間配信への掲載、紹介ショート動画での宣伝、無料掲載ページの作成をまとめて申し込めます。</span>
             </a>
-            <a className="creator-action-card" href="/login">
+            <a id="resume-card" className={`creator-action-card${resumeHighlightClass}`} href="/login">
               <strong>配信者ログイン</strong>
-              <span>掲載中のプロフィール修正、プラン変更はこちらから行えます。</span>
+              <span>掲載中のプロフィール修正、プラン変更はこちらから行えます。履歴書を作るにはログインが必要です。</span>
             </a>
           </section>
         </AuthVisibility>
@@ -78,7 +86,10 @@ export default function CreatorPage() {
               <strong>プロフィール修正</strong>
               <span>掲載中の名前、画像、自己アピール、カテゴリ、タグなどを更新できます。</span>
             </a>
-            <ResumeDownloadButton className="creator-action-card">
+            <ResumeDownloadButton
+              id="resume-card"
+              className={`creator-action-card${resumeHighlightClass}`}
+            >
               <strong>履歴書を作る</strong>
               <span>登録済みプロフィールから、VTuber専用履歴書(PNG画像)をプレビューしてダウンロードできます。</span>
             </ResumeDownloadButton>

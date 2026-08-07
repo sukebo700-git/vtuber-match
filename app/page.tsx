@@ -1,7 +1,6 @@
 import { AuthVisibility } from "@/components/AuthVisibility";
 import { HeaderAuthStatus } from "@/components/HeaderAuthStatus";
 import { LandingRandomVtuberImage } from "@/components/LandingRandomVtuberImage";
-import { ResumeDownloadButton } from "@/components/ResumeDownloadButton";
 import { SmartPromoLink } from "@/components/SmartPromoLink";
 import { XCampaignCreatorEntryLink } from "@/components/XCampaignCreatorEntryLink";
 import { UiButton } from "@/components/ui/UiButton";
@@ -61,9 +60,13 @@ export default function HomePage() {
                 <UiButton variant="secondary" className="landing-secondary-cta" href="/diagnosis">
                   VTYPE診断をする
                 </UiButton>
-                <ResumeDownloadButton className="secondary-button landing-secondary-cta">
+                <UiButton
+                  variant="secondary"
+                  className="landing-secondary-cta"
+                  href="/creator?highlight=resume#resume-card"
+                >
                   履歴書を作る
-                </ResumeDownloadButton>
+                </UiButton>
               </div>
             </div>
           </div>
