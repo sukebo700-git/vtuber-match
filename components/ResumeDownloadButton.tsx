@@ -51,6 +51,7 @@ export function ResumeDownloadButton({
         return;
       }
       if (response.status === 401) {
+        clearCreatorSessionCache();
         window.location.href = "/creator/login";
         return;
       }
@@ -145,4 +146,14 @@ export function ResumeDownloadButton({
       )}
     </>
   );
+}
+
+function clearCreatorSessionCache() {
+  try {
+    Object.keys(localStorage)
+      .filter((key) => key.startsWith("vtuber-match-creator") || key === "vtuber-match-session")
+      .forEach((key) => localStorage.removeItem(key));
+  } catch {
+    // localStorage can be unavailable in private contexts.
+  }
 }
