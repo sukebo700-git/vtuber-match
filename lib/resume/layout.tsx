@@ -141,7 +141,7 @@ function HistoryTable({
               display: "flex",
               flexDirection: "row",
               height: 30,
-              borderBottom: i === rowCount - 1 ? "none" : "1px solid #cccccc",
+              borderBottom: i === rowCount - 1 ? "none" : `1px solid ${COLOR.line}`,
             }}
           >
             <div
@@ -151,7 +151,7 @@ function HistoryTable({
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                borderRight: "1px solid #cccccc",
+                borderRight: `1px solid ${COLOR.line}`,
                 color: COLOR.ink,
               }}
             >
@@ -164,7 +164,7 @@ function HistoryTable({
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                borderRight: "1px solid #cccccc",
+                borderRight: `1px solid ${COLOR.line}`,
                 color: COLOR.ink,
               }}
             >
