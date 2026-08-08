@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { RotateCcw, Save } from "lucide-react";
 import { CATEGORIES, REGIONS, TAGS } from "@/lib/constants";
 import { diagnosisTypes } from "@/lib/diagnosis";
@@ -93,6 +93,9 @@ export function CreatorProfileEditForm() {
   const [vtypeProfile, setVtypeProfile] = useState<VtypeProfileFields | null>(null);
   const [status, setStatus] = useState("");
   const visibleImages = images.slice(0, planImageLimit(planType));
+  // 読み込み中(/api/profile-edits の応答待ち)にユーザーが入力を始めた場合、
+  // 遅れて届いたサーバー側の値で入力内容を上書きしてしまわないようにするガード。
+  const hasEditedRef = useRef(false);
 
   // --- VTuber専用履歴書 ---
   const [debutDate, setDebutDate] = useState("");
@@ -148,6 +151,7 @@ export function CreatorProfileEditForm() {
         return response.ok ? response.json() : null;
       })
       .then((data) => {
+        if (hasEditedRef.current) return;
         const profile = data?.profile as CreatorDraft | undefined;
         if (!profile) return;
         const nextImages = makeImageSlots(profile.images?.length ? profile.images : profile.image ? [profile.image] : []);
@@ -383,7 +387,7 @@ export function CreatorProfileEditForm() {
   }
 
   return (
-    <form className="form compact-form" onSubmit={submit}>
+    <form className="form compact-form" onSubmit={submit} onChangeCapture={() => { hasEditedRef.current = true; }}>
       <section className="status-band soft">
         <h2>プロフィール修正</h2>
         <p>ログイン中の配信者アカウントで、掲載プロフィールを修正できます。</p>
