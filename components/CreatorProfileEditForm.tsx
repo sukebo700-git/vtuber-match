@@ -307,8 +307,8 @@ export function CreatorProfileEditForm() {
     setImageEdits((current) => current.map((edit, editIndex) => (editIndex === index ? { ...edit, ...patch } : edit)));
   }
 
-  function toggle(list: string[], setList: (value: string[]) => void, value: string, max: number) {
-    setList(list.includes(value) ? list.filter((item) => item !== value) : [...list, value].slice(0, max));
+  function toggle(setList: (updater: (prev: string[]) => string[]) => void, value: string, max: number) {
+    setList((prev) => (prev.includes(value) ? prev.filter((item) => item !== value) : [...prev, value].slice(0, max)));
   }
 
   function addHashtag() {
@@ -654,7 +654,7 @@ export function CreatorProfileEditForm() {
         <div className="choice-grid dense">
           {CATEGORIES.map((category) => (
             <label className="choice" key={category}>
-              <input type="checkbox" checked={categories.includes(category)} onChange={() => toggle(categories, setCategories, category, 3)} />
+              <input type="checkbox" checked={categories.includes(category)} onChange={() => toggle(setCategories, category, 3)} />
               {category}
             </label>
           ))}
@@ -666,7 +666,7 @@ export function CreatorProfileEditForm() {
         <div className="choice-grid dense">
           {TAGS.map((tag) => (
             <label className="choice" key={tag}>
-              <input type="checkbox" checked={tags.includes(tag)} onChange={() => toggle(tags, setTags, tag, planTagLimit(planType))} />
+              <input type="checkbox" checked={tags.includes(tag)} onChange={() => toggle(setTags, tag, planTagLimit(planType))} />
               {tag}
             </label>
           ))}
