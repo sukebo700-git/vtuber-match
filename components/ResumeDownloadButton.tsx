@@ -90,10 +90,12 @@ export function ResumeDownloadButton({
     // 投稿画面で手動添付してもらう前提のテキスト+URLだけを事前入力する。
     saveImage();
     const name = profile.name || "VTuber";
-    const text = `VTuber専用履歴書を作ってみました📝\n${name}です、よろしくお願いします🌱`;
-    const url = profile.public_path
+    const text = `VTuber専用履歴書を作ってみました📝\n\n${name}です、よろしくお願いします🌱`;
+    // public_path はVTuber名(日本語含む)をそのままURLパスに使っているため、
+    // encodeURIせずに渡すとX側でURLとして正しく認識されず本文が壊れる。
+    const url = encodeURI(profile.public_path
       ? `${window.location.origin}${profile.public_path}`
-      : "https://www.vtubermatch.com/";
+      : "https://www.vtubermatch.com/");
     const params = new URLSearchParams({ text, url, hashtags: "VtuberMatch" });
     window.open(`https://twitter.com/intent/tweet?${params.toString()}`, "_blank", "noopener,noreferrer");
   }
