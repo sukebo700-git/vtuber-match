@@ -283,10 +283,6 @@ function IconBox({ streamer }: { streamer: ResumeSourceStreamer }) {
   );
 }
 
-function contactLineText(xAccount?: string, youtubeUrl?: string): string {
-  return [xAccount, youtubeUrl].filter(Boolean).join(" / ");
-}
-
 /** フッター: VtuberMatchのロゴ・URLと素材利用条件(画像の再配布・悪用防止のため常に表示)。 */
 function Footer() {
   return (
@@ -410,7 +406,8 @@ export function ResumeDocument({ streamer }: { streamer: ResumeSourceStreamer })
             <FieldRow label="誕生日" value={birthdayValue} />
             <FieldRow label="活動地域" value={streamer.activityRegion ?? ""} />
             <FieldRow label="連絡先" value={streamer.publicContact ?? ""} />
-            <FieldRow label="X/YouTube" value={contactLineText(streamer.xAccount, streamer.youtubeUrl)} />
+            <FieldRow label="Xアカウント" value={streamer.xAccount ?? ""} />
+            <FieldRow label="配信サイト" value={streamer.youtubeUrl ?? ""} />
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", border: `1px solid ${COLOR.line}` }}>
