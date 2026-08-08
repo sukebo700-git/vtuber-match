@@ -1,6 +1,7 @@
 import { HeaderAuthStatus } from "@/components/HeaderAuthStatus";
 import { AuthVisibility } from "@/components/AuthVisibility";
 import { ViewerLoginForm } from "@/components/ViewerLoginForm";
+import { ReloginEscapeHatch } from "@/components/ReloginEscapeHatch";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -29,6 +30,7 @@ export default function ViewerLoginPage({ searchParams }: { searchParams?: { mod
               <p className="inline-actions" style={{ marginTop: 12 }}>
                 <a className="primary-button" href="/viewer">視聴者用ページへ</a>
                 <a className="secondary-button" href="/swipe">VTuberを探す</a>
+                <ReloginEscapeHatch prefix="vtuber-match-viewer" />
               </p>
             </section>
           }

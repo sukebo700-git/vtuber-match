@@ -1,6 +1,7 @@
 import { HeaderAuthStatus } from "@/components/HeaderAuthStatus";
 import { AuthVisibility } from "@/components/AuthVisibility";
 import { CreatorLoginForm } from "@/components/CreatorLoginForm";
+import { ReloginEscapeHatch } from "@/components/ReloginEscapeHatch";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -28,8 +29,9 @@ export default function CreatorLoginPage() {
             <section className="status-band">
               <h2>配信者としてログイン中です</h2>
               <p>ログイン画面は未ログインの方だけに表示されます。掲載内容の変更やアップグレードへ進めます。</p>
-              <p style={{ marginTop: 12 }}>
+              <p className="inline-actions" style={{ marginTop: 12 }}>
                 <a className="primary-button" href="/creator">配信者用ページへ</a>
+                <ReloginEscapeHatch prefix="vtuber-match-creator" />
               </p>
             </section>
           }
