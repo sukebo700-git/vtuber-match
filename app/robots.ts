@@ -19,7 +19,7 @@ export default function robots(): MetadataRoute.Robots {
       },
       {
         userAgent: "*",
-        allow: "/",
+        allow: ["/", "/api/streamer-image/"],
         disallow: [
           "/admin",
           "/admin-login",
