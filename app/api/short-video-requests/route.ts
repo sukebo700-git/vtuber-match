@@ -81,9 +81,17 @@ export async function POST(request: Request) {
 
   const existing = await db.collection("short_video_requests").doc(requestId).get();
   const existingStatus = String(existing.data()?.status || "");
-  if (existing.exists && existingStatus === "published") {
+  if (existing.exists) {
+    // 2026-08-10: 依頼は1配信者につき1回まで。statusがopenの間は何度でも
+    // 上書き送信できてしまっていたため、既存の依頼がある時点で一律ブロックする。
+    // 内容の修正・却下後の再依頼は運営への問い合わせ経由のみとする。
+    const messages: Record<string, string> = {
+      published: "この依頼の動画はすでに公開されています。内容の変更は運営までお問い合わせください。",
+      rejected: "このご依頼は見送りとなりました。再依頼をご希望の場合は運営までお問い合わせください。",
+      open: "すでに依頼を受け付けています。内容の変更は運営までお問い合わせください。",
+    };
     return NextResponse.json({
-      error: "この依頼の動画はすでに公開されています。内容の変更は運営までお問い合わせください。",
+      error: messages[existingStatus] || "すでに依頼が登録されています。内容の変更は運営までお問い合わせください。",
       status: existingStatus,
     }, { status: 409 });
   }

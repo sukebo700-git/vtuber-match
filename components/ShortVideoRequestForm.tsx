@@ -29,7 +29,10 @@ const statusLabels: Record<string, string> = {
   rejected: "今回は見送りになりました",
 };
 
-const lockedStatuses = ["published"];
+// 2026-08-10: 依頼は1配信者につき1回まで。以前はstatus=openの間、何度でも
+// 内容を上書きして再送信できてしまっていたため、依頼が一度でも存在すれば
+// (statusを問わず)フォームをロックするよう変更。
+const lockedStatuses = ["open", "published", "rejected"];
 
 export function ShortVideoRequestForm() {
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -150,13 +153,17 @@ export function ShortVideoRequestForm() {
                 公式YouTubeチャンネルを見る
               </a>
             </>
+          ) : existing.status === "rejected" ? (
+            <p className="help-text">
+              再依頼をご希望の場合は運営までお問い合わせください。
+            </p>
           ) : null}
         </section>
       ) : null}
 
       {locked ? null : (
         <section className="status-band">
-          <h2>{existing ? "依頼内容を修正する" : "紹介ショート動画を依頼する"}</h2>
+          <h2>紹介ショート動画を依頼する</h2>
           <form className="form" onSubmit={submit}>
             <div className="field">
               <label htmlFor="short_video_appeal">紹介してほしい内容(300文字まで)</label>
