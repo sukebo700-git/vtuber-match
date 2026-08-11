@@ -35,7 +35,7 @@ export function PasswordResetRequestForm({ defaultType = "creator" }: PasswordRe
       return;
     }
 
-    setStatus("パスワード再設定申請を受け付けました。通常3日以内に、運営が本人確認後、新しいパスワードをご案内します。");
+    setStatus("パスワード再設定申請を受け付けました。該当するアカウントが見つかった場合、登録メールアドレス宛にリセット用リンクをお送りします(数分以内に届きます。迷惑メールフォルダもご確認ください)。メールが届かない場合は、通常3日以内に運営が本人確認の上、手動でご案内します。");
     setForm((current) => ({ ...current, name: "", note: "" }));
   }
 
@@ -83,7 +83,7 @@ export function PasswordResetRequestForm({ defaultType = "creator" }: PasswordRe
       </div>
 
       <p className="help-text">
-        申込ID・掲載IDは不要です。運営が登録メールアドレスと名前を確認し、通常3日以内に手動で案内します。
+        申込ID・掲載IDは不要です。該当するアカウントが見つかった場合、登録メールアドレス宛に再設定用リンクを自動送信します。届かない場合は運営が確認し、通常3日以内に手動で案内します。
       </p>
 
       <button className="primary-button" type="submit">再設定を申請する</button>

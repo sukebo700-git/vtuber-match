@@ -781,6 +781,14 @@ export async function readLocalPasswordResetRequests() {
   return JSON.parse(raw) as PasswordResetRequest[];
 }
 
+export async function setLocalPasswordResetToken(id: string, input: { token_hash: string; token_expires_at: string; application_id?: string; streamer_id?: string; viewer_id?: string }) {
+  const requests = await readLocalPasswordResetRequests();
+  const updated = requests.map((request) => (
+    request.id === id ? { ...request, ...input } : request
+  ));
+  await fs.writeFile(passwordResetRequestsPath, JSON.stringify(updated, null, 2));
+}
+
 export async function completeLocalPasswordResetRequest(id: string) {
   const requests = await readLocalPasswordResetRequests();
   const updated = requests.map((request) => (

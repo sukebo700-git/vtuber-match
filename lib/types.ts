@@ -256,4 +256,10 @@ export type PasswordResetRequest = {
   status: "open" | "completed";
   created_at?: string;
   completed_at?: string;
+  resolved_via?: "admin" | "self";
+  // セルフサービス(メールリンク)リセット用。token_hashはトークンのSHA-256、
+  // 平文トークンは保存しない。使用済み/期限切れ後はconfirm APIがtoken_hashを
+  // 消して再利用不可にする。
+  token_hash?: string;
+  token_expires_at?: string;
 };

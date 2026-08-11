@@ -20,7 +20,7 @@ export default function PasswordResetPage({ searchParams }: { searchParams?: { t
       <main className="main grid-page">
         <section className="status-band">
           <h2>パスワード再設定申請</h2>
-          <p>登録メールアドレスと名前を入力してください。運営が本人確認を行い、通常3日以内に新しいパスワードを手動で案内します。</p>
+          <p>登録メールアドレスと名前を入力してください。該当するアカウントが見つかった場合、パスワード再設定用のリンクをメールでお送りします(リンクの有効期限は1時間です)。メールが届かない場合は、運営が本人確認を行い、通常3日以内に手動でご案内します。</p>
         </section>
         <PasswordResetRequestForm defaultType={defaultType} />
       </main>
