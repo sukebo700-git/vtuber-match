@@ -67,7 +67,7 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
   const [vtypeProfile, setVtypeProfile] = useState<VtypeProfileFields | null>(null);
   const [busy, setBusy] = useState(false);
   const [showXCampaignBanner, setShowXCampaignBanner] = useState(true);
-  const [authMethod, setAuthMethod] = useState<"password" | "google">("password");
+  const [authMethod, setAuthMethod] = useState<"password" | "google">("google");
   const [googleCredential, setGoogleCredential] = useState<string | null>(null);
   const [googleEmail, setGoogleEmail] = useState("");
 
