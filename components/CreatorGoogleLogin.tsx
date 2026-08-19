@@ -47,7 +47,7 @@ export function CreatorGoogleLogin({ redirectTo = "/creator?notify=1" }: Creator
         client_id: CLIENT_ID,
         callback: handleCredentialResponse,
         auto_select: false,
-        cancel_on_tap_outside: true,
+        cancel_on_tap_outside: false,
         use_fedcm_for_prompt: true,
       });
       if (buttonRef.current) {

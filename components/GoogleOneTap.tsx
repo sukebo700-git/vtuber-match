@@ -54,7 +54,10 @@ export function GoogleOneTap({ showButton = false, redirectTo }: GoogleOneTapPro
         client_id: CLIENT_ID,
         callback: handleCredentialResponse,
         auto_select: false,
-        cancel_on_tap_outside: true,
+        // 他のポップアップ(告知バナー等)を閉じる操作も「外側クリック」と
+        // みなされてOne Tapまで一緒に閉じてしまうため無効化。
+        // (閉じる手段はOne Tap自体の×ボタンや自動タイムアウトのみになる)
+        cancel_on_tap_outside: false,
         use_fedcm_for_prompt: true,
       });
       window.google.accounts.id.prompt();

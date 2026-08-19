@@ -24,7 +24,7 @@ export function GoogleCredentialField({ onCredential }: GoogleCredentialFieldPro
         client_id: CLIENT_ID,
         callback: (response: { credential: string }) => onCredential(response.credential),
         auto_select: false,
-        cancel_on_tap_outside: true,
+        cancel_on_tap_outside: false,
         use_fedcm_for_prompt: true,
       });
       window.google.accounts.id.renderButton(buttonRef.current, {
