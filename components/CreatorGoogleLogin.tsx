@@ -58,6 +58,8 @@ export function CreatorGoogleLogin({ redirectTo = "/creator?notify=1" }: Creator
           text: "continue_with",
           shape: "pill",
           logo_alignment: "center",
+          // Googleの仕様上、幅はpx指定・最大400px。フィールドの実幅に合わせて広げる。
+          width: Math.min(400, Math.max(280, Math.round(buttonRef.current.offsetWidth || 0))),
         });
       }
     }
