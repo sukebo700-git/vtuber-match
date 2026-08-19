@@ -1,4 +1,5 @@
 import { AuthVisibility } from "@/components/AuthVisibility";
+import { GoogleOneTap } from "@/components/GoogleOneTap";
 import { HeaderAuthStatus } from "@/components/HeaderAuthStatus";
 import { LandingRandomVtuberImage } from "@/components/LandingRandomVtuberImage";
 import { SmartPromoLink } from "@/components/SmartPromoLink";
@@ -92,6 +93,10 @@ export default function HomePage() {
               </div>
               <span className="landing-promo-banner-cta">リスナー登録無料</span>
             </a>
+          </AuthVisibility>
+
+          <AuthVisibility role="viewer" mode="logged-out">
+            <GoogleOneTap />
           </AuthVisibility>
 
           <SmartPromoLink kind="x-campaign" className="landing-promo-banner landing-x-campaign-banner">

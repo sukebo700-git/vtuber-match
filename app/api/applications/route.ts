@@ -3,6 +3,7 @@ import { randomBytes } from "crypto";
 import { requireAdmin } from "@/lib/adminAuth";
 import { diagnosisTypes } from "@/lib/diagnosis";
 import { FieldValue, getAdminDb, stripUndefined } from "@/lib/firebaseAdmin";
+import { verifyGoogleIdToken } from "@/lib/googleAuth";
 import { addLocalApplication, addLocalStreamer, findLocalStreamer, readLocalApplications, readLocalStreamers, updateLocalApplication } from "@/lib/localStore";
 import { notifyAdminNewApplication } from "@/lib/notifications";
 import { hashPassword, makeCreatorLoginId } from "@/lib/password";
@@ -65,6 +66,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "登録内容を読み取れませんでした。画像容量が大きすぎる可能性があります。" }, { status: 400 });
   }
 
+  const googleCredential = String(body.google_credential || "");
+  let googleAuth: Awaited<ReturnType<typeof verifyGoogleIdToken>> = null;
+  if (googleCredential) {
+    googleAuth = await verifyGoogleIdToken(googleCredential);
+    if (!googleAuth) {
+      return NextResponse.json({ error: "Google認証に失敗しました。もう一度お試しください。" }, { status: 401 });
+    }
+    body.email = googleAuth.email;
+  }
+
   const error = validate(body);
   if (error) return NextResponse.json({ error }, { status: 400 });
 
@@ -87,7 +98,8 @@ export async function POST(request: Request) {
     stream_time: String(body.stream_time || "").trim().slice(0, 50),
     desired_plan: desiredPlan,
     creator_login_id: makeCreatorLoginId(),
-    creator_password_hash: hashPassword(String(body.creator_password || "")),
+    creator_password_hash: googleAuth ? undefined : hashPassword(String(body.creator_password || "")),
+    creator_auth_provider: googleAuth ? ("google" as const) : ("password" as const),
     admin_note: "",
     registration_source: String(body.registration_source || "").trim().slice(0, 60),
     ...buildVtypePatch(body),
@@ -530,7 +542,7 @@ function validate(body: Record<string, unknown>) {
   if (plan !== "free" && !body.description) return "ベーシックプラン以上では自己アピールを入力してください。";
   if (plan !== "free" && String(body.description || "").length < 150) return "自己アピールは150文字以上で入力してください(紹介動画が短くなりすぎるため)。";
   if (plan !== "free" && !body.one_liner) return "ベーシックプラン以上では今日のひとことを入力してください。";
-  if (String(body.creator_password || "").length < 8) return "パスワードは8文字以上で入力してください。";
+  if (!body.google_credential && String(body.creator_password || "").length < 8) return "パスワードは8文字以上で入力してください。";
   if (plan === "free" && thumbnailCount > 1) return "無料プランの画像登録は1枚までです。";
   if (thumbnailCount > 3) return "画像は最大3枚までです。";
   if (categoryCount > 3) return "カテゴリは最大3件までです。";

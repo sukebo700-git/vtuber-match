@@ -1,5 +1,6 @@
 import { HeaderAuthStatus } from "@/components/HeaderAuthStatus";
 import { AuthVisibility } from "@/components/AuthVisibility";
+import { GoogleOneTap } from "@/components/GoogleOneTap";
 import { ViewerLoginForm } from "@/components/ViewerLoginForm";
 import { ReloginEscapeHatch } from "@/components/ReloginEscapeHatch";
 import type { Metadata } from "next";
@@ -40,6 +41,7 @@ export default function ViewerLoginPage({ searchParams }: { searchParams?: { mod
           <p>無料登録またはログインすると、プロフィール保存やスーパーいいね履歴を使えます。</p>
           </section>
 
+          <GoogleOneTap showButton redirectTo="/viewer?notify=1" />
           <ViewerLoginForm initialMode={initialMode} />
         </AuthVisibility>
       </main>

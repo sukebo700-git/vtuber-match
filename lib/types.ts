@@ -113,6 +113,7 @@ export type StreamerApplication = VtypeProfileFields & {
   streamer_id?: string;
   creator_login_id?: string;
   creator_password_hash?: string;
+  creator_auth_provider?: "password" | "google";
   claim_status?: StreamerClaimStatus;
   claim_target_streamer_id?: string;
   claim_verification_code?: string;
@@ -145,6 +146,7 @@ export type ViewerProfile = VtypeProfileFields & {
   email?: string;
   viewer_login_id?: string;
   viewer_password_hash?: string;
+  auth_provider?: "password" | "google";
   viewer_plan?: ViewerPlanType;
   subscription_status?: "active" | "canceled";
   payment_state?: "active" | "past_due";

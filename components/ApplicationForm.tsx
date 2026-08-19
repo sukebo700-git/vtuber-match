@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { BadgeCheck, Crown, ImagePlus, Send } from "lucide-react";
 import { PLAN_FEATURES } from "@/lib/constants";
 import { LofiPlanBenefits } from "@/components/LofiPlanBenefits";
+import { GoogleCredentialField } from "@/components/GoogleCredentialField";
+import { decodeGoogleCredentialEmail } from "@/lib/googleIdentityClient";
 import { diagnosisTypes } from "@/lib/diagnosis";
 import { creatorVtypeStorageKey, type VtypeProfileFields } from "@/lib/diagnosisProfile";
 import { isXCampaignActive } from "@/lib/campaign";
@@ -16,6 +18,7 @@ type ApplicationFormProps = {
 type CompletionInfo = {
   email: string;
   password: string;
+  authMethod?: "password" | "google";
   claimPending?: boolean;
   claimVerificationCode?: string;
   claimXAccount?: string;
@@ -64,6 +67,14 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
   const [vtypeProfile, setVtypeProfile] = useState<VtypeProfileFields | null>(null);
   const [busy, setBusy] = useState(false);
   const [showXCampaignBanner, setShowXCampaignBanner] = useState(true);
+  const [authMethod, setAuthMethod] = useState<"password" | "google">("password");
+  const [googleCredential, setGoogleCredential] = useState<string | null>(null);
+  const [googleEmail, setGoogleEmail] = useState("");
+
+  const handleGoogleCredential = useCallback((credential: string) => {
+    setGoogleCredential(credential);
+    setGoogleEmail(decodeGoogleCredentialEmail(credential));
+  }, []);
 
   const isFree = selectedPlan === "free";
   const categoryLimit = 3;
@@ -85,10 +96,16 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
     const formElement = event.currentTarget;
     const form = new FormData(formElement);
     const desiredPlan = String(form.get("desired_plan") || "free");
-    const email = String(form.get("email") || "").trim();
-    const password = String(form.get("creator_password") || "");
+    const email = authMethod === "google" ? googleEmail : String(form.get("email") || "").trim();
+    const password = authMethod === "google" ? "" : String(form.get("creator_password") || "");
     const thumbnails = images.slice(0, planImageLimit(desiredPlan)).filter(Boolean);
     const totalImageSize = thumbnails.reduce((sum, image) => sum + image.length, 0);
+
+    if (authMethod === "google" && !googleCredential) {
+      setStatus("Googleでログインしてから送信してください。");
+      setBusy(false);
+      return;
+    }
 
     if (thumbnails.length === 0) {
       setStatus("画像を1枚以上登録してください。");
@@ -113,6 +130,7 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
       one_liner: form.get("one_liner"),
       stream_time: String(form.get("stream_time") || "").slice(0, 50),
       creator_password: password,
+      google_credential: authMethod === "google" ? googleCredential : undefined,
       desired_plan: desiredPlan,
       want_short_video: form.get("want_short_video") === "on",
       registration_source: readRegistrationSource(),
@@ -148,6 +166,7 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
       setCompletion({
         email,
         password,
+        authMethod,
         claimPending: true,
         claimVerificationCode: String(data.claim_verification_code || ""),
         claimXAccount: String(data.claim_x_account || ""),
@@ -200,12 +219,14 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
     }
 
     setStatus(data.already_registered ? "このメールアドレスは登録済みです。配信者ページから続きの操作ができます。" : "無料プランの申し込みを受け付けました。掲載ページを作成しました。Lo-Fi配信とショート動画での紹介は順次行われます。");
-    setCompletion({ email, password });
+    setCompletion({ email, password, authMethod });
     formElement.reset();
     setSelectedCategories([]);
     setSelectedTags([]);
     setImages(Array(imageSlotCount).fill(""));
     setSelectedPlan("free");
+    setGoogleCredential(null);
+    setGoogleEmail("");
     setBusy(false);
     window.setTimeout(() => {
       document.getElementById("creator-application-completion")?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -299,14 +320,37 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
         <p className="help-text">紹介動画のナレーションでお名前を正しく読み上げるために使います。</p>
       </div>
       <div className="field">
-        <label htmlFor="email">ログイン用メールアドレス</label>
-        <input id="email" name="email" type="email" required />
-        <p className="help-text">このメールアドレスとパスワードで、あとからプロフィール修正やプラン変更ができます。</p>
+        <span className="field-label">ログイン方法</span>
+        <div className="segmented-control" role="tablist" aria-label="配信者ログイン方法">
+          <button type="button" className={authMethod === "password" ? "selected" : ""} onClick={() => setAuthMethod("password")}>メール+パスワード</button>
+          <button type="button" className={authMethod === "google" ? "selected" : ""} onClick={() => setAuthMethod("google")}>Googleアカウント</button>
+        </div>
       </div>
-      <div className="field">
-        <label htmlFor="creator_password">ログイン用パスワード</label>
-        <input id="creator_password" name="creator_password" type="password" required minLength={8} autoComplete="new-password" />
-      </div>
+      {authMethod === "google" ? (
+        <div className="field">
+          <span className="field-label">Googleアカウント</span>
+          {googleEmail ? (
+            <p className="help-text">認証済み: {googleEmail}(このアカウントでログインできるようになります)</p>
+          ) : (
+            <>
+              <GoogleCredentialField onCredential={handleGoogleCredential} />
+              <p className="help-text">上のボタンからGoogleアカウントを選ぶと、パスワード不要でログインできるようになります。</p>
+            </>
+          )}
+        </div>
+      ) : (
+        <>
+          <div className="field">
+            <label htmlFor="email">ログイン用メールアドレス</label>
+            <input id="email" name="email" type="email" required />
+            <p className="help-text">このメールアドレスとパスワードで、あとからプロフィール修正やプラン変更ができます。</p>
+          </div>
+          <div className="field">
+            <label htmlFor="creator_password">ログイン用パスワード</label>
+            <input id="creator_password" name="creator_password" type="password" required minLength={8} autoComplete="new-password" />
+          </div>
+        </>
+      )}
       <div className="field">
         <label htmlFor="youtube_url">動画・配信サイトURL</label>
         <input id="youtube_url" name="youtube_url" type="url" required placeholder="https://www.youtube.com/@channel または https://www.twitch.tv/channel" />
@@ -477,11 +521,22 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
             </>
           )}
           <h2 className="application-completion-subheading">ログイン情報</h2>
-          <p>この画面をスクリーンショットなどで保管してください。</p>
-          <dl className="data-list">
-            <div><dt>ログイン用メールアドレス</dt><dd>{completion.email}</dd></div>
-            <div><dt>パスワード</dt><dd>{completion.password}</dd></div>
-          </dl>
+          {completion.authMethod === "google" ? (
+            <>
+              <p>次回からは配信者ログイン画面の「Googleアカウント」ボタンからログインできます。</p>
+              <dl className="data-list">
+                <div><dt>Googleアカウント</dt><dd>{completion.email}</dd></div>
+              </dl>
+            </>
+          ) : (
+            <>
+              <p>この画面をスクリーンショットなどで保管してください。</p>
+              <dl className="data-list">
+                <div><dt>ログイン用メールアドレス</dt><dd>{completion.email}</dd></div>
+                <div><dt>パスワード</dt><dd>{completion.password}</dd></div>
+              </dl>
+            </>
+          )}
           <p className="help-text">申込ID、掲載IDは運営管理用のため、この画面には表示していません。</p>
           {!completion.claimPending && (
             <p className="inline-actions" style={{ marginTop: 12 }}>

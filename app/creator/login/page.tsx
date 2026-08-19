@@ -1,5 +1,6 @@
 import { HeaderAuthStatus } from "@/components/HeaderAuthStatus";
 import { AuthVisibility } from "@/components/AuthVisibility";
+import { CreatorGoogleLogin } from "@/components/CreatorGoogleLogin";
 import { CreatorLoginForm } from "@/components/CreatorLoginForm";
 import { ReloginEscapeHatch } from "@/components/ReloginEscapeHatch";
 import type { Metadata } from "next";
@@ -40,6 +41,7 @@ export default function CreatorLoginPage() {
             <h2>配信者ログイン</h2>
             <p>申し込み時のメールアドレスとパスワードでログインできます。</p>
           </section>
+          <CreatorGoogleLogin redirectTo="/creator?notify=1" />
           <CreatorLoginForm />
         </AuthVisibility>
       </main>
