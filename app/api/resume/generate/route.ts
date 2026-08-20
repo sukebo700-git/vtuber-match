@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { ImageResponse } from "next/og";
 import { NextRequest, NextResponse } from "next/server";
-import { getAdminDb } from "@/lib/firebaseAdmin";
+import { FieldValue, getAdminDb } from "@/lib/firebaseAdmin";
 import { ResumeDocument, RESUME_CANVAS_SIZE, type ResumeSourceStreamer } from "@/lib/resume/layout";
 import { creatorSessionCookie, readUserSession } from "@/lib/userSession";
 
@@ -93,6 +93,16 @@ export async function GET(request: NextRequest) {
       "Content-Disposition",
       `attachment; filename="vtubermatch_resume_${streamerId}.png"`
     );
+
+    // 誰が作ったか管理画面で分かるように、生成成功時のみ本人のstreamersドキュメントへ記録する。
+    // レスポンスは待たない(集計の失敗で履歴書生成自体を失敗させないため)。
+    db.collection("streamers").doc(streamerId).set({
+      resume_generated_count: FieldValue.increment(1),
+      resume_last_generated_at: FieldValue.serverTimestamp(),
+    }, { merge: true }).catch((err) => {
+      console.error(`[resume/generate] usage tracking failed for streamer_id=${streamerId}:`, err);
+    });
+
     return image;
   } catch (err) {
     // フォント読み込み失敗・レイアウト崩れ等。ログにstreamer_idを残し、デプロイ漏れの早期発見に使う

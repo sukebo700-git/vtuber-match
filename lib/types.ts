@@ -63,6 +63,8 @@ export type Streamer = VtypeProfileFields & Partial<StreamerResumeFields> & {
   notification_enabled?: boolean;
   last_creator_login_at?: string;
   creator_login_count?: number;
+  resume_generated_count?: number;
+  resume_last_generated_at?: string;
   registered_at?: string;
   createdAt?: string;
   registeredAt?: string;

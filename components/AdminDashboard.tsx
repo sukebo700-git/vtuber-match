@@ -217,6 +217,61 @@ export function AdminDashboard({ initialApplications, initialStreamers, initialP
     setMessage(`表示中の全配信者${count}件に匿名いいねと表示回数+1を追加しました。`);
   }
 
+  async function sendBulkEngagementToSelected() {
+    if (!selectedIds.length) {
+      setMessage("対象を選択してください。");
+      return;
+    }
+    if (!window.confirm(`選択した${selectedIds.length}件に、匿名いいね1件と表示回数+1を追加します。よろしいですか？`)) return;
+    setBulkBusy(true);
+    const response = await fetch("/api/admin/streamers/bulk-engagement", {
+      method: "POST",
+      headers: { "x-admin-key": adminKey, "Content-Type": "application/json" },
+      body: JSON.stringify({ streamer_ids: selectedIds }),
+    });
+    setBulkBusy(false);
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      setMessage(data.error || "選択への一括いいね・表示追加に失敗しました。");
+      return;
+    }
+    const count = Number(data.count || 0);
+    setStreamers((current) => current.map((streamer) => (
+      selectedIds.includes(streamer.id)
+        ? { ...streamer, likes: Number(streamer.likes || 0) + 1, impressions: Number(streamer.impressions || 0) + 1 }
+        : streamer
+    )));
+    setMessage(`選択した${count}件に匿名いいねと表示回数+1を追加しました。`);
+  }
+
+  async function sendImpressionOnlyToAll() {
+    const visibleCount = listedStreamers.filter((streamer) => streamer.is_visible !== false && streamer.is_deleted !== true && streamer.is_dummy !== true).length;
+    if (!visibleCount) {
+      setMessage("対象の配信者がいません。");
+      return;
+    }
+    if (!window.confirm(`表示中の全配信者${visibleCount}件に、表示回数のみ+1を追加します(いいねは増えません)。よろしいですか？`)) return;
+    setBulkBusy(true);
+    const response = await fetch("/api/admin/streamers/bulk-engagement", {
+      method: "POST",
+      headers: { "x-admin-key": adminKey, "Content-Type": "application/json" },
+      body: JSON.stringify({ metric: "impressions" }),
+    });
+    setBulkBusy(false);
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      setMessage(data.error || "一括表示追加に失敗しました。");
+      return;
+    }
+    const count = Number(data.count || 0);
+    setStreamers((current) => current.map((streamer) => (
+      streamer.is_visible !== false && streamer.is_deleted !== true && streamer.is_dummy !== true
+        ? { ...streamer, impressions: Number(streamer.impressions || 0) + 1 }
+        : streamer
+    )));
+    setMessage(`表示中の全配信者${count}件に表示回数+1を追加しました。`);
+  }
+
   async function loadFullStreamer(streamer: Streamer) {
     const data = await fetchStreamerDetail(streamer);
     if (!data) return streamer;
@@ -744,6 +799,8 @@ export function AdminDashboard({ initialApplications, initialStreamers, initialP
           <button className="secondary-button" type="button" disabled={bulkBusy} onClick={() => bulkSetVisible(false)}><EyeOff size={16} />選択を非表示</button>
           <button className="secondary-button" type="button" disabled={bulkBusy} onClick={() => bulkSetVisible(true)}><Eye size={16} />選択を表示</button>
           <button className="secondary-button" type="button" disabled={bulkBusy} onClick={sendBulkEngagementToAll}><Heart size={16} />全員にいいね+表示</button>
+          <button className="secondary-button" type="button" disabled={bulkBusy} onClick={sendImpressionOnlyToAll}><Eye size={16} />全員に表示のみ</button>
+          <button className="secondary-button" type="button" disabled={bulkBusy} onClick={sendBulkEngagementToSelected}><Heart size={16} />選択にいいね+表示</button>
           <button className="secondary-button" type="button" disabled={bulkBusy} onClick={() => bulkSetXIntroduced(true)}>X紹介済み</button>
           <button className="secondary-button" type="button" disabled={bulkBusy} onClick={() => bulkSetXIntroduced(false)}>X未紹介へ</button>
           <button className="danger-button" type="button" disabled={bulkBusy} onClick={bulkDelete}><Trash2 size={16} />選択を削除</button>
@@ -774,6 +831,10 @@ export function AdminDashboard({ initialApplications, initialStreamers, initialP
                 <span>いいね {streamer.likes || 0}</span>
                 <span>表示 {streamer.impressions || 0}</span>
                 <span>ログイン {streamer.creator_login_count || 0}</span>
+                <span className={streamer.region ? "" : "x-unintroduced"}>活動地域 {streamer.region || "未設定"}</span>
+                <span className={streamer.resume_generated_count ? "x-introduced" : "x-unintroduced"}>
+                  履歴書 {streamer.resume_generated_count ? `作成済み(${streamer.resume_generated_count}回)` : "未作成"}
+                </span>
                 <span>{PLAN_LABELS[streamer.plan_type]}</span>
                 <span>{ADMIN_PLACEMENT_LABELS[streamer.admin_placement || "normal"]}</span>
                 <span className={streamer.x_introduced_at ? "x-introduced" : "x-unintroduced"}>{streamer.x_introduced_at ? "X紹介済み" : "X未紹介"}</span>

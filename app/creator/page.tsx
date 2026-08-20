@@ -7,7 +7,6 @@ import { ResumeDownloadButton } from "@/components/ResumeDownloadButton";
 import { ResumeHighlightScroll } from "@/components/ResumeHighlightScroll";
 import { NotificationInbox } from "@/components/NotificationInbox";
 import { CollaborationDefaultOnBanner } from "@/components/CollaborationDefaultOnBanner";
-import { getTShirtSettings } from "@/lib/tshirt/config";
 import { isCollaborationEnabled } from "@/lib/collaboration/config";
 import type { Metadata } from "next";
 
@@ -27,7 +26,6 @@ export default function CreatorPage({
 }: {
   searchParams?: { highlight?: string };
 }) {
-  const goodsEnabled = getTShirtSettings().enabled;
   const collaborationEnabled = isCollaborationEnabled();
   const highlightResume = searchParams?.highlight === "resume";
   const resumeHighlightClass = highlightResume ? " creator-action-card-highlight" : "";
@@ -101,12 +99,6 @@ export default function CreatorPage({
               <strong>アップグレード</strong>
               <span>上位表示、公式紹介、Lo-Fi配信での紹介特典を確認できます。</span>
             </a>
-            {goodsEnabled && (
-              <a className="creator-action-card" href="/creator/goods">
-                <strong>オリジナルグッズ作成支援</strong>
-                <span>VTuber限定。オリジナルネームTシャツ作成キットなどを注文できます。</span>
-              </a>
-            )}
             {collaborationEnabled && (
               <a className="creator-action-card" href="/creator/collaboration/settings">
                 <strong>コラボのお誘い設定</strong>

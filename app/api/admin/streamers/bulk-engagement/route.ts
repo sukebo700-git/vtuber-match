@@ -10,15 +10,27 @@ export async function POST(request: Request) {
   const unauthorized = requireAdmin(request);
   if (unauthorized) return unauthorized;
 
+  let body: Record<string, unknown> = {};
+  try {
+    body = await request.json();
+  } catch {
+    // ボディなしの呼び出し(=全員対象)も許可する
+  }
+  const streamerIds = Array.isArray(body.streamer_ids)
+    ? body.streamer_ids.map(String).filter(Boolean)
+    : null;
+  // "both": いいね+表示回数を両方+1(既定・従来動作) / "impressions": 表示回数のみ+1
+  const metric = body.metric === "impressions" ? "impressions" : "both";
+
   const db = getAdminDb();
   if (!db) {
     const streamers = await readLocalStreamers();
-    const targets = streamers.filter(isTargetStreamer);
+    let targets = streamers.filter(isTargetStreamer);
+    if (streamerIds) targets = targets.filter((streamer) => streamerIds.includes(streamer.id));
     for (const streamer of targets) {
-      await updateLocalStreamer(streamer.id, {
-        likes: Number(streamer.likes || 0) + 1,
-        impressions: Number(streamer.impressions || 0) + 1,
-      });
+      const patch: Record<string, number> = { impressions: Number(streamer.impressions || 0) + 1 };
+      if (metric === "both") patch.likes = Number(streamer.likes || 0) + 1;
+      await updateLocalStreamer(streamer.id, patch);
     }
     return NextResponse.json({ ok: true, source: "local", count: targets.length });
   }
@@ -27,7 +39,8 @@ export async function POST(request: Request) {
     .select("is_visible", "is_deleted", "is_dummy", "dummy", "test", "fictional", "isHidden", "likes", "impressions")
     .limit(500)
     .get();
-  const targets = snapshot.docs.filter((doc) => isTargetStreamer({ id: doc.id, ...(doc.data() || {}) }));
+  let targets = snapshot.docs.filter((doc) => isTargetStreamer({ id: doc.id, ...(doc.data() || {}) }));
+  if (streamerIds) targets = targets.filter((doc) => streamerIds.includes(doc.id));
   const weekKey = currentJstWeekKey();
   const adminSessionId = getCookieValue(request.headers.get("cookie"), adminCookieName) || request.headers.get("x-admin-key") || "unknown";
   const now = Date.now();
@@ -46,41 +59,45 @@ export async function POST(request: Request) {
         viewer_plan: "free",
       };
 
-      batch.update(streamerRef, {
-        likes: FieldValue.increment(1),
+      const updatePatch: Record<string, unknown> = {
         impressions: FieldValue.increment(1),
         [`weekly_impressions.${weekKey}`]: FieldValue.increment(1),
-      });
-      batch.set(db.collection("likes").doc(`admin_bulk_${doc.id}_${serial}`), stripUndefined({
-        user_id: "admin_bulk",
-        streamer_id: doc.id,
-        viewer_profile_id: anonymousProfile.id,
-        viewer_profile: anonymousProfile,
-        source: "admin_bulk",
-        created_at: FieldValue.serverTimestamp(),
-      }));
-      batch.set(db.collection("viewer_activities").doc(`${doc.id}_admin_bulk_like_${serial}`), stripUndefined({
-        streamer_id: doc.id,
-        viewer_id: anonymousProfile.id,
-        action: "like",
-        source: "admin_bulk",
-        viewer_profile: anonymousProfile,
-        created_at: FieldValue.serverTimestamp(),
-        updated_at: FieldValue.serverTimestamp(),
-      }));
-      batch.set(db.collection("notifications").doc(), stripUndefined({
-        target_type: "creator",
-        streamer_id: doc.id,
-        type: "like",
-        title: "匿名の視聴者からいいねが届きました",
-        body: "あなたのプロフィールにいいねが届きました。",
-        read: false,
-        source: "admin_bulk",
-        created_at: FieldValue.serverTimestamp(),
-      }));
+      };
+      if (metric === "both") updatePatch.likes = FieldValue.increment(1);
+      batch.update(streamerRef, updatePatch);
+
+      if (metric === "both") {
+        batch.set(db.collection("likes").doc(`admin_bulk_${doc.id}_${serial}`), stripUndefined({
+          user_id: "admin_bulk",
+          streamer_id: doc.id,
+          viewer_profile_id: anonymousProfile.id,
+          viewer_profile: anonymousProfile,
+          source: "admin_bulk",
+          created_at: FieldValue.serverTimestamp(),
+        }));
+        batch.set(db.collection("viewer_activities").doc(`${doc.id}_admin_bulk_like_${serial}`), stripUndefined({
+          streamer_id: doc.id,
+          viewer_id: anonymousProfile.id,
+          action: "like",
+          source: "admin_bulk",
+          viewer_profile: anonymousProfile,
+          created_at: FieldValue.serverTimestamp(),
+          updated_at: FieldValue.serverTimestamp(),
+        }));
+        batch.set(db.collection("notifications").doc(), stripUndefined({
+          target_type: "creator",
+          streamer_id: doc.id,
+          type: "like",
+          title: "匿名の視聴者からいいねが届きました",
+          body: "あなたのプロフィールにいいねが届きました。",
+          read: false,
+          source: "admin_bulk",
+          created_at: FieldValue.serverTimestamp(),
+        }));
+      }
       batch.set(db.collection("admin_audit_logs").doc(), stripUndefined({
         admin_session_id: adminSessionId,
-        action: "admin_bulk_like_and_impression",
+        action: metric === "both" ? "admin_bulk_like_and_impression" : "admin_bulk_impression_only",
         target_type: "streamer",
         target_id: doc.id,
         before: {
@@ -88,7 +105,7 @@ export async function POST(request: Request) {
           impressions: Number(data.impressions || 0),
         },
         after: {
-          likes: Number(data.likes || 0) + 1,
+          likes: Number(data.likes || 0) + (metric === "both" ? 1 : 0),
           impressions: Number(data.impressions || 0) + 1,
         },
         created_at: FieldValue.serverTimestamp(),
