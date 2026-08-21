@@ -19,7 +19,7 @@ export async function POST(request: Request) {
 
   if (!hasRakutenApiCredentials()) {
     return NextResponse.json({
-      error: "RAKUTEN_APPLICATION_ID が未設定です。楽天Developersで取得したアプリIDを環境変数に設定してください。",
+      error: "RAKUTEN_APPLICATION_ID / RAKUTEN_ACCESS_KEY が未設定です。楽天Developersで取得したApplication IDとAccess Keyを環境変数に設定してください。",
       code: "MISSING_CREDENTIALS",
     }, { status: 503 });
   }

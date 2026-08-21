@@ -3,7 +3,15 @@
 // アフィリエイトリンクの生成には使わない(もしもアフィリエイト経由のリンクを
 // そのまま利用する)。APIのaffiliateIdは楽天アフィリエイト直接のIDにしか対応せず、
 // ASPを乗り換える必要が出てしまうため、あくまで参照専用にとどめる。
-const searchEndpoint = "https://app.rakuten.co.jp/services/api/IchibaItem/Search/20220601";
+//
+// 2026年2月の認証刷新後の仕様(実測で確認):
+//   - エンドポイントは openapi.rakuten.co.jp/ichibams/... (旧 app.rakuten.co.jp は不可)
+//   - applicationId(UUID)と accessKey(pk_...)の両方をクエリで渡す
+//   - Origin ヘッダーが必須。楽天Developersに登録したドメインと一致しない場合は
+//     403 HTTP_REFERRER_NOT_ALLOWED になる。サーバー側からの呼び出しでは
+//     ブラウザのようにOriginが自動付与されないため、自分のドメインを明示して送る
+const searchEndpoint = "https://openapi.rakuten.co.jp/ichibams/api/IchibaItem/Search/20260401";
+const defaultOrigin = "https://www.vtubermatch.com";
 
 export type StockCheckResult = {
   itemCode: string;
@@ -13,7 +21,7 @@ export type StockCheckResult = {
 };
 
 export function hasRakutenApiCredentials() {
-  return Boolean(process.env.RAKUTEN_APPLICATION_ID);
+  return Boolean(process.env.RAKUTEN_APPLICATION_ID && process.env.RAKUTEN_ACCESS_KEY);
 }
 
 /**
@@ -53,12 +61,14 @@ export function extractRakutenItemCode(affiliateUrl: string): string {
  */
 export async function checkRakutenStock(itemCode: string): Promise<StockCheckResult> {
   const applicationId = process.env.RAKUTEN_APPLICATION_ID || "";
-  if (!applicationId || !itemCode) {
+  const accessKey = process.env.RAKUTEN_ACCESS_KEY || "";
+  if (!applicationId || !accessKey || !itemCode) {
     return { itemCode, inStock: true, unknown: true };
   }
 
   const params = new URLSearchParams({
     applicationId,
+    accessKey,
     itemCode,
     availability: "1",
     hits: "1",
@@ -67,6 +77,11 @@ export async function checkRakutenStock(itemCode: string): Promise<StockCheckRes
 
   try {
     const response = await fetch(`${searchEndpoint}?${params.toString()}`, {
+      headers: {
+        // 登録済みドメインからのリクエストであることを明示する。
+        // サーバー間通信ではブラウザのように自動付与されないため必須。
+        Origin: process.env.RAKUTEN_API_ORIGIN || defaultOrigin,
+      },
       // 在庫は変動するのでキャッシュしない
       cache: "no-store",
     });
