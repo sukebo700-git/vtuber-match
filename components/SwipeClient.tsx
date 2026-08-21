@@ -17,6 +17,13 @@ type SwipeClientProps = {
   initialStreamers: Streamer[];
 };
 
+type MatchNotice = {
+  key: string;
+  streamerId: string;
+  name: string;
+  youtubeUrl: string;
+};
+
 const viewerProfileKey = "vtuber-match-viewer-profile";
 const analyticsVisitorKey = "vtuber-match-analytics-visitor-id";
 const guestSwipeCountKey = "vtuber-match-guest-swipe-count-v2";
@@ -30,19 +37,22 @@ const pendingSwipeActionLastSentKey = "vtuber-match-pending-swipe-actions-last-s
 
 export function SwipeClient({ initialStreamers }: SwipeClientProps) {
   const [index, setIndex] = useState(0);
-  const [loopCount, setLoopCount] = useState(0);
   const [categoryFilter, setCategoryFilter] = useState("");
   const [regionFilter, setRegionFilter] = useState("");
   const [shuffleSeed, setShuffleSeed] = useState("initial");
   const [filterOpen, setFilterOpen] = useState(false);
   const [regionFilterOpen, setRegionFilterOpen] = useState(false);
-  const [likedStreamer, setLikedStreamer] = useState<Streamer | null>(null);
+  const [matchNotices, setMatchNotices] = useState<MatchNotice[]>([]);
   const [superBoostStreamer, setSuperBoostStreamer] = useState<Streamer | null>(null);
   const [limitReached, setLimitReached] = useState(false);
   const [swipeNotice, setSwipeNotice] = useState("");
   const [moreOpen, setMoreOpen] = useState(false);
   const [adminViewerMode, setAdminViewerMode] = useState(false);
   const [viewerVtypeId, setViewerVtypeId] = useState<number | null>(null);
+  // 連打による二重送信ガード(カード遷移自体は止めない)
+  const swipeLockRef = useRef(false);
+  // マッチ通知の遅延タイマー。アンマウント/フィルタ変更時に確実に破棄する
+  const noticeTimersRef = useRef<number[]>([]);
 
   const streamers = useMemo(
     () => prioritizeSameVtype(
@@ -61,7 +71,6 @@ export function SwipeClient({ initialStreamers }: SwipeClientProps) {
   );
   const current = streamers.length ? streamers[index % streamers.length] : undefined;
   const next = streamers.length ? streamers[(index + 1) % streamers.length] : undefined;
-  const isLooping = loopCount > 0;
   const viewerVtype = diagnosisTypes.find((type) => type.id === viewerVtypeId) || null;
   const recommendedStreamers = useMemo(
     () => viewerVtypeId
@@ -80,11 +89,18 @@ export function SwipeClient({ initialStreamers }: SwipeClientProps) {
 
   useEffect(() => {
     setIndex(0);
-    setLoopCount(0);
-    setLikedStreamer(null);
     setSwipeNotice("");
     setMoreOpen(false);
   }, [categoryFilter, regionFilter, shuffleSeed]);
+
+  // 保留中のマッチ通知タイマーをアンマウント時に破棄する
+  useEffect(() => {
+    const timers = noticeTimersRef;
+    return () => {
+      timers.current.forEach((timerId) => window.clearTimeout(timerId));
+      timers.current = [];
+    };
+  }, []);
 
   useEffect(() => {
     setShuffleSeed(createSwipeShuffleSeed());
@@ -142,25 +158,47 @@ export function SwipeClient({ initialStreamers }: SwipeClientProps) {
     });
   }, [current, next]);
 
-  async function swipe(direction: "left" | "right") {
-    if (!current || !streamers.length || likedStreamer) return;
+  // Optimistic UI: いいねの通信結果を待たずに必ず次のカードへ進む。
+  // Firestore保存・マッチ判定はバックグラウンドで走らせ、失敗時のみ通知する。
+  function swipe(direction: "left" | "right") {
+    if (!current || !streamers.length) return;
+    if (swipeLockRef.current) return;
     if (!canGuestSwipe()) {
       setLimitReached(true);
       return;
     }
-    trackSwipeAnalytics();
-    trackSwipeAction();
-    incrementGuestSwipeCount();
+    // ドラッグ完了とボタン連打が同一カードに二重発火するのを防ぐ短時間ロック。
+    // カード送り自体は下で即座に行うため、体感速度には影響しない。
+    swipeLockRef.current = true;
+    window.setTimeout(() => {
+      swipeLockRef.current = false;
+    }, 150);
 
-    if (direction === "right") {
-      const liked = current;
-      const userId = await getSwipeUserId();
-      const identity = getViewerIdentity();
+    const liked = direction === "right" ? current : null;
+    if (liked) {
       const creatorProfile = readCreatorSwipeProfile();
       if (creatorProfile?.creator_streamer_id === liked.id) {
         setSwipeNotice("自分の配信者プロフィールにはいいねできません。");
         return;
       }
+    }
+
+    trackSwipeAnalytics();
+    trackSwipeAction();
+    incrementGuestSwipeCount();
+
+    if (liked) {
+      void sendLike(liked);
+      scheduleMatchNotice(liked);
+    }
+    advance();
+  }
+
+  async function sendLike(liked: Streamer) {
+    try {
+      const userId = await getSwipeUserId();
+      const identity = getViewerIdentity();
+      const creatorProfile = readCreatorSwipeProfile();
       const viewerProfile = readViewerProfile();
       const publicViewerProfile = !identity.registered && creatorProfile
         ? creatorProfile
@@ -176,6 +214,7 @@ export function SwipeClient({ initialStreamers }: SwipeClientProps) {
       const response = await fetch("/api/likes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        keepalive: true,
         body: JSON.stringify({
           user_id: likeUserId,
           streamer_id: liked.id,
@@ -183,34 +222,44 @@ export function SwipeClient({ initialStreamers }: SwipeClientProps) {
           viewer_profile: publicViewerProfile,
         }),
       });
-      if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-        setSwipeNotice(data.error || "いいねを送信できませんでした。");
-        return;
-      }
-      setLikedStreamer(liked);
-      return;
+      if (response.ok) return;
+      // 1日1回制限・上限到達は仕様上の正常系なので、静かに無視して
+      // スワイプ体験を止めない(既にカードは次へ進んでいる)。
+      if (response.status === 429) return;
+      setSwipeNotice(`${liked.name}さんへのいいねを送信できませんでした。`);
+    } catch {
+      setSwipeNotice(`${liked.name}さんへのいいねを送信できませんでした。`);
     }
+  }
 
-    advance();
+  // いいね直後にモーダルで止めず、8〜12秒後にヘッダー付近へ非同期通知を出す。
+  // 表示に必要な情報はいいね時点でクライアントに持っているため追加readは発生しない。
+  function scheduleMatchNotice(liked: Streamer) {
+    const delay = 8000 + Math.floor(Math.random() * 4000);
+    const timerId = window.setTimeout(() => {
+      noticeTimersRef.current = noticeTimersRef.current.filter((item) => item !== timerId);
+      const notice: MatchNotice = {
+        key: `${liked.id}-${Date.now()}`,
+        streamerId: liked.id,
+        name: liked.name,
+        youtubeUrl: liked.youtube_url,
+      };
+      setMatchNotices((current) => [...current, notice].slice(-2));
+      const dismissId = window.setTimeout(() => {
+        noticeTimersRef.current = noticeTimersRef.current.filter((item) => item !== dismissId);
+        setMatchNotices((current) => current.filter((item) => item.key !== notice.key));
+      }, 9000);
+      noticeTimersRef.current.push(dismissId);
+    }, delay);
+    noticeTimersRef.current.push(timerId);
+  }
+
+  function dismissMatchNotice(key: string) {
+    setMatchNotices((current) => current.filter((item) => item.key !== key));
   }
 
   function advance() {
-    setIndex((value) => {
-      const nextIndex = value + 1;
-      if (nextIndex > 0 && streamers.length && nextIndex % streamers.length === 0) setLoopCount((loop) => loop + 1);
-      return nextIndex;
-    });
-  }
-
-  function continueSwiping() {
-    setLikedStreamer(null);
-    advance();
-  }
-
-  function openStreamingSite() {
-    if (!likedStreamer) return;
-    window.location.href = youtubeSubscribeUrl(likedStreamer.youtube_url);
+    setIndex((value) => value + 1);
   }
 
   if (!initialStreamers.length) {
@@ -351,7 +400,7 @@ export function SwipeClient({ initialStreamers }: SwipeClientProps) {
             </div>
           )}
           <div className="status-band next-find-panel">
-            <h2>{isLooping ? "再表示中" : "次の推しを見つける"}</h2>
+            <h2>次の推しを見つける</h2>
             <p>右でいいね、左でスキップ。中央ボタンからプロフィールを見られます。</p>
           </div>
           {viewerVtype && (
@@ -375,24 +424,30 @@ export function SwipeClient({ initialStreamers }: SwipeClientProps) {
         </div>
       </aside>
 
-      {likedStreamer && (
-        <div className="like-choice-backdrop" role="dialog" aria-modal="true" aria-labelledby="like-choice-title">
-          <div className="like-choice-modal">
-            <div className="like-choice-icon">
-              <Heart size={28} fill="currentColor" />
-            </div>
-            <h2 id="like-choice-title">いいねしました</h2>
-            <p>{likedStreamer.name}さんの{videoSiteLabel(likedStreamer.youtube_url)}へ移動するか、このままスワイプを続けられます。</p>
-            <div className="like-choice-actions">
-              <button className="secondary-button" type="button" onClick={continueSwiping}>
-                スワイプを続ける
+      {matchNotices.length > 0 && (
+        <div className="match-notice-stack" aria-live="polite">
+          {matchNotices.map((notice) => (
+            <div className="match-notice" key={notice.key} role="status">
+              <div className="match-notice-icon">
+                <Heart size={18} fill="currentColor" />
+              </div>
+              <div className="match-notice-body">
+                <strong>{notice.name}さんとマッチしました</strong>
+                <a href={youtubeSubscribeUrl(notice.youtubeUrl)}>
+                  <ExternalLink size={14} />
+                  {videoSiteLabel(notice.youtubeUrl)}を見る
+                </a>
+              </div>
+              <button
+                className="match-notice-close"
+                type="button"
+                aria-label="通知を閉じる"
+                onClick={() => dismissMatchNotice(notice.key)}
+              >
+                <X size={16} />
               </button>
-              <button className="primary-button" type="button" onClick={openStreamingSite}>
-                <ExternalLink size={18} />
-                {videoSiteLabel(likedStreamer.youtube_url)}を開く
-              </button>
             </div>
-          </div>
+          ))}
         </div>
       )}
       {superBoostStreamer && (

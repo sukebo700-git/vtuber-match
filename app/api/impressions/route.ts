@@ -23,7 +23,10 @@ export async function POST(request: Request) {
     const weekKey = jstWeekKey(new Date());
     const impressionCounts = countStreamerIds(streamerIds);
     const refs = Array.from(impressionCounts.keys()).map((streamerId) => db.collection("streamers").doc(streamerId));
-    const docs = await db.getAll(...refs);
+    // fieldMaskを指定しないと thumbnails(base64画像・1枚最大130KB)まで含む
+    // ドキュメント全体を取得してしまう。ここで実際に使うのは weekly_impressions
+    // だけなので、明示的に絞って転送量を落とす。
+    const docs = await db.getAll(...refs, { fieldMask: ["weekly_impressions"] });
     const batch = db.batch();
     docs.forEach((doc, index) => {
       const incrementBy = impressionCounts.get(refs[index].id) || 1;

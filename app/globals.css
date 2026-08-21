@@ -2583,6 +2583,99 @@ button {
   backdrop-filter: blur(10px);
 }
 
+/* マッチ通知: いいね直後に操作を止めず、数秒後に画面上部へ非同期表示する。
+   スワイプを妨げないよう、通知カード自体にだけ pointer-events を戻す。 */
+.match-notice-stack {
+  position: fixed;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 70;
+  display: grid;
+  gap: 8px;
+  width: min(calc(100% - 24px), 380px);
+  pointer-events: none;
+}
+
+.match-notice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.97);
+  box-shadow: 0 14px 34px rgba(38, 50, 71, 0.22);
+  pointer-events: auto;
+  animation: match-notice-in 220ms ease-out;
+}
+
+@keyframes match-notice-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .match-notice {
+    animation: none;
+  }
+}
+
+.match-notice-icon {
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ff5b9a, var(--pink));
+  color: #fff;
+}
+
+.match-notice-body {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.match-notice-body strong {
+  color: #24324d;
+  font-size: 0.92rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.match-notice-body a {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--pink);
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.match-notice-close {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(38, 50, 71, 0.08);
+  color: #24324d;
+  cursor: pointer;
+}
+
 .like-choice-modal {
   position: relative;
   width: min(100%, 420px);

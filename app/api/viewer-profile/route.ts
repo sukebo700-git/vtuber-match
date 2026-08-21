@@ -32,8 +32,11 @@ export async function GET(request: Request) {
       })
     });
   }
-  const likes = await db.collection("likes").where("viewer_profile_id", "==", id).limit(1000).get();
-  const matchCount = likes.size;
+  // 件数を数えるだけのために最大1000ドキュメントを実読みしていたため、
+  // 集計クエリ(count)へ変更する。Firestoreの課金は「一致したインデックス
+  // エントリ1000件につき1 read」なので、実質1 readまで下がる。
+  const likesCount = await db.collection("likes").where("viewer_profile_id", "==", id).count().get();
+  const matchCount = likesCount.data().count;
 
   return NextResponse.json({
     profile: sanitizeProfile({
