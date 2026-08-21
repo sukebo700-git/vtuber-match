@@ -48,8 +48,8 @@ function parseAffiliateSnippet(html: string): ParsedSnippet {
   }
 
   const hrefs = Array.from(doc.querySelectorAll("a[href]"))
-    .map((anchor) => anchor.getAttribute("href") || "")
-    .filter((href) => /^https:\/\//i.test(href));
+    .map((anchor) => normalizeSnippetUrl(anchor.getAttribute("href") || ""))
+    .filter(Boolean);
   if (!hrefs.length) return empty;
 
   // 楽天と提携しているため、複数候補があるときは楽天のリンクを優先する
@@ -59,9 +59,9 @@ function parseAffiliateSnippet(html: string): ParsedSnippet {
     hrefs[0];
 
   const images = Array.from(doc.querySelectorAll("img[src]"))
-    .filter((img) => {
-      const src = img.getAttribute("src") || "";
-      if (!/^https:\/\//i.test(src)) return false;
+    .map((img) => ({ img, src: normalizeSnippetUrl(img.getAttribute("src") || "") }))
+    .filter(({ img, src }) => {
+      if (!src) return false;
       // 計測用の1x1透明ピクセルは商品画像ではないので除外する
       if (/impression/i.test(src)) return false;
       if (/i\.moshimo\.com/i.test(src)) return false;
@@ -71,9 +71,9 @@ function parseAffiliateSnippet(html: string): ParsedSnippet {
       return true;
     });
 
-  const imageUrl = images[0]?.getAttribute("src") || "";
+  const imageUrl = images[0]?.src || "";
   const title =
-    images[0]?.getAttribute("alt")?.trim() ||
+    images[0]?.img.getAttribute("alt")?.trim() ||
     doc.querySelector("a[href]")?.textContent?.trim() ||
     "";
 
@@ -93,6 +93,21 @@ function safeDecode(value: string) {
   } catch {
     return value;
   }
+}
+
+/**
+ * もしもが出すURL/画像srcは "//af.moshimo.com/..." のようにプロトコルを省略した
+ * 「プロトコル相対」形式のため、https:// を補って統一する(自前で改変・短縮は行わない、
+ * 元の値をそのまま使うためのプロトコル補完のみ)。
+ */
+function normalizeSnippetUrl(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  if (/^https:\/\//i.test(trimmed)) return trimmed;
+  if (trimmed.startsWith("//")) return `https:${trimmed}`;
+  // http:// のみのリンクも https:// に統一する(もしも/楽天はhttps対応済みのため安全)
+  if (/^http:\/\//i.test(trimmed)) return `https://${trimmed.slice(7)}`;
+  return "";
 }
 
 export function AdminSwipeAdsPanel({ adminKey }: { adminKey: string }) {
