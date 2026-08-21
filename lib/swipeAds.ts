@@ -7,6 +7,9 @@ const settingsCollection = "app_settings";
 const settingsDocId = "swipe_ads";
 const cacheTtlMs = 5 * 60 * 1000;
 
+/** 在庫状態。sold_out のカードはスワイプに出さない */
+export type SwipeAdStockStatus = "in_stock" | "sold_out" | "unknown";
+
 export type SwipeAdCard = {
   id: string;
   /** 表示名(管理用。カード上には出さない) */
@@ -18,6 +21,9 @@ export type SwipeAdCard = {
   url: string;
   provider: "rakuten" | "yahoo" | "other";
   is_active: boolean;
+  /** 楽天APIで確認した在庫状態。未確認は unknown(=表示する) */
+  stock_status?: SwipeAdStockStatus;
+  stock_checked_at?: string;
 };
 
 export type SwipeAdSettings = {
@@ -92,11 +98,22 @@ function normalizeCard(value: unknown): SwipeAdCard | null {
     url,
     provider: card.provider === "rakuten" || card.provider === "yahoo" ? card.provider : "other",
     is_active: card.is_active !== false,
+    // 在庫状態は管理画面からの保存で消えないよう必ず引き継ぐ
+    stock_status: normalizeStockStatus(card.stock_status),
+    stock_checked_at: String(card.stock_checked_at || "").slice(0, 40) || undefined,
   };
 }
 
+function normalizeStockStatus(value: unknown): SwipeAdStockStatus {
+  return value === "in_stock" || value === "sold_out" ? value : "unknown";
+}
+
+/**
+ * スワイプに出せる広告カード。
+ * 売り切れが確認できたものだけを除外する(未確認 unknown は表示する)。
+ */
 export function activeSwipeAdCards(settings: SwipeAdSettings) {
-  return settings.cards.filter((card) => card.is_active && card.url);
+  return settings.cards.filter((card) => card.is_active && card.url && card.stock_status !== "sold_out");
 }
 
 function getCache(): SettingsCache | null {

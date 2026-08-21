@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Save, Trash2 } from "lucide-react";
+import { Plus, RefreshCw, Save, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import type { SwipeAdCard, SwipeAdSettings } from "@/lib/swipeAds";
 
@@ -200,6 +200,26 @@ export function AdminSwipeAdsPanel({ adminKey }: { adminKey: string }) {
     setMessage("保存しました。");
   }
 
+  async function checkStock() {
+    setBusy(true);
+    setMessage("楽天APIで在庫を確認しています(商品数によっては少し時間がかかります)...");
+    const response = await fetch("/api/admin/swipe-ads/check-stock", {
+      method: "POST",
+      headers: { "x-admin-key": adminKey },
+    });
+    const data = await response.json().catch(() => ({}));
+    setBusy(false);
+    if (!response.ok) {
+      setMessage(data.error || "在庫を確認できませんでした。");
+      return;
+    }
+    if (data.settings) setSettings(data.settings);
+    setMessage(
+      `在庫を確認しました(確認${data.checked}件 / 売り切れ${data.sold_out}件 / 対象外${data.skipped}件)。` +
+      "売り切れの商品はスワイプに表示されなくなります。",
+    );
+  }
+
   async function reviewGoods(id: string, status: "approved" | "rejected") {
     const note = status === "rejected" ? window.prompt("見送りの理由(配信者に表示されます・任意)") ?? "" : "";
     setBusy(true);
@@ -319,6 +339,9 @@ export function AdminSwipeAdsPanel({ adminKey }: { adminKey: string }) {
                     <input type="checkbox" checked={card.is_active} onChange={(event) => updateCard(index, { is_active: event.target.checked })} />
                     有効
                   </label>
+                  <span className={card.stock_status === "sold_out" ? "x-unintroduced" : "x-introduced"}>
+                    在庫: {card.stock_status === "sold_out" ? "売り切れ(非表示)" : card.stock_status === "in_stock" ? "あり" : "未確認"}
+                  </span>
                   <button className="danger-button" type="button" onClick={() => removeCard(index)}>
                     <Trash2 size={16} />削除
                   </button>
@@ -333,7 +356,14 @@ export function AdminSwipeAdsPanel({ adminKey }: { adminKey: string }) {
               <button className="primary-button" type="button" disabled={busy} onClick={save}>
                 <Save size={16} />設定を保存
               </button>
+              <button className="secondary-button" type="button" disabled={busy} onClick={checkStock}>
+                <RefreshCw size={16} />楽天の在庫を確認
+              </button>
             </div>
+            <p className="help-text">
+              「楽天の在庫を確認」を押すと、登録した楽天商品の在庫を調べ、売り切れのカードを自動でスワイプから外します。
+              判定できなかったカードは念のため表示を維持します。
+            </p>
           </>
         )}
       </section>
