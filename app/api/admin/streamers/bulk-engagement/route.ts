@@ -36,7 +36,7 @@ export async function POST(request: Request) {
   }
 
   const snapshot = await db.collection("streamers")
-    .select("is_visible", "is_deleted", "is_dummy", "dummy", "test", "fictional", "isHidden", "likes", "impressions")
+    .select("is_visible", "is_deleted", "is_dummy", "dummy", "test", "fictional", "isHidden", "likes", "impressions", "subscription_status")
     .limit(500)
     .get();
   let targets = snapshot.docs.filter((doc) => isTargetStreamer({ id: doc.id, ...(doc.data() || {}) }));
@@ -124,7 +124,10 @@ function isTargetStreamer(streamer: Record<string, unknown>) {
     streamer.dummy !== true &&
     streamer.test !== true &&
     streamer.fictional !== true &&
-    streamer.isHidden !== true;
+    streamer.isHidden !== true &&
+    // 課金をやめた(有料プランを解約した)配信者は対象外にする。一度も課金していない
+    // 無料配信者(subscription_statusが未設定)は従来通り対象に含める。
+    streamer.subscription_status !== "canceled";
 }
 
 function currentJstWeekKey() {

@@ -90,17 +90,19 @@ export function SwipeClient({
   const noticeTimersRef = useRef<number[]>([]);
 
   const streamers = useMemo(
-    () => prioritizeSameVtype(
-      shuffleEqualPriorityGroups(
-        (categoryFilter || regionFilter)
-          ? initialStreamers.filter((streamer) => (
-              (!categoryFilter || streamer.categories.includes(categoryFilter)) &&
-              (!regionFilter || streamer.region === regionFilter)
-            ))
-          : initialStreamers,
-        shuffleSeed,
+    () => demoteChurnedStreamers(
+      prioritizeSameVtype(
+        shuffleEqualPriorityGroups(
+          (categoryFilter || regionFilter)
+            ? initialStreamers.filter((streamer) => (
+                (!categoryFilter || streamer.categories.includes(categoryFilter)) &&
+                (!regionFilter || streamer.region === regionFilter)
+              ))
+            : initialStreamers,
+          shuffleSeed,
+        ),
+        viewerVtypeId,
       ),
-      viewerVtypeId,
     ),
     [categoryFilter, regionFilter, initialStreamers, shuffleSeed, viewerVtypeId],
   );
@@ -1252,6 +1254,16 @@ function prioritizeSameVtype(streamers: Streamer[], viewerVtypeId: number | null
   if (!sameType.length) return streamers;
   const others = streamers.filter((streamer) => streamer.vtype_id !== viewerVtypeId);
   return [...sameType, ...others];
+}
+
+// 課金をやめた(有料プランを解約した)配信者は、通常の並び順から外して
+// 後方(最後から5番目くらい)へ固定表示する。あからさまに最後尾にはしない。
+function demoteChurnedStreamers(streamers: Streamer[]) {
+  const demoted = streamers.filter((streamer) => streamer.subscription_status === "canceled");
+  if (!demoted.length) return streamers;
+  const rest = streamers.filter((streamer) => streamer.subscription_status !== "canceled");
+  const insertAt = Math.max(0, rest.length - 4);
+  return [...rest.slice(0, insertAt), ...demoted, ...rest.slice(insertAt)];
 }
 
 function swipePriorityScore(streamer: Streamer) {
