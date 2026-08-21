@@ -22,11 +22,85 @@ const statusLabels: Record<string, string> = {
   rejected: "見送り",
 };
 
+type ParsedSnippet = {
+  url: string;
+  imageUrl: string;
+  title: string;
+  provider: SwipeAdCard["provider"];
+};
+
+/**
+ * もしもアフィリエイトのHTMLタグから必要な要素を取り出す。
+ * - 商品リンク: <a href="af.moshimo.com/..."><img src="thumbnail.image.rakuten.co.jp/..."></a> + 計測用1x1画像
+ * - かんたんリンク: Amazon/楽天/Yahoo!の複数リンクが並ぶため、楽天を優先して選ぶ
+ * DOMParserを使うことで &amp; などのHTMLエンティティも自動で復号される。
+ */
+function parseAffiliateSnippet(html: string): ParsedSnippet {
+  const empty: ParsedSnippet = { url: "", imageUrl: "", title: "", provider: "other" };
+  const source = html.trim();
+  if (!source) return empty;
+
+  let doc: Document;
+  try {
+    doc = new DOMParser().parseFromString(source, "text/html");
+  } catch {
+    return empty;
+  }
+
+  const hrefs = Array.from(doc.querySelectorAll("a[href]"))
+    .map((anchor) => anchor.getAttribute("href") || "")
+    .filter((href) => /^https:\/\//i.test(href));
+  if (!hrefs.length) return empty;
+
+  // 楽天と提携しているため、複数候補があるときは楽天のリンクを優先する
+  const url =
+    hrefs.find((href) => /moshimo/i.test(href) && /rakuten/i.test(decodeURIComponent(href))) ||
+    hrefs.find((href) => /moshimo/i.test(href)) ||
+    hrefs[0];
+
+  const images = Array.from(doc.querySelectorAll("img[src]"))
+    .filter((img) => {
+      const src = img.getAttribute("src") || "";
+      if (!/^https:\/\//i.test(src)) return false;
+      // 計測用の1x1透明ピクセルは商品画像ではないので除外する
+      if (/impression/i.test(src)) return false;
+      if (/i\.moshimo\.com/i.test(src)) return false;
+      const width = Number(img.getAttribute("width") || 0);
+      const height = Number(img.getAttribute("height") || 0);
+      if (width === 1 || height === 1) return false;
+      return true;
+    });
+
+  const imageUrl = images[0]?.getAttribute("src") || "";
+  const title =
+    images[0]?.getAttribute("alt")?.trim() ||
+    doc.querySelector("a[href]")?.textContent?.trim() ||
+    "";
+
+  const decoded = safeDecode(url);
+  const provider: SwipeAdCard["provider"] = /rakuten/i.test(decoded)
+    ? "rakuten"
+    : /yahoo|shopping\.geocities|paypaymall/i.test(decoded)
+      ? "yahoo"
+      : "other";
+
+  return { url, imageUrl, title, provider };
+}
+
+function safeDecode(value: string) {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
 export function AdminSwipeAdsPanel({ adminKey }: { adminKey: string }) {
   const [settings, setSettings] = useState<SwipeAdSettings | null>(null);
   const [goods, setGoods] = useState<GoodsItem[]>([]);
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
+  const [snippet, setSnippet] = useState("");
 
   const loadGoods = useCallback(() => {
     fetch("/api/admin/vtuber-goods", { headers: { "x-admin-key": adminKey } })
@@ -76,6 +150,34 @@ export function AdminSwipeAdsPanel({ adminKey }: { adminKey: string }) {
       if (!current) return current;
       return { ...current, cards: current.cards.filter((_, cardIndex) => cardIndex !== index) };
     });
+  }
+
+  /** もしもの商品リンク/かんたんリンクのHTMLから、画像URLとアフィリエイトURLを取り出してカード化する */
+  function addCardFromSnippet() {
+    const parsed = parseAffiliateSnippet(snippet);
+    if (!parsed.url) {
+      setMessage("HTMLタグからリンクを読み取れませんでした。もしもの「商品リンク」で生成されたタグをそのまま貼り付けてください。");
+      return;
+    }
+    setSettings((current) => {
+      if (!current) return current;
+      const card: SwipeAdCard = {
+        id: `ad-${Date.now().toString(36)}`,
+        label: parsed.title.slice(0, 60),
+        title: parsed.title.slice(0, 80),
+        image_url: parsed.imageUrl,
+        url: parsed.url,
+        provider: parsed.provider,
+        is_active: true,
+      };
+      return { ...current, cards: [...current.cards, card] };
+    });
+    setSnippet("");
+    setMessage(
+      parsed.imageUrl
+        ? "カードを追加しました。文言を確認して保存してください。"
+        : "カードを追加しましたが、画像URLを読み取れませんでした。手動で入力してください。",
+    );
   }
 
   async function save() {
@@ -164,16 +266,32 @@ export function AdminSwipeAdsPanel({ adminKey }: { adminKey: string }) {
 
             <h3 style={{ marginTop: 18 }}>アフィリエイト広告カード</h3>
             <p className="help-text">
-              楽天・Yahoo!の商品リンクをそのまま登録します。規約上、短縮URLや中間リダイレクトは使わず、
-              https から始まる完全なアフィリエイトURLを貼ってください。
+              もしもアフィリエイトが生成したHTMLタグをそのまま貼り付けると、画像URLとリンクを自動で取り出します。
+              リンクはもしもの計測URLのまま使い、こちらで短縮・改変はしません。
             </p>
+
+            <div className="field">
+              <label htmlFor="moshimo_snippet">もしものHTMLタグから追加</label>
+              <textarea
+                id="moshimo_snippet"
+                rows={3}
+                value={snippet}
+                onChange={(event) => setSnippet(event.target.value)}
+                placeholder={'もしもの「商品リンク」で生成された <a href="https://af.moshimo.com/...">...</a> をそのまま貼り付け'}
+              />
+              <div className="admin-filter-row">
+                <button className="secondary-button" type="button" onClick={addCardFromSnippet} disabled={!snippet.trim()}>
+                  <Plus size={16} />解析してカードを追加
+                </button>
+              </div>
+            </div>
 
             {settings.cards.map((card, index) => (
               <div className="status-band" key={card.id} style={{ marginTop: 10 }}>
                 <div className="admin-filter-row">
                   <div className="field">
                     <label>管理用ラベル</label>
-                    <input value={card.label} onChange={(event) => updateCard(index, { label: event.target.value })} placeholder="例: コンデンサマイク" />
+                    <input value={card.label} onChange={(event) => updateCard(index, { label: event.target.value })} placeholder="例: 痛バッグ / アクスタケース" />
                   </div>
                   <div className="field">
                     <label>提供元</label>
