@@ -181,6 +181,13 @@ export type ViewerProfile = VtypeProfileFields & {
   last_viewer_login_at?: string;
   created_at?: string;
   updated_at?: string;
+  /**
+   * viewer_entitlementsコレクションから都度読んで合成する派生値。
+   * viewer_profilesドキュメント自体には保存しない(プロフィール編集経由で
+   * 書き換えられないようにするため)。
+   */
+  entitlement_tier?: "free" | "elite";
+  entitlement_valid_until?: string;
 };
 
 export type EmbeddedViewerProfile = Partial<ViewerProfile> & {

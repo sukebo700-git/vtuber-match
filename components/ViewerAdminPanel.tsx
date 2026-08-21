@@ -8,6 +8,23 @@ export function ViewerAdminPanel({ viewers }: { viewers: ViewerProfileWithStats[
   const [items, setItems] = useState(viewers);
   const [busyId, setBusyId] = useState("");
 
+  async function setElite(id: string, grant: boolean) {
+    setBusyId(id);
+    const response = await fetch(`/api/admin/viewers/${encodeURIComponent(id)}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: grant ? "grant_elite" : "revoke_elite" }),
+    });
+    setBusyId("");
+    if (!response.ok) {
+      alert("更新できませんでした。");
+      return;
+    }
+    setItems((current) => current.map((viewer) => (
+      viewer.id === id ? { ...viewer, entitlement_tier: grant ? "elite" : "free" } : viewer
+    )));
+  }
+
   async function removeViewer(id: string) {
     const target = items.find((viewer) => viewer.id === id);
     if (target?.has_paid_history) {
@@ -41,6 +58,7 @@ export function ViewerAdminPanel({ viewers }: { viewers: ViewerProfileWithStats[
           const superLikePurchases = viewer.super_like_purchase_count || 0;
           const registeredAt = viewer.created_at || viewer.updated_at;
           const lastActionAt = viewer.last_viewer_activity_at;
+          const isElite = viewer.entitlement_tier === "elite";
 
           return (
             <article className={viewerCardClassName(viewer, registeredAt)} key={viewer.id}>
@@ -50,7 +68,7 @@ export function ViewerAdminPanel({ viewers }: { viewers: ViewerProfileWithStats[
               </div>
 
               <div className="viewer-admin-summary-grid" aria-label="視聴者の利用状況">
-                <span className="state pending">無料</span>
+                <span className={`state ${isElite ? "approved" : "pending"}`}>{isElite ? "エリートファン" : "無料"}</span>
                 {viewer.is_admin_viewer && <span className="state pending">匿名テスト</span>}
                 {(viewer.registration_source === "x_campaign" || viewer.x_campaign_entry) && (
                   <span className="state approved">Xキャンペーン応募済み</span>
@@ -72,7 +90,13 @@ export function ViewerAdminPanel({ viewers }: { viewers: ViewerProfileWithStats[
                   <div><dt>視聴者ID</dt><dd>{viewer.id}</dd></div>
                   <div><dt>管理ID</dt><dd>{viewer.viewer_login_id || "未発行"}</dd></div>
                   <div><dt>メール</dt><dd>{viewer.email || "未登録"}</dd></div>
-                  <div><dt>プラン</dt><dd>無料プラン</dd></div>
+                  <div><dt>プラン</dt><dd>{isElite ? "エリートファン(月額500円)" : "無料"}</dd></div>
+                  {isElite && viewer.entitlement_valid_until && (
+                    <div><dt>有効期限</dt><dd>{formatDateMinute(viewer.entitlement_valid_until)}</dd></div>
+                  )}
+                  {isElite && !viewer.entitlement_valid_until && (
+                    <div><dt>有効期限</dt><dd>無期限(管理付与)</dd></div>
+                  )}
                   <div><dt>表示名</dt><dd>{viewer.display_name || viewer.youtube_display_name || "未入力"}</dd></div>
                   <div><dt>Xアカウント</dt><dd>{viewer.twitter_id || "未入力"}</dd></div>
                   <div><dt>登録経路</dt><dd>{viewer.registration_source === "x_campaign" ? "Xキャンペーン" : "通常"}</dd></div>
@@ -84,14 +108,35 @@ export function ViewerAdminPanel({ viewers }: { viewers: ViewerProfileWithStats[
                   <div><dt>更新日</dt><dd>{formatDate(viewer.updated_at)}</dd></div>
                 </dl>
                 {viewer.has_paid_history && <p className="help-text">スーパーいいね購入履歴があるため削除できません。</p>}
-                <button
-                  className="secondary-button danger-button"
-                  type="button"
-                  disabled={busyId === viewer.id || viewer.has_paid_history}
-                  onClick={() => removeViewer(viewer.id)}
-                >
-                  {busyId === viewer.id ? "削除中..." : viewer.has_paid_history ? "削除不可" : "視聴者を削除"}
-                </button>
+                <div className="admin-filter-row">
+                  {isElite ? (
+                    <button
+                      className="secondary-button"
+                      type="button"
+                      disabled={busyId === viewer.id}
+                      onClick={() => setElite(viewer.id, false)}
+                    >
+                      エリートファンを解除
+                    </button>
+                  ) : (
+                    <button
+                      className="secondary-button"
+                      type="button"
+                      disabled={busyId === viewer.id}
+                      onClick={() => setElite(viewer.id, true)}
+                    >
+                      エリートファンを付与(無期限)
+                    </button>
+                  )}
+                  <button
+                    className="secondary-button danger-button"
+                    type="button"
+                    disabled={busyId === viewer.id || viewer.has_paid_history}
+                    onClick={() => removeViewer(viewer.id)}
+                  >
+                    {busyId === viewer.id ? "処理中..." : viewer.has_paid_history ? "削除不可" : "視聴者を削除"}
+                  </button>
+                </div>
               </details>
             </article>
           );

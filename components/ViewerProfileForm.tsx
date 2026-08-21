@@ -183,6 +183,10 @@ export function ViewerProfileForm() {
         </div>
       </div>
 
+      <p className="help-text">
+        現在のプラン: <strong>{profile.entitlement_tier === "elite" ? "エリートファン" : "無料登録"}</strong>
+      </p>
+
       <dl className="data-list">
         <div>
           <dt>視聴者ID</dt>

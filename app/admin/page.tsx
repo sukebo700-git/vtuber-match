@@ -14,6 +14,7 @@ import { PLAN_LABELS } from "@/lib/billing";
 import { getAdminDb } from "@/lib/firebaseAdmin";
 import { readAllLocalStreamers, readLocalAnalyticsSummary, readLocalApplications, readLocalPasswordResetRequests, readLocalReports, readLocalViewerProfilesWithStats, readLocalVisitSourceStats, readLocalVisitStats, summarizeVisits } from "@/lib/localStore";
 import { normalizeStreamer } from "@/lib/streamers";
+import { getViewerEntitlements } from "@/lib/viewerEntitlements";
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import type { ApplicationStatus, PlanType, StreamerApplication, StreamerProfileEdit, ViewerProfile, ViewerProfileWithStats, StreamerReport, PasswordResetRequest } from "@/lib/types";
@@ -489,7 +490,18 @@ async function readFirestoreViewerProfiles({ cursor }: { cursor?: string }): Pro
   const pageBase = decodedCursor ? sorted.filter((viewer) => isViewerAfterAdminCursor(viewer, decodedCursor)) : sorted;
   const items = pageBase.slice(0, 100);
   const hasNext = pageBase.length > 100;
-  return { items, nextCursor: hasNext && items.length ? encodeViewerAdminCursor(items[items.length - 1]) : undefined, totalCount };
+
+  // 画面に出す最大100件ぶんだけ、エリート権限をまとめて読む(getAllで1回)。
+  // 500件全部ではなく、実際に表示するページ分だけに絞ってreadを節約する。
+  const entitlements = await getViewerEntitlements(items.map((viewer) => viewer.id));
+  const itemsWithEntitlement = items.map((viewer) => {
+    const entitlement = entitlements.get(viewer.id);
+    return entitlement
+      ? { ...viewer, entitlement_tier: entitlement.tier, entitlement_valid_until: entitlement.validUntil }
+      : { ...viewer, entitlement_tier: "free" as const };
+  });
+
+  return { items: itemsWithEntitlement, nextCursor: hasNext && items.length ? encodeViewerAdminCursor(items[items.length - 1]) : undefined, totalCount };
 }
 
 function viewerDocToAdminRow(id: string, data: ViewerProfile & Record<string, unknown>, documentCreatedAt?: string): ViewerProfileWithStats {

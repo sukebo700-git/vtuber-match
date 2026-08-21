@@ -4,6 +4,7 @@ import { diagnosisTypes } from "@/lib/diagnosis";
 import { FieldValue, getAdminDb } from "@/lib/firebaseAdmin";
 import { readLocalViewerProfilesRaw, readLocalViewerProfilesWithStats, upsertLocalViewerProfile } from "@/lib/localStore";
 import { readUserSession, viewerSessionCookie } from "@/lib/userSession";
+import { getViewerEntitlement } from "@/lib/viewerEntitlements";
 import type { ViewerProfile } from "@/lib/types";
 
 export async function GET(request: Request) {
@@ -21,6 +22,7 @@ export async function GET(request: Request) {
 
   const profileDoc = await db.collection("viewer_profiles").doc(id).get();
   const profile = profileDoc.exists ? profileDoc.data() : {};
+  const entitlement = await getViewerEntitlement(id);
   if (profile?.is_admin_viewer === true) {
     return NextResponse.json({
       profile: sanitizeProfile({
@@ -28,7 +30,9 @@ export async function GET(request: Request) {
         ...profile,
         match_count: 0,
         streamer_like_count: 0,
-        fan_level: "starter"
+        fan_level: "starter",
+        entitlement_tier: entitlement.tier,
+        entitlement_valid_until: entitlement.validUntil,
       })
     });
   }
@@ -44,7 +48,9 @@ export async function GET(request: Request) {
       ...profile,
       match_count: matchCount,
       streamer_like_count: 0,
-      fan_level: fanLevel(matchCount)
+      fan_level: fanLevel(matchCount),
+      entitlement_tier: entitlement.tier,
+      entitlement_valid_until: entitlement.validUntil,
     })
   });
 }
