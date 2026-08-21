@@ -2572,6 +2572,60 @@ button {
   flex-wrap: wrap;
 }
 
+/* 広告カード: 全画面オーバーレイにせず、VTuberカードと同じ枠内に収める
+   (フィード内ネイティブ広告と同じ扱い。インタースティシャルにしない) */
+.ad-card {
+  background: #fff;
+  cursor: default;
+}
+
+.ad-card img {
+  object-fit: contain;
+  background: #f4f6fb;
+}
+
+.ad-card-placeholder {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, #eef1f8, #dfe5f2);
+}
+
+.ad-card-label {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 3;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(19, 27, 44, 0.72);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.ad-card-description {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.82rem;
+}
+
+.ad-card-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: #fff;
+  color: #24324d;
+  font-weight: 800;
+  font-size: 0.9rem;
+  text-decoration: none;
+  box-shadow: 0 8px 20px rgba(19, 27, 44, 0.24);
+}
+
 .like-choice-backdrop {
   position: fixed;
   inset: 0;

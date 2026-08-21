@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 
 export type AdminImportantNotification = {
   id: string;
-  type: "password_reset" | "withdrawal" | "payment_started" | "payment_ended" | "payment_failed" | "subscription_canceled" | "short_video" | "tshirt_order" | "other";
+  type: "password_reset" | "withdrawal" | "payment_started" | "payment_ended" | "payment_failed" | "subscription_canceled" | "short_video" | "tshirt_order" | "vtuber_goods" | "other";
   title: string;
   body: string;
   created_at?: string;

@@ -7,6 +7,7 @@ import { PasswordResetAdminPanel } from "@/components/PasswordResetAdminPanel";
 import { VisitStatsPanel } from "@/components/VisitStatsPanel";
 import { AdminAnalyticsPanel } from "@/components/AdminAnalyticsPanel";
 import { AdminImportantNotifications, type AdminImportantNotification } from "@/components/AdminImportantNotifications";
+import { AdminSwipeAdsPanel } from "@/components/AdminSwipeAdsPanel";
 import { emptyAdminAnalyticsSummary, type AdminAnalyticsSummary } from "@/lib/analytics";
 import { adminCookieName, verifyAdminSession } from "@/lib/adminSession";
 import { PLAN_LABELS } from "@/lib/billing";
@@ -25,13 +26,14 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-type AdminTab = "streamers" | "viewers" | "sales" | "analytics" | "inbox";
+type AdminTab = "streamers" | "viewers" | "sales" | "analytics" | "inbox" | "ads";
 
 const adminTabs: Array<{ id: AdminTab; label: string }> = [
   { id: "streamers", label: "配信者" },
   { id: "viewers", label: "視聴者" },
   { id: "sales", label: "申込/課金" },
   { id: "analytics", label: "分析" },
+  { id: "ads", label: "広告/グッズ" },
   { id: "inbox", label: "問い合わせ" },
 ];
 
@@ -124,6 +126,7 @@ export default async function AdminPage({ searchParams }: { searchParams?: Admin
             <AdminAnalyticsPanel analytics={analyticsStats} />
           </>
         )}
+        {activeTab === "ads" && <AdminSwipeAdsPanel adminKey="" />}
         {activeTab === "streamers" && <ShortVideoAdminPanel adminKey="" />}
         {needsStreamerData && <AdminDashboard initialApplications={applications} initialStreamers={streamers} initialPaidStreamers={streamerPage.paidItems ?? []} adminKey="" />}
         {activeTab === "viewers" && <ViewerAdminPanel viewers={viewers} />}
@@ -163,14 +166,14 @@ function AdminPagination({ activeTab, nextCursor, xFilter }: { activeTab: "strea
 }
 
 function normalizeAdminTab(value: string | undefined): AdminTab {
-  if (value === "viewers" || value === "sales" || value === "analytics" || value === "inbox") return value;
+  if (value === "viewers" || value === "sales" || value === "analytics" || value === "inbox" || value === "ads") return value;
   return "streamers";
 }
 
 async function readImportantNotifications(): Promise<AdminImportantNotification[]> {
   const db = getAdminDb();
   if (!db) return [];
-  const [passwordResets, applicationDocs, streamerDocs, shortVideoDocs, tshirtOrderDocs, paymentDocs] = await Promise.all([
+  const [passwordResets, applicationDocs, streamerDocs, shortVideoDocs, tshirtOrderDocs, paymentDocs, goodsDocs] = await Promise.all([
     db.collection("password_reset_requests")
       .select("email", "name", "user_type", "status", "created_at", "updated_at")
       .limit(40)
@@ -198,6 +201,11 @@ async function readImportantNotifications(): Promise<AdminImportantNotification[
     // 複合indexを避けるためJS側で行う(既存の他クエリと同じ方針)。
     db.collection("payments")
       .orderBy("created_at", "desc")
+      .limit(40)
+      .get(),
+    // VTuberグッズ枠: 承認待ちを通知する。承認/見送りすると status が変わり自然に消える。
+    db.collection("vtuber_goods")
+      .where("status", "==", "pending")
       .limit(40)
       .get(),
   ]);
@@ -295,6 +303,17 @@ async function readImportantNotifications(): Promise<AdminImportantNotification[
       created_at: timestampToIso(data.paidAt ?? data.createdAt),
       href: "/admin/tshirt-orders",
       svg_href: `/api/admin/tshirt-orders/${doc.id}/svg?variant=mirror`,
+    });
+  });
+  goodsDocs.docs.forEach((doc) => {
+    const data = doc.data();
+    items.push({
+      id: `vtuber_goods:${doc.id}`,
+      type: "vtuber_goods",
+      title: "グッズ掲載の申請",
+      body: `${data.streamer_name || doc.id} が「${data.title || ""}」の掲載を申請しています。`,
+      created_at: timestampToIso(data.updated_at ?? data.created_at),
+      href: "/admin?tab=ads",
     });
   });
   paymentDocs.docs.forEach((doc) => {

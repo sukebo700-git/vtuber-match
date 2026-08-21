@@ -95,6 +95,10 @@ export default function CreatorPage({
               <strong>紹介ショート動画を依頼</strong>
               <span>公式YouTubeチャンネルで公開する紹介ショート動画を無料で依頼できます。</span>
             </a>
+            <a className="creator-action-card" href="/creator/merch">
+              <strong>グッズ掲載枠</strong>
+              <span>プレミアムプラン特典。あなたのグッズをリスナーのスワイプ画面に掲載できます。</span>
+            </a>
             <a className="creator-action-card" href="/creator/upgrade">
               <strong>アップグレード</strong>
               <span>上位表示、公式紹介、Lo-Fi配信での紹介特典を確認できます。</span>

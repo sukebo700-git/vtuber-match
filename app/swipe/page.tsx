@@ -1,6 +1,8 @@
 import { HeaderAuthStatus } from "@/components/HeaderAuthStatus";
 import { SwipeClient } from "@/components/SwipeClient";
 import { getStreamersForSwipe } from "@/lib/streamers";
+import { activeSwipeAdCards, getSwipeAdSettings } from "@/lib/swipeAds";
+import { getApprovedGoodsCards } from "@/lib/vtuberGoods";
 import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
@@ -14,7 +16,13 @@ export const metadata: Metadata = {
 };
 
 export default async function SwipePage() {
-  const streamers = await getStreamersForSwipe();
+  // 広告設定は5分キャッシュの1 read、グッズも同様にキャッシュ済みの一覧を使う。
+  // 広告がオフの間はグッズの読み取りも行わない。
+  const [streamers, adSettings] = await Promise.all([
+    getStreamersForSwipe(),
+    getSwipeAdSettings(),
+  ]);
+  const goodsCards = adSettings.enabled ? await getApprovedGoodsCards() : [];
 
   return (
     <div className="app-shell">
@@ -30,7 +38,12 @@ export default async function SwipePage() {
         <HeaderAuthStatus />
       </header>
       <main className="main swipe-page-main">
-        <SwipeClient initialStreamers={streamers} />
+        <SwipeClient
+          initialStreamers={streamers}
+          adCards={adSettings.enabled ? activeSwipeAdCards(adSettings) : []}
+          goodsCards={goodsCards}
+          adIntervals={{ guest: adSettings.guest_interval, free: adSettings.free_interval }}
+        />
       </main>
     </div>
   );

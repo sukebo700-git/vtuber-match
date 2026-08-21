@@ -8,13 +8,18 @@ import { viewerVtypeStorageKey, type VtypeProfileFields } from "@/lib/diagnosisP
 import { ensureAnonymousUser } from "@/lib/firebase";
 import { anonymousViewerProfile, getViewerIdentity } from "@/lib/viewerIdentity";
 import { videoSiteLabel, youtubeSubscribeUrl } from "@/lib/youtube";
+import type { SwipeAdCard } from "@/lib/swipeAds";
 import type { Streamer, ViewerProfile } from "@/lib/types";
+import type { VtuberGoodsCard } from "@/lib/vtuberGoods";
 import { UiBadge } from "@/components/ui/UiBadge";
 import { UiButton } from "@/components/ui/UiButton";
 import { UiPanel } from "@/components/ui/UiPanel";
 
 type SwipeClientProps = {
   initialStreamers: Streamer[];
+  adCards?: SwipeAdCard[];
+  goodsCards?: VtuberGoodsCard[];
+  adIntervals?: { guest: number; free: number };
 };
 
 type MatchNotice = {
@@ -22,6 +27,18 @@ type MatchNotice = {
   streamerId: string;
   name: string;
   youtubeUrl: string;
+};
+
+// スワイプ列に差し込むカード。アフィリエイト広告とVTuberグッズを1:1で交互に出す。
+type DeckAd = {
+  id: string;
+  kind: "affiliate" | "goods";
+  title: string;
+  imageUrl: string;
+  url: string;
+  /** グッズ枠のみ: 誰のグッズか */
+  ownerName?: string;
+  description?: string;
 };
 
 const viewerProfileKey = "vtuber-match-viewer-profile";
@@ -34,9 +51,25 @@ const pendingImpressionKey = "vtuber-match-pending-impressions";
 const pendingImpressionFlushTimerKey = "vtuber-match-pending-impressions-flush-timer";
 const pendingSwipeActionKey = "vtuber-match-pending-swipe-actions";
 const pendingSwipeActionLastSentKey = "vtuber-match-pending-swipe-actions-last-sent";
+// 広告表示の進行状態。外部の商品ページへ遷移して戻ってきても、
+// 同じ広告を出さず次のVTuberカードから再開できるよう永続化する。
+const adProgressKey = "vtuber-match-ad-progress-v1";
 
-export function SwipeClient({ initialStreamers }: SwipeClientProps) {
+export function SwipeClient({
+  initialStreamers,
+  adCards = [],
+  goodsCards = [],
+  adIntervals = { guest: 10, free: 25 },
+}: SwipeClientProps) {
   const [index, setIndex] = useState(0);
+  // 広告を出す判定に使う「VTuberカードを何人見たか」。広告カード自体は数えない。
+  const [vtuberViewCount, setVtuberViewCount] = useState(0);
+  const [pendingAd, setPendingAd] = useState<DeckAd | null>(null);
+  const [isRegisteredViewer, setIsRegisteredViewer] = useState(false);
+  const adTurnRef = useRef(0);
+  const adProgressLoadedRef = useRef(false);
+  // 広告判定の正となるカウント(stateは永続化と再描画のためのミラー)
+  const vtuberViewCountRef = useRef(0);
   const [categoryFilter, setCategoryFilter] = useState("");
   const [regionFilter, setRegionFilter] = useState("");
   const [shuffleSeed, setShuffleSeed] = useState("initial");
@@ -158,10 +191,92 @@ export function SwipeClient({ initialStreamers }: SwipeClientProps) {
     });
   }, [current, next]);
 
+  // 外部の商品ページから戻ってきたときに、広告の進行状況を引き継ぐ。
+  //
+  // カード位置(index)は保存しない。デッキはマウントごとにシャッフルされるため
+  // 同じindexが同じVTuberを指さず、復元しても意味がないうえ、シャッフル用の
+  // effectがindexを0へ戻すのと競合するため。
+  // pendingAdも復元しない = 同じ広告を再表示せず次のVTuberカードから再開する。
+  // 一方カウンタは引き継ぐ(リロードで広告を回避できてしまうのを防ぐ)。
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(adProgressKey);
+      if (raw) {
+        const saved = JSON.parse(raw) as { viewCount?: number; adTurn?: number };
+        if (Number.isFinite(saved.viewCount)) {
+          const restored = Math.max(0, Number(saved.viewCount));
+          vtuberViewCountRef.current = restored;
+          setVtuberViewCount(restored);
+        }
+        if (Number.isFinite(saved.adTurn)) adTurnRef.current = Math.max(0, Number(saved.adTurn));
+      }
+    } catch {
+      // 復元に失敗しても先頭から始めれば良いだけなので握りつぶす
+    }
+    setIsRegisteredViewer(getViewerIdentity().registered);
+    adProgressLoadedRef.current = true;
+  }, []);
+
+  // 保存値はrefから読む。復元直後の再描画前にこのeffectが走っても、
+  // stateはまだ更新前なので0で上書きしてしまうため。
+  useEffect(() => {
+    if (!adProgressLoadedRef.current) return;
+    try {
+      localStorage.setItem(adProgressKey, JSON.stringify({
+        viewCount: vtuberViewCountRef.current,
+        adTurn: adTurnRef.current,
+      }));
+    } catch {
+      // 保存できなくても進行自体は続けられる
+    }
+  }, [vtuberViewCount]);
+
+  // localStorageはSSR中に触れないため、登録判定は必ずeffect経由で状態に落とす
+  const adInterval = isRegisteredViewer ? adIntervals.free : adIntervals.guest;
+
+  /** アフィリエイトとグッズを1:1で交互に出す。在庫が無い側は自動でもう一方へ寄せる */
+  function pickNextAd(): DeckAd | null {
+    const affiliates = adCards;
+    const goods = goodsCards;
+    if (!affiliates.length && !goods.length) return null;
+
+    const preferAffiliate = adTurnRef.current % 2 === 0;
+    const useAffiliate = preferAffiliate ? affiliates.length > 0 : goods.length === 0;
+    adTurnRef.current += 1;
+
+    if (useAffiliate) {
+      const card = affiliates[Math.floor(adTurnRef.current / 2) % affiliates.length];
+      return {
+        id: card.id,
+        kind: "affiliate",
+        title: card.title || card.label,
+        imageUrl: card.image_url,
+        url: card.url,
+      };
+    }
+
+    const card = goods[Math.floor(adTurnRef.current / 2) % goods.length];
+    return {
+      id: card.id,
+      kind: "goods",
+      title: card.title,
+      imageUrl: card.image_url,
+      url: card.url,
+      ownerName: card.streamer_name,
+      description: card.description,
+    };
+  }
+
+  function dismissAd() {
+    setPendingAd(null);
+  }
+
   // Optimistic UI: いいねの通信結果を待たずに必ず次のカードへ進む。
   // Firestore保存・マッチ判定はバックグラウンドで走らせ、失敗時のみ通知する。
   function swipe(direction: "left" | "right") {
     if (!current || !streamers.length) return;
+    // 広告カード表示中はVTuberカードへの操作を受け付けない(閉じると再開する)
+    if (pendingAd) return;
     if (swipeLockRef.current) return;
     if (!canGuestSwipe()) {
       setLimitReached(true);
@@ -260,6 +375,19 @@ export function SwipeClient({ initialStreamers }: SwipeClientProps) {
 
   function advance() {
     setIndex((value) => value + 1);
+    // VTuberカードを見た数だけ数え、規定人数に達したら次に広告を1枚挟む。
+    // 広告カード自体はこのカウントに含まれない。
+    //
+    // カウントの正はrefで持つ。setStateの更新関数は純粋である必要があり、
+    // その中でpickNextAd()のような副作用を呼ぶとStrictModeの二重実行で
+    // ローテーションが2手進んでしまうため、必ず外側で判定する。
+    vtuberViewCountRef.current += 1;
+    const nextCount = vtuberViewCountRef.current;
+    setVtuberViewCount(nextCount);
+    if (adInterval > 0 && nextCount % adInterval === 0) {
+      const ad = pickNextAd();
+      if (ad) setPendingAd(ad);
+    }
   }
 
   if (!initialStreamers.length) {
@@ -354,32 +482,47 @@ export function SwipeClient({ initialStreamers }: SwipeClientProps) {
         ) : (
           <>
             <div className="deck" aria-live="polite">
-              {next && <PreviewCard streamer={next} />}
-              <SwipeCard
-                key={`${current.id}-${index}`}
-                streamer={current}
-                thumbnail={visibleThumbnail}
-                onSwipe={swipe}
-              />
+              {pendingAd ? (
+                <AdCard ad={pendingAd} onSkip={dismissAd} />
+              ) : (
+                <>
+                  {next && <PreviewCard streamer={next} />}
+                  <SwipeCard
+                    key={`${current.id}-${index}`}
+                    streamer={current}
+                    thumbnail={visibleThumbnail}
+                    onSwipe={swipe}
+                  />
+                </>
+              )}
             </div>
-            <div className="actions">
-              <button className="icon-button action-skip" aria-label="スキップ" onClick={() => swipe("left")}>
-                <X size={28} />
-                <span>スキップ</span>
-              </button>
-              <a className="icon-button action-profile" aria-label="プロフィール" href={`/detail/${current.id}`}>
-                <Info size={26} />
-                <span>プロフィール</span>
-              </a>
-              <button className="icon-button action-super" aria-label="スーパーいいね" onClick={() => setSuperBoostStreamer(current)}>
-                <Star size={27} fill="currentColor" />
-                <span>スーパー</span>
-              </button>
-              <button className="icon-button like action-like" aria-label="いいね" onClick={() => swipe("right")}>
-                <Heart size={28} fill="currentColor" />
-                <span>いいね!</span>
-              </button>
-            </div>
+            {pendingAd ? (
+              <div className="actions">
+                <button className="icon-button action-skip" aria-label="広告をスキップ" onClick={dismissAd}>
+                  <X size={28} />
+                  <span>スキップ</span>
+                </button>
+              </div>
+            ) : (
+              <div className="actions">
+                <button className="icon-button action-skip" aria-label="スキップ" onClick={() => swipe("left")}>
+                  <X size={28} />
+                  <span>スキップ</span>
+                </button>
+                <a className="icon-button action-profile" aria-label="プロフィール" href={`/detail/${current.id}`}>
+                  <Info size={26} />
+                  <span>プロフィール</span>
+                </a>
+                <button className="icon-button action-super" aria-label="スーパーいいね" onClick={() => setSuperBoostStreamer(current)}>
+                  <Star size={27} fill="currentColor" />
+                  <span>スーパー</span>
+                </button>
+                <button className="icon-button like action-like" aria-label="いいね" onClick={() => swipe("right")}>
+                  <Heart size={28} fill="currentColor" />
+                  <span>いいね!</span>
+                </button>
+              </div>
+            )}
           </>
         )}
       </div>
@@ -882,6 +1025,100 @@ function SwipeCard({
             <span>{vtypeLabel}</span>
           </div>
         )}
+      </div>
+    </article>
+  );
+}
+
+/**
+ * 広告カード。VTuberカードと違い「右スワイプで遷移」はしない。
+ * アフィリエイト各社の規約は誤クリック誘発を禁じており、意図しない遷移を避けるため
+ * 遷移は明示的なタップのみ、左スワイプ/✕はスキップ(クリック扱いにならない)とする。
+ */
+function AdCard({ ad, onSkip }: { ad: DeckAd; onSkip: () => void }) {
+  const cardRef = useRef<HTMLElement | null>(null);
+  const dragStartRef = useRef<number | null>(null);
+  const dragXRef = useRef(0);
+  const didDragRef = useRef(false);
+  const frameRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (frameRef.current) window.cancelAnimationFrame(frameRef.current);
+    };
+  }, []);
+
+  function paint(x: number) {
+    dragXRef.current = x;
+    if (frameRef.current) return;
+    frameRef.current = window.requestAnimationFrame(() => {
+      frameRef.current = null;
+      const card = cardRef.current;
+      if (!card) return;
+      const rotate = Math.max(-10, Math.min(10, dragXRef.current / 18));
+      card.style.transform = `translate3d(${dragXRef.current}px, 0, 0) rotate(${rotate}deg)`;
+    });
+  }
+
+  function reset() {
+    paint(0);
+    dragStartRef.current = null;
+    window.setTimeout(() => {
+      didDragRef.current = false;
+    }, 90);
+  }
+
+  function release() {
+    // 左右どちらへ振ってもスキップ(右で遷移させない)
+    if (Math.abs(dragXRef.current) > 76) {
+      reset();
+      onSkip();
+      return;
+    }
+    reset();
+  }
+
+  return (
+    <article
+      ref={cardRef}
+      className="card ad-card"
+      onPointerDown={(event) => {
+        dragStartRef.current = event.clientX;
+        didDragRef.current = false;
+        event.currentTarget.setPointerCapture(event.pointerId);
+      }}
+      onPointerMove={(event) => {
+        if (dragStartRef.current === null) return;
+        const nextDragX = Math.max(-170, Math.min(170, event.clientX - dragStartRef.current));
+        if (Math.abs(nextDragX) > 8) didDragRef.current = true;
+        paint(nextDragX);
+      }}
+      onPointerUp={release}
+      onPointerCancel={reset}
+    >
+      <span className="ad-card-label">{ad.kind === "goods" ? "VTuberグッズ" : "PR"}</span>
+      {ad.imageUrl ? (
+        <img src={ad.imageUrl} alt="" loading="eager" decoding="async" />
+      ) : (
+        <div className="ad-card-placeholder" aria-hidden="true" />
+      )}
+      <div className="card-overlay">
+        {ad.ownerName && <div className="pill-row"><UiBadge>{ad.ownerName}</UiBadge></div>}
+        <h1>{ad.title}</h1>
+        {ad.description && <p className="ad-card-description">{ad.description}</p>}
+        <a
+          className="ad-card-cta"
+          href={ad.url}
+          target="_blank"
+          rel="noreferrer noopener sponsored"
+          onClick={(event) => {
+            // ドラッグ操作を誤クリックとして扱わない
+            if (didDragRef.current) event.preventDefault();
+          }}
+        >
+          <ExternalLink size={16} />
+          {ad.kind === "goods" ? "グッズを見る" : "商品を見る"}
+        </a>
       </div>
     </article>
   );
