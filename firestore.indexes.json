@@ -25,6 +25,14 @@
         { "fieldPath": "viewer_profile_id", "order": "ASCENDING" },
         { "fieldPath": "created_at", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "matches",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "viewer_profile_id", "order": "ASCENDING" },
+        { "fieldPath": "matched_at", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

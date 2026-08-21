@@ -60,6 +60,13 @@ export default function ViewerPage({
         </AuthVisibility>
 
         <ViewerProfileGate />
+        <section className="status-band">
+          <h2>マッチ一覧</h2>
+          <p>いいねしたVTuberの一覧を見られます。</p>
+          <p className="inline-actions" style={{ marginTop: 12 }}>
+            <a className="primary-button" href="/viewer/matches">マッチ一覧を見る</a>
+          </p>
+        </section>
         <AuthVisibility role="viewer" mode="logged-in">
           <section className="status-band">
             <h2>エリートファン</h2>

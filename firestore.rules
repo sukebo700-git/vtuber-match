@@ -68,5 +68,9 @@ service cloud.firestore {
     match /system_usage/{usageId} {
       allow read, write: if false;
     }
+    // マッチ一覧(/viewer/matches)向けの非正規化データ。サーバーAPI(Admin SDK)経由のみ。
+    match /matches/{matchId} {
+      allow read, write: if false;
+    }
   }
 }

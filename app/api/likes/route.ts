@@ -58,6 +58,7 @@ export async function POST(request: Request) {
   const streamerRef = db.collection("streamers").doc(streamerId);
   const streamerDoc = await streamerRef.get();
   if (!streamerDoc.exists) return NextResponse.json({ error: "streamer not found" }, { status: 404 });
+  const streamerData = streamerDoc.data() || {};
   const isCreatorSource = viewerProfile?.source_type === "creator";
   if (isCreatorSource && viewerProfile?.creator_streamer_id) {
     const likerStreamerDoc = await db.collection("streamers").doc(String(viewerProfile.creator_streamer_id)).get();
@@ -127,6 +128,20 @@ export async function POST(request: Request) {
     tx.update(streamerRef, {
       likes: FieldValue.increment(1),
     });
+    // マッチ一覧(/viewer/matches)向けの非正規化レコード。仕様上「いいね=即マッチ」なので
+    // ここで書く。streamer_idごとに1件へ集約し(同じVTuberに複数回いいねしても増えない)、
+    // 一覧側は都度streamersをJOINせずにこのコレクションだけを読めば表示できる。
+    if (trackedViewerId) {
+      const matchRef = db.collection("matches").doc(`${trackedViewerId}_${streamerId}`);
+      tx.set(matchRef, {
+        viewer_profile_id: trackedViewerId,
+        streamer_id: streamerId,
+        streamer_name: streamerData.name || "",
+        streamer_thumbnail: streamerData.thumbnails?.[0] || "",
+        streamer_youtube_url: streamerData.youtube_url || "",
+        matched_at: FieldValue.serverTimestamp(),
+      }, { merge: true });
+    }
     tx.set(db.collection("notifications").doc(), {
       target_type: "streamer",
       streamer_id: streamerId,
@@ -139,7 +154,7 @@ export async function POST(request: Request) {
     });
   });
 
-  const streamer = streamerDoc.data() || {};
+  const streamer = streamerData;
   if (limited) {
     return NextResponse.json({
       error: "今日送れるいいね数の上限に達しました。",

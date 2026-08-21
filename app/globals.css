@@ -4800,6 +4800,44 @@ button {
   margin-top: 4px;
 }
 
+.match-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.match-list-item {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+}
+
+.match-list-thumb {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  object-fit: cover;
+}
+
+.match-list-name {
+  margin: 0;
+  font-weight: 700;
+}
+
+@media (max-width: 520px) {
+  .match-list-item {
+    grid-template-columns: 48px minmax(0, 1fr);
+  }
+
+  .match-list-item .secondary-button {
+    grid-column: 1 / -1;
+  }
+}
+
 @media (max-width: 760px) {
   .admin-table-list .admin-card {
     grid-template-columns: 1fr;
