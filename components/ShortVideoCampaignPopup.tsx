@@ -1,5 +1,6 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 type CreatorAuth = {
@@ -24,11 +25,18 @@ const popupLastShownAtKeyPrefix = "vtuber-match-short-video-campaign-last-shown-
 const popupMinIntervalMs = 4 * 60 * 60 * 1000;
 
 export function ShortVideoCampaignPopup() {
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [creator, setCreator] = useState<CreatorAuth | null>(null);
   const [busy, setBusy] = useState(false);
 
+  // /swipe は全画面backdropに覆われるとカード操作ができなくなるため対象外にする。
+  // このポップアップ自体は掲載VTuber(配信者側)向けの告知で、主にリスナーが
+  // 操作するスワイプ画面とは表示対象がそもそもズレているための措置。
+  const isSwipePage = pathname?.startsWith("/swipe") ?? false;
+
   useEffect(() => {
+    if (isSwipePage) return;
     try {
       const dismissedUntil = Number(localStorage.getItem(popupDismissedUntilKey) || "0");
       if (dismissedUntil && Date.now() < dismissedUntil) return;
@@ -62,12 +70,14 @@ export function ShortVideoCampaignPopup() {
       }
     }, 1400);
     return () => window.clearTimeout(timer);
-  }, []);
+  }, [isSwipePage]);
 
   const isCreator = Boolean(creator?.id || creator?.streamer_id || creator?.application_id || creator?.email);
   const creatorLabel = useMemo(() => creator?.name || creator?.email || creator?.id || "登録済み配信者", [creator]);
 
-  if (!open) return null;
+  // 表示中に/swipeへクライアント遷移した場合(閉じる前にリンクを踏んだ等)も、
+  // カード操作を塞がないよう描画自体を抑止する。
+  if (!open || isSwipePage) return null;
 
   function dismissPopup() {
     try {
