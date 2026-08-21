@@ -61,6 +61,13 @@ export default function ViewerPage({
 
         <ViewerProfileGate />
         <AuthVisibility role="viewer" mode="logged-in">
+          <section className="status-band">
+            <h2>エリートファン</h2>
+            <p>マッチ履歴を無制限に見られたり、VTuberからのいいねを確認できる月額プランです。</p>
+            <p className="inline-actions" style={{ marginTop: 12 }}>
+              <a className="primary-button" href="/viewer/upgrade">エリートファンを見る</a>
+            </p>
+          </section>
           <ViewerSuperBoostWallet />
         </AuthVisibility>
       </main>

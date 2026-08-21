@@ -1,10 +1,11 @@
 import crypto from "crypto";
 import { NextResponse } from "next/server";
-import { getPlanAmount, isOneTimePlan, isPaidPlan, isStreamerPaidPlan, PLAN_LABELS } from "@/lib/billing";
+import { getPlanAmount, isOneTimePlan, isPaidPlan, isStreamerPaidPlan, isViewerSubscriptionPlan, PLAN_LABELS } from "@/lib/billing";
 import type { PlanType } from "@/lib/types";
 import { FieldValue, getAdminDb } from "@/lib/firebaseAdmin";
 import { markOrderExpired, markOrderPaidAndGenerateAssets, markOrderRefundedByPaymentIntent } from "@/lib/tshirt/orders";
 import { notifyAdminPaymentSucceeded } from "@/lib/notifications";
+import { getViewerEntitlement, setViewerEntitlement } from "@/lib/viewerEntitlements";
 
 export const dynamic = "force-dynamic";
 
@@ -129,7 +130,9 @@ export async function POST(request: Request) {
   const paymentStatus = String(session.payment_status || "");
   const paymentConfirmed = paymentStatus === "paid" || paymentStatus === "no_payment_required";
 
-  if (!isPaidPlan(planType) && !isOneTimePlan(planType)) return NextResponse.json({ error: "invalid plan" }, { status: 400 });
+  if (!isPaidPlan(planType) && !isOneTimePlan(planType) && !isViewerSubscriptionPlan(planType)) {
+    return NextResponse.json({ error: "invalid plan" }, { status: 400 });
+  }
 
   const db = getAdminDb();
   if (!db) return NextResponse.json({ received: true, skipped: "firestore not configured" });
@@ -153,6 +156,31 @@ export async function POST(request: Request) {
       amount: getPlanAmount(planType),
       payerLabel: payerEmail || viewerId,
     }).catch((error) => console.error("notifyAdminPaymentSucceeded (super_boost) failed:", error));
+    return NextResponse.json({ received: true });
+  }
+
+  if (isViewerSubscriptionPlan(planType)) {
+    if (!viewerId) return NextResponse.json({ error: "invalid elite fan metadata" }, { status: 400 });
+    if (!(await reserveStripeEvent(db, String(event.id || "")))) return NextResponse.json({ received: true, duplicate: true });
+
+    if (paymentConfirmed) {
+      const validUntil = (await resolveSubscriptionPeriodEndIso(subscriptionId)) || fallbackEliteValidUntil();
+      await setViewerEntitlement(viewerId, {
+        tier: "elite",
+        validUntil,
+        stripeSubscriptionId: subscriptionId,
+        grantSource: "stripe",
+      });
+      const payerEmail = String(metadata.payer_email || session.customer_details?.email || session.customer_email || "");
+      await notifyAdminPaymentSucceeded({
+        planLabel: PLAN_LABELS.elite_fan,
+        amount: getPlanAmount("elite_fan"),
+        payerLabel: payerEmail || viewerId,
+      }).catch((error) => console.error("notifyAdminPaymentSucceeded (elite_fan) failed:", error));
+    }
+    // 決済未確定(3Dセキュア未完了等)の場合は付与を見送り、invoice.payment_succeeded/paid
+    // (markInvoicePaymentState)で実際の入金が確認できた時点で確定させる。
+    // streamer側のpayment_status確認deferralパターン(このファイル冒頭のコメント参照)と同じ方針。
     return NextResponse.json({ received: true });
   }
 
@@ -383,6 +411,16 @@ async function markSubscriptionCanceled(subscription: any) {
       updated_at: FieldValue.serverTimestamp()
     }, { merge: true });
   }
+
+  const viewerId = String(metadata.viewer_id || "");
+  if (viewerId) {
+    // 配信者側(hasDifferentActiveSubscription)と同じ理由: アップグレード等で既に
+    // 別サブスクに切り替わっていた場合、古いキャンセル通知でダウングレードしない。
+    const current = await getViewerEntitlement(viewerId);
+    if (!current.stripeSubscriptionId || current.stripeSubscriptionId === subscriptionId) {
+      await setViewerEntitlement(viewerId, { tier: "free", validUntil: null, grantSource: "stripe" });
+    }
+  }
 }
 
 async function markInvoicePaymentState(invoice: any, paymentState: "active" | "past_due") {
@@ -423,6 +461,28 @@ async function markInvoicePaymentState(invoice: any, paymentState: "active" | "p
     applicationId ? setIfCurrentSubscription(db.collection("applications").doc(applicationId), subscriptionId, patch) : Promise.resolve(),
     streamerId ? setIfCurrentSubscription(db.collection("streamers").doc(streamerId), subscriptionId, patch) : Promise.resolve(),
   ]);
+
+  // エリートファン(リスナー)の毎月の更新確認。checkout.session.completedは
+  // サブスク作成時の1回しか発火しないため、2ヶ月目以降の継続はここで
+  // validUntilを延長し続けないとフェイルセーフ判定で切れてしまう。
+  // past_due(支払い失敗)時は配信者側と同じ猶予方針で即ダウングレードしない
+  // (実際の解約はcustomer.subscription.deletedで確定させる)。
+  const viewerId = String(metadata.viewer_id || "");
+  // 解約直後の競合対策: checkout直後の初回invoice.payment_succeededが、ユーザーの
+  // 即時解約(viewer-cancel-subscription)より後にこのwebhookへ届くことがある。
+  // その場合subscription.statusは既に"canceled"になっているため、ここで再度
+  // elite付与してしまうと解約したのに1ヶ月分の権限が復活する事故になる。
+  // subscriptionは上のresolveInvoiceSubscriptionで取得済みの生の状態を使い、
+  // 古いinvoiceイベントのスナップショットではなく現在の実際の状態で判定する。
+  if (viewerId && planType === "elite_fan" && paymentState === "active" && subscription?.status !== "canceled") {
+    const validUntil = (await resolveSubscriptionPeriodEndIso(subscriptionId)) || fallbackEliteValidUntil();
+    await setViewerEntitlement(viewerId, {
+      tier: "elite",
+      validUntil,
+      stripeSubscriptionId: subscriptionId,
+      grantSource: "stripe",
+    });
+  }
 }
 
 async function cancelPreviousSubscriptionForUpgrade(db: FirebaseFirestore.Firestore, input: {
@@ -502,6 +562,24 @@ async function fetchStripeSubscription(subscriptionId: string) {
     return null;
   }
   return response.json();
+}
+
+/** エリートファンの有効期限をStripeの実際の請求期間末日から求める。取得できなければnull。 */
+async function resolveSubscriptionPeriodEndIso(subscriptionId: string): Promise<string | null> {
+  if (!subscriptionId) return null;
+  const subscription = await fetchStripeSubscription(subscriptionId);
+  const periodEnd = subscription?.current_period_end;
+  if (!periodEnd) return null;
+  return new Date(Number(periodEnd) * 1000).toISOString();
+}
+
+/**
+ * Stripeから請求期間を取得できなかった場合の保守的なフォールバック。
+ * 決済自体は成功しているため付与は行うが、期限は短め(35日)に倒し、
+ * 万一取得失敗が続いても無期限にエリート権限が残り続けないようにする。
+ */
+function fallbackEliteValidUntil(): string {
+  return new Date(Date.now() + 35 * 24 * 60 * 60 * 1000).toISOString();
 }
 
 type StripeCancelResult = {

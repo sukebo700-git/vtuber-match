@@ -66,6 +66,8 @@ export function SwipeClient({
   const [vtuberViewCount, setVtuberViewCount] = useState(0);
   const [pendingAd, setPendingAd] = useState<DeckAd | null>(null);
   const [isRegisteredViewer, setIsRegisteredViewer] = useState(false);
+  // エリートファンは広告カードを挟まない(課金特典の一つ)。
+  const [isEliteViewer, setIsEliteViewer] = useState(false);
   const adTurnRef = useRef(0);
   const adProgressLoadedRef = useRef(false);
   // 広告判定の正となるカウント(stateは永続化と再描画のためのミラー)
@@ -167,6 +169,7 @@ export function SwipeClient({
         localStorage.setItem(viewerProfileKey, JSON.stringify(data.profile));
         setViewerVtypeId(resolveVtypeId(data.profile) || readStoredViewerVtypeId());
         if (data.profile.is_admin_viewer === true) setAdminViewerMode(true);
+        setIsEliteViewer(data.profile.entitlement_tier === "elite");
       })
       .catch(() => undefined);
   }, []);
@@ -384,7 +387,7 @@ export function SwipeClient({
     vtuberViewCountRef.current += 1;
     const nextCount = vtuberViewCountRef.current;
     setVtuberViewCount(nextCount);
-    if (adInterval > 0 && nextCount % adInterval === 0) {
+    if (adInterval > 0 && !isEliteViewer && nextCount % adInterval === 0) {
       const ad = pickNextAd();
       if (ad) setPendingAd(ad);
     }

@@ -11,11 +11,14 @@ export default function CheckoutSuccessPage({
   const targetType = searchParams?.role === "viewer" ? "viewer" : "creator";
   const destination = targetType === "viewer" ? "/viewer" : "/creator";
   const isTshirtKit = searchParams?.flow === "tshirt_kit";
-  const message = targetType === "viewer"
-    ? "スーパーいいねの決済が完了しました。"
-    : isTshirtKit
-      ? "オリジナルネームTシャツ作成キットのご注文を受け付けました。"
-      : "プランを反映しました。";
+  const isEliteFan = searchParams?.flow === "elite_fan";
+  const message = isEliteFan
+    ? "エリートファンへのお申し込みが完了しました。"
+    : targetType === "viewer"
+      ? "スーパーいいねの決済が完了しました。"
+      : isTshirtKit
+        ? "オリジナルネームTシャツ作成キットのご注文を受け付けました。"
+        : "プランを反映しました。";
 
   return (
     <div className="app-shell">

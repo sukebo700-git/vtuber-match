@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import { getAppUrl, getStripePriceId, isOneTimePlan, isPaidPlan, isStreamerPaidPlan } from "@/lib/billing";
+import { getAppUrl, getStripePriceId, isOneTimePlan, isPaidPlan, isStreamerPaidPlan, isViewerSubscriptionPlan } from "@/lib/billing";
 import type { PlanType } from "@/lib/types";
 import { getAdminDb } from "@/lib/firebaseAdmin";
+import { getViewerEntitlement } from "@/lib/viewerEntitlements";
 
 export const dynamic = "force-dynamic";
 
@@ -15,13 +16,16 @@ export async function POST(request: Request) {
   const currentPlan = String(body.current_plan || "free") as PlanType;
   const payerEmail = String(body.payer_email || "");
 
-  if ((!applicationId && !streamerId && !viewerId) || (!isPaidPlan(planType) && !isOneTimePlan(planType))) {
+  if (
+    (!applicationId && !streamerId && !viewerId) ||
+    (!isPaidPlan(planType) && !isOneTimePlan(planType) && !isViewerSubscriptionPlan(planType))
+  ) {
     return NextResponse.json({ error: "invalid checkout request" }, { status: 400 });
   }
   if ((applicationId || streamerId) && !isStreamerPaidPlan(planType) && !isOneTimePlan(planType)) {
     return NextResponse.json({ error: "invalid streamer checkout request" }, { status: 400 });
   }
-  if (viewerId && !isOneTimePlan(planType)) {
+  if (viewerId && !isOneTimePlan(planType) && !isViewerSubscriptionPlan(planType)) {
     return NextResponse.json({ error: "invalid viewer checkout request" }, { status: 400 });
   }
   if (isOneTimePlan(planType) && (!streamerId || !viewerId || !effect)) {
@@ -50,6 +54,14 @@ export async function POST(request: Request) {
     const viewer = await db.collection("viewer_profiles").doc(viewerId).get();
     if (!viewer.exists) return NextResponse.json({ error: "viewer not found" }, { status: 404 });
   }
+  // 二重課金防止: 既にエリートファンなら新規サブスクは作らせない
+  // (UIはボタン非表示で防いでいるが、複数タブや連打の取りこぼしに備えたサーバー側の最終防衛線)。
+  if (isViewerSubscriptionPlan(planType) && viewerId) {
+    const entitlement = await getViewerEntitlement(viewerId);
+    if (entitlement.tier === "elite") {
+      return NextResponse.json({ error: "既にエリートファンです。" }, { status: 409 });
+    }
+  }
 
   const appUrl = getAppUrl();
   const cancelParams = new URLSearchParams(
@@ -57,10 +69,13 @@ export async function POST(request: Request) {
   );
   const params = new URLSearchParams();
   const successRole = viewerId ? "viewer" : "creator";
+  // checkout/successは flow で分岐して文言を変える(tshirt_kitと同じパターン)。
+  // 未指定(スーパーいいね)は従来通りの文言を維持する。
+  const successFlow = isViewerSubscriptionPlan(planType) ? "&flow=elite_fan" : "";
   params.set("mode", isOneTimePlan(planType) ? "payment" : "subscription");
   params.set("line_items[0][price]", priceId);
   params.set("line_items[0][quantity]", "1");
-  params.set("success_url", `${appUrl}/checkout/success?role=${successRole}&notify=1&session_id={CHECKOUT_SESSION_ID}`);
+  params.set("success_url", `${appUrl}/checkout/success?role=${successRole}${successFlow}&notify=1&session_id={CHECKOUT_SESSION_ID}`);
   params.set("cancel_url", `${appUrl}/checkout?${cancelParams.toString()}`);
   params.set("metadata[plan_type]", planType);
   params.set("metadata[current_plan]", currentPlan);
@@ -76,6 +91,7 @@ export async function POST(request: Request) {
   if (!isOneTimePlan(planType)) {
     if (applicationId) params.set("subscription_data[metadata][application_id]", applicationId);
     if (streamerId) params.set("subscription_data[metadata][streamer_id]", streamerId);
+    if (viewerId) params.set("subscription_data[metadata][viewer_id]", viewerId);
   }
   if (payerEmail) params.set("customer_email", payerEmail);
 
