@@ -22,11 +22,6 @@ const nextConfig = {
   async redirects() {
     return [
       {
-        source: "/viewer/upgrade",
-        destination: "/viewer",
-        permanent: false
-      },
-      {
         source: "/viewer/plan",
         destination: "/viewer",
         permanent: false

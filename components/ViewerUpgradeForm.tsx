@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { getViewerIdentity } from "@/lib/viewerIdentity";
 
-type Status = "loading" | "ready" | "elite" | "error";
+type Status = "loading" | "ready" | "elite";
 
 const eliteFeatures = [
   "マッチ履歴を無制限に閲覧できます(未登録は最新1件、無料登録は最新5件まで)",
@@ -16,12 +16,14 @@ export function ViewerUpgradeForm() {
   const [validUntil, setValidUntil] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+  const [isRegistered, setIsRegistered] = useState(false);
 
   useEffect(() => {
     const identity = getViewerIdentity();
+    setIsRegistered(identity.registered);
     if (!identity.registered) {
-      setStatus("error");
-      setMessage("視聴者ログインが必要です。");
+      // 未登録でも説明・料金は見せる(購入ボタンを押した時点でログインへ誘導する)。
+      setStatus("ready");
       return;
     }
     fetch(`/api/viewer-profile?id=${encodeURIComponent(identity.id)}`)
@@ -55,7 +57,7 @@ export function ViewerUpgradeForm() {
   async function checkout() {
     const identity = getViewerIdentity();
     if (!identity.registered) {
-      window.location.assign("/viewer/login");
+      window.location.assign(`/viewer/login?next=${encodeURIComponent("/viewer/upgrade")}`);
       return;
     }
     setBusy(true);
@@ -79,17 +81,6 @@ export function ViewerUpgradeForm() {
   }
 
   if (status === "loading") return <p className="help-text">読み込んでいます...</p>;
-
-  if (status === "error") {
-    return (
-      <section className="status-band">
-        <p>{message}</p>
-        <p className="inline-actions" style={{ marginTop: 12 }}>
-          <a className="primary-button" href="/viewer/login">視聴者ログインへ</a>
-        </p>
-      </section>
-    );
-  }
 
   if (status === "elite") {
     return (
@@ -125,6 +116,9 @@ export function ViewerUpgradeForm() {
         </button>
       </p>
       {message && <p className="help-text">{message}</p>}
+      {!isRegistered && (
+        <p className="help-text">購入には視聴者ログイン(無料登録)が必要です。ボタンを押すとログイン画面へ移動します。</p>
+      )}
       <p className="help-text">いつでも解約できます。解約すると即座に無料登録の状態に戻ります。</p>
     </section>
   );

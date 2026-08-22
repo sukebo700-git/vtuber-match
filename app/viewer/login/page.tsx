@@ -10,8 +10,11 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function ViewerLoginPage({ searchParams }: { searchParams?: { mode?: string } }) {
+export default function ViewerLoginPage({ searchParams }: { searchParams?: { mode?: string; next?: string } }) {
   const initialMode = searchParams?.mode === "register" ? "register" : "login";
+  // オープンリダイレクト対策: 自サイト内の絶対パス("/"始まり、"//"始まりは除外)のみ許可する。
+  const rawNext = searchParams?.next || "";
+  const next = rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : undefined;
 
   return (
     <div className="app-shell">
@@ -41,8 +44,8 @@ export default function ViewerLoginPage({ searchParams }: { searchParams?: { mod
           <p>無料登録またはログインすると、プロフィール保存やスーパーいいね履歴を使えます。</p>
           </section>
 
-          <GoogleOneTap showButton redirectTo="/viewer?notify=1" />
-          <ViewerLoginForm initialMode={initialMode} />
+          <GoogleOneTap showButton redirectTo={next || "/viewer?notify=1"} />
+          <ViewerLoginForm initialMode={initialMode} next={next} />
         </AuthVisibility>
       </main>
     </div>

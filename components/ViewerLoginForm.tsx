@@ -7,6 +7,8 @@ const authKey = "vtuber-match-viewer-auth";
 
 type ViewerLoginFormProps = {
   initialMode?: "login" | "register";
+  /** ログイン後の遷移先。未指定時は従来通り/viewerへ遷移する。 */
+  next?: string;
 };
 
 // 新規登録リンクに付与された ?src=x_campaign を読み取り、Xキャンペーン経由の
@@ -16,7 +18,7 @@ function readRegistrationSource(): string {
   return new URLSearchParams(window.location.search).get("src") || "";
 }
 
-export function ViewerLoginForm({ initialMode = "login" }: ViewerLoginFormProps) {
+export function ViewerLoginForm({ initialMode = "login", next }: ViewerLoginFormProps) {
   const [mode, setMode] = useState<"login" | "register">(initialMode);
   const [form, setForm] = useState({ email: "", password: "", twitterId: "" });
   const [status, setStatus] = useState("");
@@ -59,7 +61,11 @@ export function ViewerLoginForm({ initialMode = "login" }: ViewerLoginFormProps)
       loggedInAt: new Date().toISOString()
     }));
     window.dispatchEvent(new Event("vtuber-match-auth-changed"));
-    setStatus(data.auth_action === "created" ? "新規登録しました。通知設定へ移動します。" : "ログインしました。通知設定へ移動します。");
+    setStatus(data.auth_action === "created" ? "新規登録しました。移動します。" : "ログインしました。移動します。");
+    if (next) {
+      window.location.assign(next);
+      return;
+    }
     const isXCampaignRegistration = mode === "register" && data.auth_action === "created" && readRegistrationSource() === "x_campaign";
     window.location.assign(isXCampaignRegistration ? "/viewer?notify=1&campaign=1" : "/viewer?notify=1");
   }
