@@ -99,11 +99,12 @@ export function HeaderAuthStatus() {
   const [login, setLogin] = useState<HeaderLoginState | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
-  // マッチ・VTuberからのいいねに気づけるように、メニューへ赤い印を出す。
-  // 該当ページ(/viewer/matches, /viewer/likes)を訪れると既読になり消える
-  // (各ページ側でnotificationsをread済みにする)。
+  // マッチ・VTuberからのいいね・視聴者からのいいねに気づけるように、メニューへ
+  // 赤い印を出す。該当ページ(/viewer/matches, /viewer/likes, /creator/viewer-likes)
+  // を訪れると既読になり消える(各ページ側でnotificationsをread済みにする)。
   const [hasNewMatch, setHasNewMatch] = useState(false);
   const [hasNewStreamerLike, setHasNewStreamerLike] = useState(false);
+  const [hasNewViewerLike, setHasNewViewerLike] = useState(false);
 
   useEffect(() => {
     const refresh = () => setLogin(readLoginState());
@@ -119,19 +120,35 @@ export function HeaderAuthStatus() {
   }, []);
 
   useEffect(() => {
-    if (login?.type !== "viewer") {
-      setHasNewMatch(false);
-      setHasNewStreamerLike(false);
+    if (login?.type === "viewer") {
+      setHasNewViewerLike(false);
+      fetch("/api/notifications")
+        .then((response) => (response.ok ? response.json() : null))
+        .then((data) => {
+          const notifications: { type?: string; read?: boolean }[] = Array.isArray(data?.notifications) ? data.notifications : [];
+          setHasNewMatch(notifications.some((item) => item.type === "MATCH_CREATED" && !item.read));
+          setHasNewStreamerLike(notifications.some((item) => item.type === "STREAMER_LIKE_RECEIVED" && !item.read));
+        })
+        .catch(() => undefined);
       return;
     }
-    fetch("/api/notifications")
-      .then((response) => (response.ok ? response.json() : null))
-      .then((data) => {
-        const notifications: { type?: string; read?: boolean }[] = Array.isArray(data?.notifications) ? data.notifications : [];
-        setHasNewMatch(notifications.some((item) => item.type === "MATCH_CREATED" && !item.read));
-        setHasNewStreamerLike(notifications.some((item) => item.type === "STREAMER_LIKE_RECEIVED" && !item.read));
-      })
-      .catch(() => undefined);
+
+    if (login?.type === "creator") {
+      setHasNewMatch(false);
+      setHasNewStreamerLike(false);
+      fetch("/api/notifications")
+        .then((response) => (response.ok ? response.json() : null))
+        .then((data) => {
+          const notifications: { type?: string; read?: boolean }[] = Array.isArray(data?.notifications) ? data.notifications : [];
+          setHasNewViewerLike(notifications.some((item) => item.type === "LIKE_CREATED" && !item.read));
+        })
+        .catch(() => undefined);
+      return;
+    }
+
+    setHasNewMatch(false);
+    setHasNewStreamerLike(false);
+    setHasNewViewerLike(false);
   }, [login]);
 
   const displayName = useMemo(() => {
@@ -151,6 +168,7 @@ export function HeaderAuthStatus() {
     if (login?.type === "creator") {
       return [
         { href: "/creator/edit", label: "プロフィール" },
+        { href: "/creator/viewer-likes", label: "気になるリスナー" },
         { href: "/creator/upgrade", label: "アップグレード" },
       ];
     }
@@ -230,7 +248,7 @@ export function HeaderAuthStatus() {
           <Menu size={17} aria-hidden />
           メニュー
         </button>
-        {(hasNewMatch || hasNewStreamerLike) && <span className="header-menu-dot" aria-hidden />}
+        {(hasNewMatch || hasNewStreamerLike || hasNewViewerLike) && <span className="header-menu-dot" aria-hidden />}
 
         {menuOpen ? (
           <div className="header-menu-panel" role="menu">
@@ -253,6 +271,7 @@ export function HeaderAuthStatus() {
                     index === 0 ? "menu-section-start" : "",
                     hasNewMatch && item.href === "/viewer/matches" ? "header-menu-item-new" : "",
                     hasNewStreamerLike && item.href === "/viewer/likes" ? "header-menu-item-new" : "",
+                    hasNewViewerLike && item.href === "/creator/viewer-likes" ? "header-menu-item-new" : "",
                   ].filter(Boolean).join(" ") || undefined}
                   href={item.href}
                   role="menuitem"

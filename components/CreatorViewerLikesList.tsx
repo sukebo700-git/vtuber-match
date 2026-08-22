@@ -18,6 +18,25 @@ export function CreatorViewerLikesList() {
   const [likedIds, setLikedIds] = useState<Set<string>>(new Set());
   const [message, setMessage] = useState("");
 
+  // このページを訪れたら、ヘッダーメニューの「いいねが届きました」印を既読にして消す。
+  // ログインしていないと/api/notificationsは401を返すだけなので握りつぶす。
+  useEffect(() => {
+    fetch("/api/notifications")
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data) => {
+        const notifications = Array.isArray(data?.notifications) ? data.notifications : [];
+        const unread = notifications.filter((item: { type?: string; read?: boolean }) => item.type === "LIKE_CREATED" && !item.read);
+        return Promise.all(unread.map((item: { id: string }) => (
+          fetch("/api/notifications", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: item.id }),
+          }).catch(() => undefined)
+        )));
+      })
+      .catch(() => undefined);
+  }, []);
+
   useEffect(() => {
     fetch("/api/creator-viewers")
       .then((response) => {
