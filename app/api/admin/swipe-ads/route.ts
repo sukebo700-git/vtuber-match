@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/adminAuth";
-import { FieldValue, getAdminDb } from "@/lib/firebaseAdmin";
+import { FieldValue, getAdminDb, stripUndefined } from "@/lib/firebaseAdmin";
 import { invalidateSwipeAdSettingsCache, normalizeSwipeAdSettings, SWIPE_AD_DEFAULTS } from "@/lib/swipeAds";
 
 export const dynamic = "force-dynamic";
@@ -39,10 +39,18 @@ export async function PUT(request: Request) {
   // 正規化を通すことで、間隔の範囲外・不正URL・httpsでないリンクを弾く
   const settings = normalizeSwipeAdSettings(body);
 
-  await db.collection(settingsCollection).doc(settingsDocId).set({
-    ...settings,
-    updated_at: FieldValue.serverTimestamp(),
-  }, { merge: true });
+  try {
+    // stock_checked_at未確認のカード(stock_checked_at: undefined)がFirestoreの
+    // set()に渡ると「Cannot use 'undefined' as a Firestore value」で例外になり、
+    // 保存全体が失敗していた。stripUndefinedでネスト(cards配列内も含む)ごと除去する。
+    await db.collection(settingsCollection).doc(settingsDocId).set(stripUndefined({
+      ...settings,
+      updated_at: FieldValue.serverTimestamp(),
+    }), { merge: true });
+  } catch (error) {
+    console.error("Failed to save swipe ad settings:", error instanceof Error ? error.message : String(error));
+    return NextResponse.json({ error: "保存できませんでした。時間をおいて再度お試しください。" }, { status: 500 });
+  }
 
   invalidateSwipeAdSettingsCache();
 
