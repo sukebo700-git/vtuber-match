@@ -43,6 +43,7 @@ export default async function SwipePage() {
           adCards={adSettings.enabled ? activeSwipeAdCards(adSettings) : []}
           goodsCards={goodsCards}
           adIntervals={{ guest: adSettings.guest_interval, free: adSettings.free_interval }}
+          houseAdEnabled={adSettings.enabled}
         />
       </main>
     </div>

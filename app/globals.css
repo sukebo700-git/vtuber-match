@@ -2609,25 +2609,27 @@ button {
   flex-wrap: wrap;
 }
 
-/* 広告カード: 全画面オーバーレイにせず、VTuberカードと同じ枠内に収める
-   (フィード内ネイティブ広告と同じ扱い。インタースティシャルにしない) */
-.ad-card {
+/* プロモーションカード(アフィリエイト広告/グッズ/自社枠): 全画面オーバーレイにせず、
+   VTuberカードと同じ枠内に収める(フィード内ネイティブ広告と同じ扱い。インタースティシャルにしない)
+   クラス名に"ad"を含めると、一部の広告ブロッカーのクラス名ベースのcosmetic filterに
+   一致してカード全体が非表示・黒塗りになることがあるため、あえて"promo-card"にしている */
+.promo-card {
   background: #fff;
   cursor: default;
 }
 
-.ad-card img {
+.promo-card img {
   object-fit: contain;
   background: #f4f6fb;
 }
 
-.ad-card-placeholder {
+.promo-card-placeholder {
   position: absolute;
   inset: 0;
   background: linear-gradient(135deg, #eef1f8, #dfe5f2);
 }
 
-.ad-card-label {
+.promo-card-label {
   position: absolute;
   top: 12px;
   left: 12px;
@@ -2641,13 +2643,13 @@ button {
   letter-spacing: 0.04em;
 }
 
-.ad-card-description {
+.promo-card-description {
   margin: 0;
   color: rgba(255, 255, 255, 0.9);
   font-size: 0.82rem;
 }
 
-.ad-card-cta {
+.promo-card-cta {
   display: inline-flex;
   align-items: center;
   justify-content: center;

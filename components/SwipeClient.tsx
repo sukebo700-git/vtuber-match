@@ -20,6 +20,8 @@ type SwipeClientProps = {
   adCards?: SwipeAdCard[];
   goodsCards?: VtuberGoodsCard[];
   adIntervals?: { guest: number; free: number };
+  /** 自社枠(グッズ掲載枠の宣伝)を広告ローテーションに含めるか */
+  houseAdEnabled?: boolean;
   /** 検索バー・サイドパネル(今日のひとこと/おすすめ)を隠したシンプル表示にする。 */
   minimal?: boolean;
   /** 指定時、渡されたデッキ(initialStreamers)を1周スワイプし終えたら自動遷移する。 */
@@ -33,16 +35,26 @@ type MatchNotice = {
   youtubeUrl: string;
 };
 
-// スワイプ列に差し込むカード。アフィリエイト広告とVTuberグッズを1:1で交互に出す。
+// スワイプ列に差し込むカード。アフィリエイト広告とVTuberグッズを1:1で交互に出しつつ、
+// 自社枠(グッズ掲載枠の宣伝)をアフィリエイト2件につき1件の割合で挟む。
 type DeckAd = {
   id: string;
-  kind: "affiliate" | "goods";
+  kind: "affiliate" | "goods" | "house";
   title: string;
   imageUrl: string;
   url: string;
   /** グッズ枠のみ: 誰のグッズか */
   ownerName?: string;
   description?: string;
+};
+
+/** 自社枠: グッズ掲載枠(プレミアムプラン特典)の宣伝。在庫や設定に関係なく固定で表示する */
+const HOUSE_AD: DeckAd = {
+  id: "house-goods-slot",
+  kind: "house",
+  title: "あなたのグッズをこの枠で宣伝しませんか？",
+  imageUrl: "/promo/house-ad/house-ad.jpg",
+  url: "/creator/merch",
 };
 
 const viewerProfileKey = "vtuber-match-viewer-profile";
@@ -67,6 +79,7 @@ export function SwipeClient({
   adCards = [],
   goodsCards = [],
   adIntervals = { guest: 10, free: 25 },
+  houseAdEnabled = false,
   minimal = false,
   redirectOnComplete,
 }: SwipeClientProps) {
@@ -80,6 +93,8 @@ export function SwipeClient({
   // スワイプカードの既見管理(48hクールダウン)。直近48h以内に見たVTuberのID集合。
   const [recentlySeenIds, setRecentlySeenIds] = useState<Set<string>>(new Set());
   const adTurnRef = useRef(0);
+  // 自社枠を除いた、アフィリエイト/グッズの1:1交互ローテーション用カウンタ
+  const normalAdTurnRef = useRef(0);
   const adProgressLoadedRef = useRef(false);
   // 広告判定の正となるカウント(stateは永続化と再描画のためのミラー)
   const vtuberViewCountRef = useRef(0);
@@ -246,13 +261,14 @@ export function SwipeClient({
     try {
       const raw = localStorage.getItem(adProgressKey);
       if (raw) {
-        const saved = JSON.parse(raw) as { viewCount?: number; adTurn?: number };
+        const saved = JSON.parse(raw) as { viewCount?: number; adTurn?: number; normalAdTurn?: number };
         if (Number.isFinite(saved.viewCount)) {
           const restored = Math.max(0, Number(saved.viewCount));
           vtuberViewCountRef.current = restored;
           setVtuberViewCount(restored);
         }
         if (Number.isFinite(saved.adTurn)) adTurnRef.current = Math.max(0, Number(saved.adTurn));
+        if (Number.isFinite(saved.normalAdTurn)) normalAdTurnRef.current = Math.max(0, Number(saved.normalAdTurn));
       }
     } catch {
       // 復元に失敗しても先頭から始めれば良いだけなので握りつぶす
@@ -269,6 +285,7 @@ export function SwipeClient({
       localStorage.setItem(adProgressKey, JSON.stringify({
         viewCount: vtuberViewCountRef.current,
         adTurn: adTurnRef.current,
+        normalAdTurn: normalAdTurnRef.current,
       }));
     } catch {
       // 保存できなくても進行自体は続けられる
@@ -278,18 +295,27 @@ export function SwipeClient({
   // localStorageはSSR中に触れないため、登録判定は必ずeffect経由で状態に落とす
   const adInterval = isRegisteredViewer ? adIntervals.free : adIntervals.guest;
 
-  /** アフィリエイトとグッズを1:1で交互に出す。在庫が無い側は自動でもう一方へ寄せる */
+  /**
+   * 自社枠を挟まない2ターンではアフィリエイトとグッズを1:1で交互に出す
+   * (在庫が無い側は自動でもう一方へ寄せる)。3ターン目は自社枠を出し、
+   * 結果としてアフィリエイト(+グッズ):自社枠 が概ね2:1になる。
+   */
   function pickNextAd(): DeckAd | null {
+    const turn = adTurnRef.current;
+    adTurnRef.current += 1;
+
+    if (houseAdEnabled && turn % 3 === 2) return HOUSE_AD;
+
     const affiliates = adCards;
     const goods = goodsCards;
     if (!affiliates.length && !goods.length) return null;
 
-    const preferAffiliate = adTurnRef.current % 2 === 0;
+    const preferAffiliate = normalAdTurnRef.current % 2 === 0;
     const useAffiliate = preferAffiliate ? affiliates.length > 0 : goods.length === 0;
-    adTurnRef.current += 1;
+    normalAdTurnRef.current += 1;
 
     if (useAffiliate) {
-      const card = affiliates[Math.floor(adTurnRef.current / 2) % affiliates.length];
+      const card = affiliates[Math.floor(normalAdTurnRef.current / 2) % affiliates.length];
       return {
         id: card.id,
         kind: "affiliate",
@@ -299,7 +325,7 @@ export function SwipeClient({
       };
     }
 
-    const card = goods[Math.floor(adTurnRef.current / 2) % goods.length];
+    const card = goods[Math.floor(normalAdTurnRef.current / 2) % goods.length];
     return {
       id: card.id,
       kind: "goods",
@@ -599,7 +625,7 @@ export function SwipeClient({
           さらに見る
         </button>
         <div className={`swipe-more-panel ${moreOpen ? "is-open" : ""}`}>
-          {current && (current.one_liner || (current.plan_type === "boost" && current.archive_url)) && (
+          {!pendingAd && current && (current.one_liner || (current.plan_type === "boost" && current.archive_url)) && (
             <div className="status-band today-note">
               <h2>
                 <Sparkles size={19} /> 今日のひとこと
@@ -1199,7 +1225,7 @@ function AdCard({ ad, onSkip }: { ad: DeckAd; onSkip: () => void }) {
   return (
     <article
       ref={cardRef}
-      className="card ad-card"
+      className="card promo-card"
       onPointerDown={(event) => {
         dragStartRef.current = event.clientX;
         didDragRef.current = false;
@@ -1214,28 +1240,30 @@ function AdCard({ ad, onSkip }: { ad: DeckAd; onSkip: () => void }) {
       onPointerUp={release}
       onPointerCancel={reset}
     >
-      <span className="ad-card-label">{ad.kind === "goods" ? "VTuberグッズ" : "PR"}</span>
+      <span className="promo-card-label">
+        {ad.kind === "goods" ? "VTuberグッズ" : ad.kind === "house" ? "VtuberMatchより" : "PR"}
+      </span>
       {ad.imageUrl ? (
-        <img src={ad.imageUrl} alt="" loading="eager" decoding="async" />
+        <img src={ad.imageUrl} alt={ad.kind === "house" ? ad.title : ""} loading="eager" decoding="async" />
       ) : (
-        <div className="ad-card-placeholder" aria-hidden="true" />
+        <div className="promo-card-placeholder" aria-hidden="true" />
       )}
       <div className="card-overlay">
         {ad.ownerName && <div className="pill-row"><UiBadge>{ad.ownerName}</UiBadge></div>}
-        <h1>{ad.title}</h1>
-        {ad.description && <p className="ad-card-description">{ad.description}</p>}
+        {ad.kind !== "house" && <h1>{ad.title}</h1>}
+        {ad.description && <p className="promo-card-description">{ad.description}</p>}
         <a
-          className="ad-card-cta"
+          className="promo-card-cta"
           href={ad.url}
           target="_blank"
-          rel="noreferrer noopener sponsored"
+          rel={ad.kind === "house" ? "noreferrer noopener" : "noreferrer noopener sponsored"}
           onClick={(event) => {
             // ドラッグ操作を誤クリックとして扱わない
             if (didDragRef.current) event.preventDefault();
           }}
         >
           <ExternalLink size={16} />
-          {ad.kind === "goods" ? "グッズを見る" : "商品を見る"}
+          {ad.kind === "goods" ? "グッズを見る" : ad.kind === "house" ? "詳しく見る" : "商品を見る"}
         </a>
       </div>
     </article>
