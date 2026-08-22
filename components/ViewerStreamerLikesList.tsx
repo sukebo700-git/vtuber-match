@@ -22,6 +22,26 @@ export function ViewerStreamerLikesList() {
   const [status, setStatus] = useState<Status>("loading");
   const [data, setData] = useState<LikesResponse | null>(null);
 
+  // このページを訪れたら、ヘッダーメニューの「いいねが届きました」印を既読にして消す。
+  // ログインしていないと/api/notificationsは401を返すだけなので、
+  // 未登録・匿名ユーザーでは何も起きない(catchで握りつぶす)。
+  useEffect(() => {
+    fetch("/api/notifications")
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data) => {
+        const notifications = Array.isArray(data?.notifications) ? data.notifications : [];
+        const unread = notifications.filter((item: { type?: string; read?: boolean }) => item.type === "STREAMER_LIKE_RECEIVED" && !item.read);
+        return Promise.all(unread.map((item: { id: string }) => (
+          fetch("/api/notifications", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: item.id }),
+          }).catch(() => undefined)
+        )));
+      })
+      .catch(() => undefined);
+  }, []);
+
   useEffect(() => {
     const identity = getViewerIdentity();
     fetch(`/api/viewer-streamer-likes?id=${encodeURIComponent(identity.id)}`)

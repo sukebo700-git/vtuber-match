@@ -34,13 +34,13 @@ const VIEWER_KEYS = [
   "vtuber-match-viewer-profile",
 ];
 
+// ヘルプは各ページのヘッダーnavに常時表示済みのため、このドロップダウンには含めない。
 const GLOBAL_MENU_ITEMS = [
   { href: "/swipe", label: "スワイプ" },
   { href: "/viewer", label: "視聴者用" },
   { href: "/creator", label: "配信者用" },
   { href: "/diagnosis", label: "タイプ診断" },
   { href: "https://www.youtube.com/@VtuberMatch", label: "公式YouTube", external: true },
-  { href: "/help", label: "ヘルプ" },
 ];
 
 function readJson<T>(value: string | null): T | null {
@@ -99,9 +99,11 @@ export function HeaderAuthStatus() {
   const [login, setLogin] = useState<HeaderLoginState | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
-  // マッチしたら気づけるように、メニューへ赤い印を出す。/viewer/matches を
-  // 訪れると既読になり消える(ViewerMatchesList側でnotificationsをread済みにする)。
+  // マッチ・VTuberからのいいねに気づけるように、メニューへ赤い印を出す。
+  // 該当ページ(/viewer/matches, /viewer/likes)を訪れると既読になり消える
+  // (各ページ側でnotificationsをread済みにする)。
   const [hasNewMatch, setHasNewMatch] = useState(false);
+  const [hasNewStreamerLike, setHasNewStreamerLike] = useState(false);
 
   useEffect(() => {
     const refresh = () => setLogin(readLoginState());
@@ -119,13 +121,15 @@ export function HeaderAuthStatus() {
   useEffect(() => {
     if (login?.type !== "viewer") {
       setHasNewMatch(false);
+      setHasNewStreamerLike(false);
       return;
     }
     fetch("/api/notifications")
       .then((response) => (response.ok ? response.json() : null))
       .then((data) => {
-        const notifications = Array.isArray(data?.notifications) ? data.notifications : [];
-        setHasNewMatch(notifications.some((item: { type?: string; read?: boolean }) => item.type === "MATCH_CREATED" && !item.read));
+        const notifications: { type?: string; read?: boolean }[] = Array.isArray(data?.notifications) ? data.notifications : [];
+        setHasNewMatch(notifications.some((item) => item.type === "MATCH_CREATED" && !item.read));
+        setHasNewStreamerLike(notifications.some((item) => item.type === "STREAMER_LIKE_RECEIVED" && !item.read));
       })
       .catch(() => undefined);
   }, [login]);
@@ -137,6 +141,12 @@ export function HeaderAuthStatus() {
 
   const statusLabel = login ? (login.type === "creator" ? "配信者" : "視聴者") : "未ログイン";
 
+  // 視聴者としてログイン中は「配信者用」への導線は不要なので出さない。
+  const globalMenuItems = useMemo(
+    () => login?.type === "viewer" ? GLOBAL_MENU_ITEMS.filter((item) => item.href !== "/creator") : GLOBAL_MENU_ITEMS,
+    [login],
+  );
+
   const menuItems = useMemo(() => {
     if (login?.type === "creator") {
       return [
@@ -146,10 +156,11 @@ export function HeaderAuthStatus() {
     }
 
     if (login?.type === "viewer") {
+      // 「視聴者用ページ」「プロフィール」は上のGLOBAL_MENU_ITEMSの「視聴者用」
+      // (href="/viewer")と同じ行き先の重複だったため出さない。
       return [
-        { href: "/viewer", label: "視聴者用ページ" },
         { href: "/viewer/matches", label: "マッチ一覧" },
-        { href: "/viewer", label: "プロフィール" },
+        { href: "/viewer/likes", label: "VTuberからのいいね" },
       ];
     }
 
@@ -219,11 +230,11 @@ export function HeaderAuthStatus() {
           <Menu size={17} aria-hidden />
           メニュー
         </button>
-        {hasNewMatch && <span className="header-menu-dot" aria-hidden />}
+        {(hasNewMatch || hasNewStreamerLike) && <span className="header-menu-dot" aria-hidden />}
 
         {menuOpen ? (
           <div className="header-menu-panel" role="menu">
-            {GLOBAL_MENU_ITEMS.map((item) => (
+            {globalMenuItems.map((item) => (
               <a
                 key={`${item.href}-${item.label}`}
                 href={item.href}
@@ -241,6 +252,7 @@ export function HeaderAuthStatus() {
                   className={[
                     index === 0 ? "menu-section-start" : "",
                     hasNewMatch && item.href === "/viewer/matches" ? "header-menu-item-new" : "",
+                    hasNewStreamerLike && item.href === "/viewer/likes" ? "header-menu-item-new" : "",
                   ].filter(Boolean).join(" ") || undefined}
                   href={item.href}
                   role="menuitem"
