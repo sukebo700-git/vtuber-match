@@ -599,7 +599,7 @@ export function SwipeClient({
               </div>
               <div className="match-notice-body">
                 <strong>{notice.name}さんとマッチしました</strong>
-                <a href={youtubeSubscribeUrl(notice.youtubeUrl)}>
+                <a href={youtubeSubscribeUrl(notice.youtubeUrl)} target="_blank" rel="noreferrer">
                   <ExternalLink size={14} />
                   {videoSiteLabel(notice.youtubeUrl)}を見る
                 </a>
