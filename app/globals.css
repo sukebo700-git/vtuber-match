@@ -7675,8 +7675,20 @@ body::after {
     padding-top: 10px !important;
   }
 
+  /* スマホでは「日替わりピックアップ」を、VTuberを探すボタンの直下に
+     自然に続くよう並び替える(DOM順はSEO/読み上げ順を保つため変更せず、
+     表示順だけを負のorderで繰り上げる)。 */
   .landing-copy {
+    order: -3 !important;
     gap: 8px !important;
+  }
+
+  .landing-daily-pickup-banner {
+    order: -2 !important;
+  }
+
+  .landing-visual {
+    order: -1 !important;
   }
 
   .landing-copy h1 {

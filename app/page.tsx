@@ -78,7 +78,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          <a className="landing-promo-banner" href="/recommended">
+          <a className="landing-promo-banner landing-daily-pickup-banner" href="/recommended">
             <div className="landing-promo-banner-copy">
               <span className="landing-promo-banner-kicker">日替わりピックアップ</span>
               <strong>本日のおすすめVTuber</strong>
