@@ -15,6 +15,7 @@ import { getAdminDb } from "@/lib/firebaseAdmin";
 import { readAllLocalStreamers, readLocalAnalyticsSummary, readLocalApplications, readLocalPasswordResetRequests, readLocalReports, readLocalViewerProfilesWithStats, readLocalVisitSourceStats, readLocalVisitStats, summarizeVisits } from "@/lib/localStore";
 import { normalizeStreamer } from "@/lib/streamers";
 import { getViewerEntitlements } from "@/lib/viewerEntitlements";
+import { getStreamerLikeCounts } from "@/lib/streamerLikes";
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import type { ApplicationStatus, PlanType, StreamerApplication, StreamerProfileEdit, ViewerProfile, ViewerProfileWithStats, StreamerReport, PasswordResetRequest } from "@/lib/types";
@@ -469,7 +470,6 @@ async function readFirestoreViewerProfiles({ cursor }: { cursor?: string }): Pro
       "createdAt",
       "updated_at",
       "match_count",
-      "streamer_like_count",
       "super_like_stock",
       "super_like_purchase_count",
       "has_paid_history",
@@ -491,14 +491,22 @@ async function readFirestoreViewerProfiles({ cursor }: { cursor?: string }): Pro
   const items = pageBase.slice(0, 100);
   const hasNext = pageBase.length > 100;
 
-  // 画面に出す最大100件ぶんだけ、エリート権限をまとめて読む(getAllで1回)。
+  // 画面に出す最大100件ぶんだけ、エリート権限とVTuberからのいいね数をまとめて読む。
   // 500件全部ではなく、実際に表示するページ分だけに絞ってreadを節約する。
-  const entitlements = await getViewerEntitlements(items.map((viewer) => viewer.id));
+  const viewerIds = items.map((viewer) => viewer.id);
+  const [entitlements, streamerLikeCounts] = await Promise.all([
+    getViewerEntitlements(viewerIds),
+    getStreamerLikeCounts(viewerIds),
+  ]);
   const itemsWithEntitlement = items.map((viewer) => {
     const entitlement = entitlements.get(viewer.id);
-    return entitlement
-      ? { ...viewer, entitlement_tier: entitlement.tier, entitlement_valid_until: entitlement.validUntil }
-      : { ...viewer, entitlement_tier: "free" as const };
+    return {
+      ...viewer,
+      ...(entitlement
+        ? { entitlement_tier: entitlement.tier, entitlement_valid_until: entitlement.validUntil }
+        : { entitlement_tier: "free" as const }),
+      streamer_like_count: streamerLikeCounts.get(viewer.id) || 0,
+    };
   });
 
   return { items: itemsWithEntitlement, nextCursor: hasNext && items.length ? encodeViewerAdminCursor(items[items.length - 1]) : undefined, totalCount };
@@ -533,7 +541,9 @@ function viewerDocToAdminRow(id: string, data: ViewerProfile & Record<string, un
     created_at: createdAt || documentCreatedAt || timestampToIso(data.updated_at),
     updated_at: timestampToIso(data.updated_at),
     match_count: matchCount,
-    streamer_like_count: Number(data.streamer_like_count || 0),
+    // 呼び出し元(readFirestoreViewerProfiles)でstreamer_likesの実カウントに上書きする。
+    // 旧streamer_like_countストア型カウンタは更新漏れで実数と乖離するバグがあったため廃止。
+    streamer_like_count: 0,
     super_like_stock: Number(data.super_like_stock || 0),
     super_like_purchase_count: Number(data.super_like_purchase_count || 0),
     has_paid_history: data.has_paid_history === true || Number(data.super_like_purchase_count || 0) > 0,

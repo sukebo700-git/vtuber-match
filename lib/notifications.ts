@@ -34,6 +34,48 @@ export async function notifyStreamerLike(tokens: string[] | undefined, sourceNam
   });
 }
 
+// VTuberからいいね返しが届いた視聴者への通知。エリートファンでないと送信元を
+// 確認できない仕様(仕様確認済み)のため、本文にVTuber名は含めない。
+export async function notifyViewerLikedByStreamer(viewerProfileId: string, fcmTokens: string[] | undefined) {
+  const db = getAdminDb();
+  if (!db) return;
+
+  const title = "VTuberからいいねが届きました";
+  const body = "気になるVTuberからいいねが届いています。エリートファンになると送信元を確認できます。";
+
+  await db.collection("notifications").doc().set({
+    target_type: "viewer",
+    viewer_profile_id: viewerProfileId,
+    type: "STREAMER_LIKE_RECEIVED",
+    title,
+    body,
+    read: false,
+    created_at: FieldValue.serverTimestamp(),
+  });
+
+  if (!fcmTokens?.length) return;
+  const app = getAdminApp();
+  if (!app) return;
+
+  await app.messaging().sendEachForMulticast({
+    tokens: fcmTokens,
+    notification: { title, body },
+    webpush: {
+      notification: {
+        title,
+        body,
+        icon: "/icon.svg",
+        badge: "/icon.svg",
+      },
+      fcmOptions: { link: "/viewer/likes" },
+    },
+    data: {
+      type: "STREAMER_LIKE_RECEIVED",
+      url: "/viewer/likes",
+    },
+  });
+}
+
 export async function notifyAdminNewApplication(input: {
   applicationId: string;
   streamerName: string;

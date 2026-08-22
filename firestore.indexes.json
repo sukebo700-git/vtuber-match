@@ -33,6 +33,22 @@
         { "fieldPath": "viewer_profile_id", "order": "ASCENDING" },
         { "fieldPath": "matched_at", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "likes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "streamer_id", "order": "ASCENDING" },
+        { "fieldPath": "timestamp", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "streamer_likes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "viewer_profile_id", "order": "ASCENDING" },
+        { "fieldPath": "created_at", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

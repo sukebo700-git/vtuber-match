@@ -99,6 +99,10 @@ export default function CreatorPage({
               <strong>グッズ掲載枠</strong>
               <span>プレミアムプラン特典。あなたのグッズをリスナーのスワイプ画面に掲載できます。</span>
             </a>
+            <a className="creator-action-card" href="/creator/viewer-likes">
+              <strong>気になるリスナー</strong>
+              <span>あなたにいいねしたリスナーを確認し、いいね返しができます。</span>
+            </a>
             <a className="creator-action-card" href="/creator/upgrade">
               <strong>アップグレード</strong>
               <span>上位表示、公式紹介、Lo-Fi配信での紹介特典を確認できます。</span>

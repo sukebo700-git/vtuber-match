@@ -76,5 +76,9 @@ service cloud.firestore {
     match /swipe_state/{viewerId} {
       allow read, write: if false;
     }
+    // VTuber→リスナーの「いいね返し」。サーバーAPI(Admin SDK)経由のみ。
+    match /streamer_likes/{likeId} {
+      allow read, write: if false;
+    }
   }
 }
