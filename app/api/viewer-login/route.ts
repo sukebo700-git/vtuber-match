@@ -3,6 +3,7 @@ import { FieldValue, getAdminDb } from "@/lib/firebaseAdmin";
 import { mergeLocalViewerIdentity, readLocalViewerProfilesRaw, upsertLocalViewerProfile } from "@/lib/localStore";
 import { hashPassword, makeViewerLoginId } from "@/lib/password";
 import { createUserSession, userSessionCookieOptions, viewerSessionCookie } from "@/lib/userSession";
+import { mergeFirestoreViewerIdentity } from "@/lib/viewerIdentityMerge";
 import type { ViewerProfile } from "@/lib/types";
 
 export async function POST(request: Request) {
@@ -153,23 +154,4 @@ function publicProfile(profile: ViewerProfile) {
 
 function stripUndefined<T extends Record<string, unknown>>(value: T) {
   return Object.fromEntries(Object.entries(value).filter(([, item]) => item !== undefined)) as T;
-}
-
-async function mergeFirestoreViewerIdentity(db: FirebaseFirestore.Firestore, fromId: string, toId: string) {
-  const [likes, activities] = await Promise.all([
-    db.collection("likes").where("viewer_profile_id", "==", fromId).limit(500).get(),
-    db.collection("viewer_activities").where("viewer_profile_id", "==", fromId).limit(500).get(),
-  ]);
-
-  const batch = db.batch();
-  likes.docs.forEach((doc) => batch.set(doc.ref, { viewer_profile_id: toId }, { merge: true }));
-  activities.docs.forEach((doc) => {
-    const data = doc.data();
-    batch.set(db.collection("viewer_activities").doc(`${data.streamer_id}_${toId}_${data.action || "view"}`), {
-      ...data,
-      viewer_profile_id: toId,
-    }, { merge: true });
-    batch.delete(doc.ref);
-  });
-  await batch.commit();
 }
