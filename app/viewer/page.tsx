@@ -3,8 +3,6 @@ import { AuthVisibility } from "@/components/AuthVisibility";
 import { ViewerProfileGate } from "@/components/ViewerProfileGate";
 import { ViewerSuperBoostWallet } from "@/components/ViewerSuperBoostWallet";
 import { isXCampaignActive } from "@/lib/campaign";
-import { getTodaysPicks } from "@/lib/dailyPicks";
-import { streamerImagePath } from "@/lib/streamers";
 import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
@@ -17,13 +15,12 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function ViewerPage({
+export default function ViewerPage({
   searchParams,
 }: {
   searchParams: { [key: string]: string | string[] | undefined };
 }) {
   const isXCampaignEntry = searchParams.campaign === "1" && isXCampaignActive();
-  const todaysPicks = await getTodaysPicks();
 
   return (
     <div className="app-shell">
@@ -62,23 +59,6 @@ export default async function ViewerPage({
           </section>
         </AuthVisibility>
 
-        {todaysPicks.length > 0 && (
-          <section className="status-band">
-            <h2>今日のおすすめ10人</h2>
-            <p>今日はこの10人をピックアップしました。日付が変わると入れ替わります。</p>
-            <div className="daily-picks-grid">
-              {todaysPicks.map((streamer) => (
-                <a className="daily-pick-card" href={`/detail/${streamer.id}`} key={streamer.id}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={streamerImagePath(streamer)} alt={streamer.name} className="daily-pick-thumb" />
-                  <span className="daily-pick-name">{streamer.name}</span>
-                </a>
-              ))}
-            </div>
-          </section>
-        )}
-
-        <ViewerProfileGate />
         <section className="status-band">
           <h2>マッチ一覧</h2>
           <p>いいねしたVTuberの一覧を見られます。</p>
@@ -93,6 +73,8 @@ export default async function ViewerPage({
             <a className="primary-button" href="/viewer/likes">確認する</a>
           </p>
         </section>
+
+        <ViewerProfileGate />
         <AuthVisibility role="viewer" mode="logged-in">
           <section className="status-band">
             <h2>エリートファン</h2>
