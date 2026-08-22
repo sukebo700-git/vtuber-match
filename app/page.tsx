@@ -86,7 +86,7 @@ export default function HomePage() {
             <span className="landing-promo-banner-cta">10人を見る</span>
           </a>
 
-          <SmartPromoLink kind="creator-promo" className="landing-promo-banner">
+          <SmartPromoLink kind="creator-promo" className="landing-promo-banner landing-creator-promo-banner">
             <div className="landing-promo-banner-copy">
               <span className="landing-promo-banner-kicker">ショート動画&amp;24時間宣伝企画</span>
               <strong>Lo-Fi配信への掲載・紹介ショート動画・無料掲載ページ、すべて0円</strong>
