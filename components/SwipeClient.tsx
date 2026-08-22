@@ -448,6 +448,10 @@ export function SwipeClient({
 
   function advance() {
     setIndex((value) => value + 1);
+    // minimal(今日のおすすめ10人)は広告を挟まない仕様のため、カウントも増やさない。
+    // ここで増やしてしまうと、広告が出ないまま数字だけ進み、次に/swipeへ移った時に
+    // 持ち越したカウントのせいで想定より早く広告が出てしまう。
+    if (minimal) return;
     // VTuberカードを見た数だけ数え、規定人数に達したら次に広告を1枚挟む。
     // 広告カード自体はこのカウントに含まれない。
     //
