@@ -30,6 +30,10 @@ const emptyProfile: ViewerProfile = {
   streamer_like_count: 0,
 };
 
+function hasProfileContent(profile: Partial<ViewerProfile>) {
+  return Boolean(profile.display_name || profile.image || profile.one_liner || profile.profile);
+}
+
 type ImageEdit = {
   scale: number;
   x: number;
@@ -47,6 +51,9 @@ export function ViewerProfileForm() {
   const [status, setStatus] = useState("");
   const [sourceImage, setSourceImage] = useState("");
   const [imageEdit, setImageEdit] = useState<ImageEdit>(defaultImageEdit);
+  // 未入力の新規ユーザーには畳んだ状態で見せ、圧迫感を減らす。
+  // 既にプロフィールを入力済みの場合は自動で開く(隠れて見えなくなるのを防ぐ)。
+  const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
     const id = localStorage.getItem(idKey) || crypto.randomUUID();
@@ -66,6 +73,7 @@ export function ViewerProfileForm() {
     };
     setProfile(nextProfile);
     setSourceImage(nextProfile.image || "");
+    if (hasProfileContent(nextProfile)) setExpanded(true);
 
     fetch(`/api/viewer-profile?id=${encodeURIComponent(id)}`)
       .then((response) => response.json())
@@ -86,6 +94,7 @@ export function ViewerProfileForm() {
             };
             localStorage.setItem(storageKey, JSON.stringify(next));
             setSourceImage(next.image || "");
+            if (hasProfileContent(next)) setExpanded(true);
             return next;
           });
         }
@@ -183,6 +192,12 @@ export function ViewerProfileForm() {
         </div>
       </div>
 
+      {!expanded ? (
+        <button className="primary-button" type="button" onClick={() => setExpanded(true)}>
+          プロフィールを入力する
+        </button>
+      ) : (
+        <>
       <p className="help-text">
         現在のプラン: <strong>{profile.entitlement_tier === "elite" ? "エリートファン" : "無料登録"}</strong>
       </p>
@@ -388,6 +403,8 @@ export function ViewerProfileForm() {
         <a className="primary-button" href="/swipe">VTuberを探す</a>
       </p>
       {status && <p className="help-text">{status}</p>}
+        </>
+      )}
     </form>
   );
 }
