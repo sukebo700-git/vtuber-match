@@ -76,8 +76,13 @@ export async function POST(request: Request) {
   const activityRef = db.collection("viewer_activities").doc(`${streamerId}_${trackedViewerId}_like`);
   const today = jstDateKey();
 
+  const matchRef = trackedViewerId ? db.collection("matches").doc(`${trackedViewerId}_${streamerId}`) : null;
+  let isNewMatch = false;
+
   await db.runTransaction(async (tx) => {
     const activityDoc = await tx.get(activityRef);
+    const matchDoc = matchRef ? await tx.get(matchRef) : null;
+    isNewMatch = Boolean(matchRef && !matchDoc?.exists);
 
     if (viewerRef) {
       const viewerDoc = await tx.get(viewerRef);
@@ -131,8 +136,7 @@ export async function POST(request: Request) {
     // マッチ一覧(/viewer/matches)向けの非正規化レコード。仕様上「いいね=即マッチ」なので
     // ここで書く。streamer_idごとに1件へ集約し(同じVTuberに複数回いいねしても増えない)、
     // 一覧側は都度streamersをJOINせずにこのコレクションだけを読めば表示できる。
-    if (trackedViewerId) {
-      const matchRef = db.collection("matches").doc(`${trackedViewerId}_${streamerId}`);
+    if (matchRef) {
       tx.set(matchRef, {
         viewer_profile_id: trackedViewerId,
         streamer_id: streamerId,
@@ -152,6 +156,19 @@ export async function POST(request: Request) {
       read: false,
       created_at: FieldValue.serverTimestamp()
     });
+    // ヘッダーメニューの「マッチしたら気づける」導線向け。同じVTuberへの
+    // 再いいね(既にマッチ済み)では出さず、初めてマッチした時だけ通知する。
+    if (isNewMatch && trackedViewerId) {
+      tx.set(db.collection("notifications").doc(), {
+        target_type: "viewer",
+        viewer_profile_id: trackedViewerId,
+        type: "MATCH_CREATED",
+        title: "マッチしました",
+        body: `${streamerData.name || "VTuber"}さんとマッチしました`,
+        read: false,
+        created_at: FieldValue.serverTimestamp()
+      });
+    }
   });
 
   const streamer = streamerData;

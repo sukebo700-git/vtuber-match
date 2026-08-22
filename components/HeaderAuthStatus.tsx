@@ -99,6 +99,9 @@ export function HeaderAuthStatus() {
   const [login, setLogin] = useState<HeaderLoginState | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
+  // マッチしたら気づけるように、メニューへ赤い印を出す。/viewer/matches を
+  // 訪れると既読になり消える(ViewerMatchesList側でnotificationsをread済みにする)。
+  const [hasNewMatch, setHasNewMatch] = useState(false);
 
   useEffect(() => {
     const refresh = () => setLogin(readLoginState());
@@ -112,6 +115,20 @@ export function HeaderAuthStatus() {
       window.removeEventListener("vtuber-match-auth-changed", refresh);
     };
   }, []);
+
+  useEffect(() => {
+    if (login?.type !== "viewer") {
+      setHasNewMatch(false);
+      return;
+    }
+    fetch("/api/notifications")
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data) => {
+        const notifications = Array.isArray(data?.notifications) ? data.notifications : [];
+        setHasNewMatch(notifications.some((item: { type?: string; read?: boolean }) => item.type === "MATCH_CREATED" && !item.read));
+      })
+      .catch(() => undefined);
+  }, [login]);
 
   const displayName = useMemo(() => {
     if (!login) return "未ログイン";
@@ -131,6 +148,7 @@ export function HeaderAuthStatus() {
     if (login?.type === "viewer") {
       return [
         { href: "/viewer", label: "視聴者用ページ" },
+        { href: "/viewer/matches", label: "マッチ一覧" },
         { href: "/viewer", label: "プロフィール" },
       ];
     }
@@ -201,6 +219,7 @@ export function HeaderAuthStatus() {
           <Menu size={17} aria-hidden />
           メニュー
         </button>
+        {hasNewMatch && <span className="header-menu-dot" aria-hidden />}
 
         {menuOpen ? (
           <div className="header-menu-panel" role="menu">
@@ -217,7 +236,15 @@ export function HeaderAuthStatus() {
             ))}
             {menuItems.length ? (
               menuItems.map((item, index) => (
-                <a key={`${item.href}-${item.label}`} className={index === 0 ? "menu-section-start" : undefined} href={item.href} role="menuitem">
+                <a
+                  key={`${item.href}-${item.label}`}
+                  className={[
+                    index === 0 ? "menu-section-start" : "",
+                    hasNewMatch && item.href === "/viewer/matches" ? "header-menu-item-new" : "",
+                  ].filter(Boolean).join(" ") || undefined}
+                  href={item.href}
+                  role="menuitem"
+                >
                   {item.label}
                 </a>
               ))

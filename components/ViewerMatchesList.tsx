@@ -24,6 +24,26 @@ export function ViewerMatchesList() {
   const [status, setStatus] = useState<Status>("loading");
   const [data, setData] = useState<MatchesResponse | null>(null);
 
+  // このページを訪れたら、ヘッダーメニューの「マッチしました」印を既読にして消す。
+  // ログインしていないと/api/notificationsは401を返すだけなので、
+  // 未登録・匿名ユーザーでは何も起きない(catchで握りつぶす)。
+  useEffect(() => {
+    fetch("/api/notifications")
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data) => {
+        const notifications = Array.isArray(data?.notifications) ? data.notifications : [];
+        const unreadMatchNotices = notifications.filter((item: { type?: string; read?: boolean }) => item.type === "MATCH_CREATED" && !item.read);
+        return Promise.all(unreadMatchNotices.map((item: { id: string }) => (
+          fetch("/api/notifications", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: item.id }),
+          }).catch(() => undefined)
+        )));
+      })
+      .catch(() => undefined);
+  }, []);
+
   useEffect(() => {
     const identity = getViewerIdentity();
     fetch(`/api/viewer-matches?id=${encodeURIComponent(identity.id)}`)
