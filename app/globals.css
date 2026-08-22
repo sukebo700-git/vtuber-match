@@ -8217,3 +8217,10 @@ body::after {
   width: 100%;
   height: auto;
 }
+
+.viewer-upgrade-plan-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 16px;
+}

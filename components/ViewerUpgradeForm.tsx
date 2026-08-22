@@ -5,12 +5,6 @@ import { getViewerIdentity } from "@/lib/viewerIdentity";
 
 type Status = "loading" | "ready" | "elite";
 
-const eliteFeatures = [
-  "マッチ履歴を無制限に閲覧できます(未登録は最新1件、無料登録は最新5件まで)",
-  "VTuberからいいねが届いたとき、送信元・件数を確認できます",
-  "スワイプ中の広告が表示されなくなります",
-];
-
 export function ViewerUpgradeForm() {
   const [status, setStatus] = useState<Status>("loading");
   const [validUntil, setValidUntil] = useState("");
@@ -104,12 +98,18 @@ export function ViewerUpgradeForm() {
 
   return (
     <section className="status-band">
-      <h2>エリートファン 月額500円</h2>
-      <ul>
-        {eliteFeatures.map((feature) => (
-          <li key={feature}>{feature}</li>
-        ))}
-      </ul>
+      <h2 style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0 0 0 0)", whiteSpace: "nowrap" }}>
+        エリートファン 月額500円
+      </h2>
+      <picture>
+        <source srcSet="/promo/elite-fan/elite-fan.webp" type="image/webp" />
+        <img
+          src="/promo/elite-fan/elite-fan.jpg"
+          alt="エリートファン 月額500円。マッチ履歴を無制限に閲覧できます(未登録は最新1件、無料登録は最新5件まで)。VTuberからいいねが届いたとき、送信元・件数を確認できます。スワイプ中の広告が表示されなくなります。いつでも解約できます。解約すると即座に無料登録の状態に戻ります。"
+          className="viewer-upgrade-plan-image"
+          loading="eager"
+        />
+      </picture>
       <p className="inline-actions" style={{ marginTop: 12 }}>
         <button className="primary-button" type="button" disabled={busy} onClick={checkout}>
           {busy ? "処理中..." : "エリートファンになる(月額500円)"}
