@@ -99,6 +99,11 @@ export function SwipeClient({
   const swipeLockRef = useRef(false);
   // マッチ通知の遅延タイマー。アンマウント/フィルタ変更時に確実に破棄する
   const noticeTimersRef = useRef<number[]>([]);
+  // マッチ通知を連続で出さないためのキュー。1件ずつ間隔を空けて表示する
+  // (1件目=8秒後、2件目=前の表示から20秒後、3件目以降=60〜150秒間隔)。
+  const matchQueueRef = useRef<MatchNotice[]>([]);
+  const matchShownCountRef = useRef(0);
+  const matchScheduleTimerRef = useRef<number | null>(null);
 
   const streamers = useMemo(() => {
     const filtered = (categoryFilter || regionFilter)
@@ -343,7 +348,7 @@ export function SwipeClient({
 
     if (liked) {
       void sendLike(liked);
-      scheduleMatchNotice(liked);
+      enqueueMatchNotice(liked);
     }
     advance();
   }
@@ -386,25 +391,40 @@ export function SwipeClient({
     }
   }
 
-  // いいね直後にモーダルで止めず、8〜12秒後にヘッダー付近へ非同期通知を出す。
+  // いいね直後にモーダルで止めず、非同期でヘッダー付近へ通知を出す。連続いいねで
+  // 何件も重なって出るのを防ぐため、キューに積んで1件ずつ間隔を空けて表示する。
   // 表示に必要な情報はいいね時点でクライアントに持っているため追加readは発生しない。
-  function scheduleMatchNotice(liked: Streamer) {
-    const delay = 8000 + Math.floor(Math.random() * 4000);
+  function enqueueMatchNotice(liked: Streamer) {
+    matchQueueRef.current.push({
+      key: `${liked.id}-${Date.now()}`,
+      streamerId: liked.id,
+      name: liked.name,
+      youtubeUrl: liked.youtube_url,
+    });
+    scheduleNextMatchNotice();
+  }
+
+  function scheduleNextMatchNotice() {
+    if (matchScheduleTimerRef.current !== null) return;
+    if (!matchQueueRef.current.length) return;
+    const shown = matchShownCountRef.current;
+    // 1件目=8秒後、2件目=前の表示から20秒後、3件目以降=60〜150秒間隔。
+    const delay = shown === 0 ? 8000 : shown === 1 ? 20000 : 60000 + Math.floor(Math.random() * 90000);
     const timerId = window.setTimeout(() => {
+      matchScheduleTimerRef.current = null;
       noticeTimersRef.current = noticeTimersRef.current.filter((item) => item !== timerId);
-      const notice: MatchNotice = {
-        key: `${liked.id}-${Date.now()}`,
-        streamerId: liked.id,
-        name: liked.name,
-        youtubeUrl: liked.youtube_url,
-      };
-      setMatchNotices((current) => [...current, notice].slice(-2));
+      const notice = matchQueueRef.current.shift();
+      if (!notice) return;
+      matchShownCountRef.current += 1;
+      setMatchNotices([notice]);
       const dismissId = window.setTimeout(() => {
         noticeTimersRef.current = noticeTimersRef.current.filter((item) => item !== dismissId);
         setMatchNotices((current) => current.filter((item) => item.key !== notice.key));
       }, 9000);
       noticeTimersRef.current.push(dismissId);
+      scheduleNextMatchNotice();
     }, delay);
+    matchScheduleTimerRef.current = timerId;
     noticeTimersRef.current.push(timerId);
   }
 
