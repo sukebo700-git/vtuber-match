@@ -1027,6 +1027,11 @@ button {
   align-items: center;
 }
 
+.swipe-stage.swipe-stage-minimal {
+  grid-template-columns: minmax(320px, min(46vw, 520px));
+  justify-content: center;
+}
+
 .swipe-search {
   position: relative;
   z-index: 6;

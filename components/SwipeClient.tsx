@@ -20,6 +20,10 @@ type SwipeClientProps = {
   adCards?: SwipeAdCard[];
   goodsCards?: VtuberGoodsCard[];
   adIntervals?: { guest: number; free: number };
+  /** 検索バー・サイドパネル(今日のひとこと/おすすめ)を隠したシンプル表示にする。 */
+  minimal?: boolean;
+  /** 指定時、渡されたデッキ(initialStreamers)を1周スワイプし終えたら自動遷移する。 */
+  redirectOnComplete?: string;
 };
 
 type MatchNotice = {
@@ -63,6 +67,8 @@ export function SwipeClient({
   adCards = [],
   goodsCards = [],
   adIntervals = { guest: 10, free: 25 },
+  minimal = false,
+  redirectOnComplete,
 }: SwipeClientProps) {
   const [index, setIndex] = useState(0);
   // 広告を出す判定に使う「VTuberカードを何人見たか」。広告カード自体は数えない。
@@ -101,18 +107,24 @@ export function SwipeClient({
           (!regionFilter || streamer.region === regionFilter)
         ))
       : initialStreamers;
-    return demoteChurnedStreamers(
-      prioritizeSameVtype(
-        shuffleEqualPriorityGroups(
-          filterRecentlySeen(filtered, recentlySeenIds),
-          shuffleSeed,
-        ),
-        viewerVtypeId,
+    // minimal(例: 今日のおすすめ10人)は渡されたデッキをそのまま「N人だけ」
+    // 出し切ることが目的のため、既読48hクールダウン・課金停止者の後方降格は
+    // 適用しない(適用すると10人を切ってしまい、仕様と矛盾するため)。
+    const ordered = prioritizeSameVtype(
+      shuffleEqualPriorityGroups(
+        minimal ? filtered : filterRecentlySeen(filtered, recentlySeenIds),
+        shuffleSeed,
       ),
+      viewerVtypeId,
     );
-  }, [categoryFilter, regionFilter, initialStreamers, shuffleSeed, viewerVtypeId, recentlySeenIds]);
-  const current = streamers.length ? streamers[index % streamers.length] : undefined;
-  const next = streamers.length ? streamers[(index + 1) % streamers.length] : undefined;
+    return minimal ? ordered : demoteChurnedStreamers(ordered);
+  }, [categoryFilter, regionFilter, initialStreamers, shuffleSeed, viewerVtypeId, recentlySeenIds, minimal]);
+  // minimalかつ1周し終えた(=index >= streamers.length)場合はredirectOnComplete先へ
+  // 遷移する。遷移直前の一瞬だけ先頭カードが再表示されるチラつきを避けるため、
+  // 完了扱いの間はcurrent/nextを出さない。
+  const isDeckComplete = minimal && streamers.length > 0 && index >= streamers.length;
+  const current = !isDeckComplete && streamers.length ? streamers[index % streamers.length] : undefined;
+  const next = !isDeckComplete && streamers.length ? streamers[(index + 1) % streamers.length] : undefined;
   const viewerVtype = diagnosisTypes.find((type) => type.id === viewerVtypeId) || null;
   const recommendedStreamers = useMemo(
     () => viewerVtypeId
@@ -128,6 +140,10 @@ export function SwipeClient({
     const pick = Math.abs(hash(`${current.id}-${index}`)) % current.thumbnails.length;
     return current.thumbnails[pick];
   }, [current, index]);
+
+  useEffect(() => {
+    if (isDeckComplete && redirectOnComplete) window.location.assign(redirectOnComplete);
+  }, [isDeckComplete, redirectOnComplete]);
 
   useEffect(() => {
     setIndex(0);
@@ -434,8 +450,9 @@ export function SwipeClient({
   }
 
   return (
-    <section className="swipe-stage">
+    <section className={minimal ? "swipe-stage swipe-stage-minimal" : "swipe-stage"}>
       <div className="swipe-main">
+        {!minimal && (
         <div className="swipe-search">
           <button className="mini-button" type="button" onClick={() => setFilterOpen((value) => !value)}>
             <Search size={16} />
@@ -496,8 +513,13 @@ export function SwipeClient({
             </div>
           )}
         </div>
+        )}
 
-        {!current ? (
+        {isDeckComplete ? (
+          <div className="status-band">
+            <h2>移動しています...</h2>
+          </div>
+        ) : !current ? (
           <div className="status-band">
             <h2>該当する配信者がいません</h2>
             <p>カテゴリや活動地域を変更するか、検索を解除してください。</p>
@@ -550,6 +572,7 @@ export function SwipeClient({
         )}
       </div>
 
+      {!minimal && (
       <aside className="side-panel">
         <button className="more-toggle" type="button" onClick={() => setMoreOpen((value) => !value)} aria-expanded={moreOpen}>
           <ChevronDown size={18} />
@@ -589,6 +612,7 @@ export function SwipeClient({
           )}
         </div>
       </aside>
+      )}
 
       {matchNotices.length > 0 && (
         <div className="match-notice-stack" aria-live="polite">
