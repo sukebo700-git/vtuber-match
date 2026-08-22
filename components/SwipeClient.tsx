@@ -65,9 +65,6 @@ const guestSwipeLimit = 40;
 const impressionSessionPrefix = "vtuber-match-impression-session-";
 const pendingImpressionKey = "vtuber-match-pending-impressions";
 const pendingImpressionFlushTimerKey = "vtuber-match-pending-impressions-flush-timer";
-// スワイプカードの既見管理(48hクールダウン)。バッチ送信の仕組みはimpressionsと同じ。
-const pendingSeenKey = "vtuber-match-pending-seen";
-const pendingSeenFlushTimerKey = "vtuber-match-pending-seen-flush-timer";
 const pendingSwipeActionKey = "vtuber-match-pending-swipe-actions";
 const pendingSwipeActionLastSentKey = "vtuber-match-pending-swipe-actions-last-sent";
 // 広告表示の進行状態。外部の商品ページへ遷移して戻ってきても、
@@ -90,8 +87,6 @@ export function SwipeClient({
   const [isRegisteredViewer, setIsRegisteredViewer] = useState(false);
   // エリートファンは広告カードを挟まない(課金特典の一つ)。
   const [isEliteViewer, setIsEliteViewer] = useState(false);
-  // スワイプカードの既見管理(48hクールダウン)。直近48h以内に見たVTuberのID集合。
-  const [recentlySeenIds, setRecentlySeenIds] = useState<Set<string>>(new Set());
   const adTurnRef = useRef(0);
   // 自社枠を除いた、アフィリエイト/グッズの1:1交互ローテーション用カウンタ
   const normalAdTurnRef = useRef(0);
@@ -128,17 +123,14 @@ export function SwipeClient({
         ))
       : initialStreamers;
     // minimal(例: 今日のおすすめ10人)は渡されたデッキをそのまま「N人だけ」
-    // 出し切ることが目的のため、既読48hクールダウン・課金停止者の後方降格は
-    // 適用しない(適用すると10人を切ってしまい、仕様と矛盾するため)。
+    // 出し切ることが目的のため、課金停止者の後方降格は適用しない
+    // (適用すると10人を切ってしまい、仕様と矛盾するため)。
     const ordered = prioritizeSameVtype(
-      shuffleEqualPriorityGroups(
-        minimal ? filtered : filterRecentlySeen(filtered, recentlySeenIds),
-        shuffleSeed,
-      ),
+      shuffleEqualPriorityGroups(filtered, shuffleSeed),
       viewerVtypeId,
     );
     return minimal ? ordered : demoteChurnedStreamers(ordered);
-  }, [categoryFilter, regionFilter, initialStreamers, shuffleSeed, viewerVtypeId, recentlySeenIds, minimal]);
+  }, [categoryFilter, regionFilter, initialStreamers, shuffleSeed, viewerVtypeId, minimal]);
   // minimalかつ1周し終えた(=index >= streamers.length)場合はredirectOnComplete先へ
   // 遷移する。遷移直前の一瞬だけ先頭カードが再表示されるチラつきを避けるため、
   // 完了扱いの間はcurrent/nextを出さない。
@@ -194,7 +186,6 @@ export function SwipeClient({
     if (sessionStorage.getItem(impressionKey)) return;
     sessionStorage.setItem(impressionKey, "1");
     queueImpression(current.id);
-    queueSeen(getViewerIdentity().id, current.id);
   }, [current, adminViewerMode]);
 
   useEffect(() => {
@@ -219,21 +210,9 @@ export function SwipeClient({
   }, []);
 
   useEffect(() => {
-    const viewerId = getViewerIdentity().id;
-    if (!viewerId) return;
-    fetch(`/api/swipe-state?id=${encodeURIComponent(viewerId)}`)
-      .then((response) => (response.ok ? response.json() : null))
-      .then((data) => {
-        if (Array.isArray(data?.seen_streamer_ids)) setRecentlySeenIds(new Set(data.seen_streamer_ids));
-      })
-      .catch(() => undefined);
-  }, []);
-
-  useEffect(() => {
     const flush = () => {
       flushImpressions();
       flushSwipeActions();
-      flushSeen(getViewerIdentity().id);
     };
     window.addEventListener("pagehide", flush);
     return () => {
@@ -373,13 +352,17 @@ export function SwipeClient({
     incrementGuestSwipeCount();
 
     if (liked) {
-      void sendLike(liked);
-      enqueueMatchNotice(liked);
+      void sendLike(liked).then((isNewMatch) => {
+        // 初回マッチの時だけ通知する。48hの既読クールダウンを撤廃したことで
+        // 同じVTuberに何度もいいねできるようになったため、その都度「マッチしました」
+        // が出てしまわないよう、サーバー側の判定結果を待ってから出す。
+        if (isNewMatch) enqueueMatchNotice(liked);
+      });
     }
     advance();
   }
 
-  async function sendLike(liked: Streamer) {
+  async function sendLike(liked: Streamer): Promise<boolean> {
     try {
       const userId = await getSwipeUserId();
       const identity = getViewerIdentity();
@@ -407,13 +390,18 @@ export function SwipeClient({
           viewer_profile: publicViewerProfile,
         }),
       });
-      if (response.ok) return;
+      if (response.ok) {
+        const data = await response.json().catch(() => null);
+        return Boolean(data?.is_new_match);
+      }
       // 1日1回制限・上限到達は仕様上の正常系なので、静かに無視して
       // スワイプ体験を止めない(既にカードは次へ進んでいる)。
-      if (response.status === 429) return;
+      if (response.status === 429) return false;
       setSwipeNotice(`${liked.name}さんへのいいねを送信できませんでした。`);
+      return false;
     } catch {
       setSwipeNotice(`${liked.name}さんへのいいねを送信できませんでした。`);
+      return false;
     }
   }
 
@@ -929,57 +917,6 @@ function readPendingImpressions() {
   }
 }
 
-function queueSeen(viewerId: string, streamerId: string) {
-  if (!viewerId) return;
-  try {
-    const ids = readPendingSeen();
-    ids.push(streamerId);
-    localStorage.setItem(pendingSeenKey, JSON.stringify(ids.slice(-40)));
-    if (ids.length >= 5) flushSeen(viewerId);
-    scheduleSeenFlush(viewerId);
-  } catch {
-    // 既見記録は失敗してもスワイプ体験を止めない
-  }
-}
-
-function scheduleSeenFlush(viewerId: string) {
-  try {
-    if (sessionStorage.getItem(pendingSeenFlushTimerKey)) return;
-    sessionStorage.setItem(pendingSeenFlushTimerKey, "1");
-    window.setTimeout(() => {
-      sessionStorage.removeItem(pendingSeenFlushTimerKey);
-      flushSeen(viewerId);
-    }, 6000);
-  } catch {
-    // 既見記録は失敗してもスワイプ体験を止めない
-  }
-}
-
-function flushSeen(viewerId: string) {
-  if (!viewerId) return;
-  const ids = readPendingSeen();
-  if (!ids.length) return;
-  localStorage.setItem(pendingSeenKey, "[]");
-  fetch("/api/swipe-state", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    keepalive: true,
-    body: JSON.stringify({ id: viewerId, streamer_ids: ids.slice(0, 40) }),
-  }).catch(() => {
-    const current = readPendingSeen();
-    localStorage.setItem(pendingSeenKey, JSON.stringify([...ids, ...current].slice(-40)));
-  });
-}
-
-function readPendingSeen() {
-  try {
-    const parsed = JSON.parse(localStorage.getItem(pendingSeenKey) || "[]");
-    return Array.isArray(parsed) ? parsed.map(String).filter(Boolean).slice(0, 40) : [];
-  } catch {
-    return [];
-  }
-}
-
 function canGuestSwipe() {
   const identity = getViewerIdentity();
   if (identity.registered || readCreatorSwipeProfile()) return true;
@@ -1397,15 +1334,6 @@ function prioritizeSameVtype(streamers: Streamer[], viewerVtypeId: number | null
   if (!sameType.length) return streamers;
   const others = streamers.filter((streamer) => streamer.vtype_id !== viewerVtypeId);
   return [...sameType, ...others];
-}
-
-// スワイプカードの既見管理(48hクールダウン): 直近48h以内に見たVTuberは
-// 一旦デッキから外す。ただし除外しすぎてデッキが極端に少なくなる場合は、
-// 見尽くした利用者が閲覧できなくなるのを避けるため無視して全員を対象に戻す。
-function filterRecentlySeen(streamers: Streamer[], seenIds: Set<string>) {
-  if (!seenIds.size) return streamers;
-  const unseen = streamers.filter((streamer) => !seenIds.has(streamer.id));
-  return unseen.length >= 5 ? unseen : streamers;
 }
 
 // 課金をやめた(有料プランを解約した)配信者は、通常の並び順から外して

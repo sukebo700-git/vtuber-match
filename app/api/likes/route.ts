@@ -52,7 +52,7 @@ export async function POST(request: Request) {
       });
     }
     await incrementLocalStreamer(streamerId, "likes");
-    return NextResponse.json({ matched: true, source: "local" });
+    return NextResponse.json({ matched: true, is_new_match: true, source: "local" });
   }
 
   const streamerRef = db.collection("streamers").doc(streamerId);
@@ -188,6 +188,7 @@ export async function POST(request: Request) {
 
   return NextResponse.json({
     matched: true,
+    is_new_match: isNewMatch,
     youtube_url: streamer.youtube_url,
     source: "firestore"
   });
