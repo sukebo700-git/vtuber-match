@@ -1,7 +1,6 @@
 import { HeaderAuthStatus } from "@/components/HeaderAuthStatus";
 import { AuthVisibility } from "@/components/AuthVisibility";
 import { CreatorSuperBoostNotice } from "@/components/CreatorSuperBoostNotice";
-import { LofiPlanBenefits } from "@/components/LofiPlanBenefits";
 import { CreatorProfileSharePanel } from "@/components/CreatorProfileSharePanel";
 import { ResumeDownloadButton } from "@/components/ResumeDownloadButton";
 import { ResumeHighlightScroll } from "@/components/ResumeHighlightScroll";
@@ -120,55 +119,18 @@ export default function CreatorPage({
           </section>
         </AuthVisibility>
 
-        <section className="status-band creator-plan-panel">
-          <span className="creator-page-kicker">Plans</span>
-          <h2>プランの違い</h2>
-          <p>
-            掲載内容、表示順位、公式チャンネルでの紹介内容をまとめて確認できます。
-            上位プランほど、視聴者の目に触れる機会が増えます。
-          </p>
-          <div className="plan-table creator-plan-table">
-            <article className="plan-card">
-              <strong>無料プラン</strong>
-              <span className="plan-price">0円</span>
-              <p>Lo-Fi配信への掲載、ショート動画での宣伝、無料掲載ページの作成をまとめて申し込めます。</p>
-              <ul>
-                <li className="plan-highlight-red">Lo-Fi 24時間配信に掲載(20秒CM)</li>
-                <li className="plan-highlight-red">紹介ショート動画で宣伝(YouTube Shorts)</li>
-                <li className="plan-highlight-red">無料掲載ページを作成</li>
-                <li>画像1枚、名前、配信サイトURL、自己アピール100文字まで</li>
-              </ul>
-              <LofiPlanBenefits planId="registered" />
-            </article>
-            <article className="plan-card">
-              <strong>ベーシックプラン</strong>
-              <span className="plan-price">月額500円</span>
-              <p>もっと見られる機会を増やしたい方向け。掲載情報と公式紹介の内容が広がります。</p>
-              <ul>
-                <li>画像3枚</li>
-                <li>Xアカウント表示</li>
-                <li>カテゴリ、タグ表示</li>
-                <li>無料プランより上位表示</li>
-                <li className="plan-highlight-red">1〜3分のCMをLo-Fi 24時間配信で配信</li>
-                <li className="plan-highlight-red">Shortsは音声ナレーション+テキスト付き</li>
-              </ul>
-              <LofiPlanBenefits planId="paid" />
-            </article>
-            <article className="plan-card">
-              <strong>プレミアムプラン</strong>
-              <span className="plan-price">月額980円</span>
-              <p>さらに目立たせたい方向け。常時優先表示を利用できます。</p>
-              <ul>
-                <li>画像5枚</li>
-                <li>ベーシックプランのすべて</li>
-                <li>常時優先表示で宣伝効果を最大化</li>
-                <li>より目立つプレミアムフレーム</li>
-                <li className="plan-highlight-red">1〜3分のCMをLo-Fi 24時間配信で配信</li>
-                <li className="plan-highlight-red">Shortsは音声ナレーション+テキスト付き</li>
-              </ul>
-              <LofiPlanBenefits planId="boost" />
-            </article>
-          </div>
+        <section className="status-band creator-plan-panel apply-plan-comparison">
+          <h2 style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0 0 0 0)", whiteSpace: "nowrap" }}>
+            プランの違い
+          </h2>
+          <picture>
+            <source srcSet="/promo/creator-plans/creator-plans.webp" type="image/webp" />
+            <img
+              src="/promo/creator-plans/creator-plans.jpg"
+              alt="プランの違い。無料プラン0円: Lo-Fi 24時間配信に掲載(20秒CM)、YouTube Shortsで紹介動画を無料掲載、無料掲載ページを作成、画像1枚・自己アピール100文字まで、カテゴリ・タグは非表示。ベーシックプラン月額500円(無料プランに加えて): 画像3枚・自己アピール500文字まで、Xアカウント・カテゴリ・タグ(5個まで)を表示、スワイプで上位表示、Lo-Fi配信のCMが1〜3分に拡大、Shortsに音声ナレーション+テキストが付く。プレミアムプラン月額980円(ベーシックプランに加えて): 画像5枚・タグ8個まで、常時優先表示でスワイプの最上位に、ホログラム演出とプレミアムフレームでカードが目立つ、自分のグッズをリスナーのスワイプ画面に掲載できるグッズ掲載枠。"
+              loading="lazy"
+            />
+          </picture>
         </section>
       </main>
     </div>
