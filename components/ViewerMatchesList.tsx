@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { getViewerIdentity } from "@/lib/viewerIdentity";
+import { youtubeSubscribeUrl } from "@/lib/youtube";
 
 type MatchItem = {
   streamer_id: string;
@@ -100,7 +101,12 @@ export function ViewerMatchesList() {
                   )}
                 </div>
                 {match.streamer_youtube_url && (
-                  <a className="secondary-button" href={match.streamer_youtube_url} target="_blank" rel="noreferrer">
+                  <a
+                    className="secondary-button"
+                    href={youtubeSubscribeUrl(match.streamer_youtube_url)}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
                     チャンネルへ
                   </a>
                 )}
