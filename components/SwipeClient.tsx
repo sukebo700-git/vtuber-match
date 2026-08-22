@@ -49,6 +49,9 @@ const guestSwipeLimit = 40;
 const impressionSessionPrefix = "vtuber-match-impression-session-";
 const pendingImpressionKey = "vtuber-match-pending-impressions";
 const pendingImpressionFlushTimerKey = "vtuber-match-pending-impressions-flush-timer";
+// スワイプカードの既見管理(48hクールダウン)。バッチ送信の仕組みはimpressionsと同じ。
+const pendingSeenKey = "vtuber-match-pending-seen";
+const pendingSeenFlushTimerKey = "vtuber-match-pending-seen-flush-timer";
 const pendingSwipeActionKey = "vtuber-match-pending-swipe-actions";
 const pendingSwipeActionLastSentKey = "vtuber-match-pending-swipe-actions-last-sent";
 // 広告表示の進行状態。外部の商品ページへ遷移して戻ってきても、
@@ -68,6 +71,8 @@ export function SwipeClient({
   const [isRegisteredViewer, setIsRegisteredViewer] = useState(false);
   // エリートファンは広告カードを挟まない(課金特典の一つ)。
   const [isEliteViewer, setIsEliteViewer] = useState(false);
+  // スワイプカードの既見管理(48hクールダウン)。直近48h以内に見たVTuberのID集合。
+  const [recentlySeenIds, setRecentlySeenIds] = useState<Set<string>>(new Set());
   const adTurnRef = useRef(0);
   const adProgressLoadedRef = useRef(false);
   // 広告判定の正となるカウント(stateは永続化と再描画のためのミラー)
@@ -89,23 +94,23 @@ export function SwipeClient({
   // マッチ通知の遅延タイマー。アンマウント/フィルタ変更時に確実に破棄する
   const noticeTimersRef = useRef<number[]>([]);
 
-  const streamers = useMemo(
-    () => demoteChurnedStreamers(
+  const streamers = useMemo(() => {
+    const filtered = (categoryFilter || regionFilter)
+      ? initialStreamers.filter((streamer) => (
+          (!categoryFilter || streamer.categories.includes(categoryFilter)) &&
+          (!regionFilter || streamer.region === regionFilter)
+        ))
+      : initialStreamers;
+    return demoteChurnedStreamers(
       prioritizeSameVtype(
         shuffleEqualPriorityGroups(
-          (categoryFilter || regionFilter)
-            ? initialStreamers.filter((streamer) => (
-                (!categoryFilter || streamer.categories.includes(categoryFilter)) &&
-                (!regionFilter || streamer.region === regionFilter)
-              ))
-            : initialStreamers,
+          filterRecentlySeen(filtered, recentlySeenIds),
           shuffleSeed,
         ),
         viewerVtypeId,
       ),
-    ),
-    [categoryFilter, regionFilter, initialStreamers, shuffleSeed, viewerVtypeId],
-  );
+    );
+  }, [categoryFilter, regionFilter, initialStreamers, shuffleSeed, viewerVtypeId, recentlySeenIds]);
   const current = streamers.length ? streamers[index % streamers.length] : undefined;
   const next = streamers.length ? streamers[(index + 1) % streamers.length] : undefined;
   const viewerVtype = diagnosisTypes.find((type) => type.id === viewerVtypeId) || null;
@@ -153,6 +158,7 @@ export function SwipeClient({
     if (sessionStorage.getItem(impressionKey)) return;
     sessionStorage.setItem(impressionKey, "1");
     queueImpression(current.id);
+    queueSeen(getViewerIdentity().id, current.id);
   }, [current, adminViewerMode]);
 
   useEffect(() => {
@@ -177,9 +183,21 @@ export function SwipeClient({
   }, []);
 
   useEffect(() => {
+    const viewerId = getViewerIdentity().id;
+    if (!viewerId) return;
+    fetch(`/api/swipe-state?id=${encodeURIComponent(viewerId)}`)
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data) => {
+        if (Array.isArray(data?.seen_streamer_ids)) setRecentlySeenIds(new Set(data.seen_streamer_ids));
+      })
+      .catch(() => undefined);
+  }, []);
+
+  useEffect(() => {
     const flush = () => {
       flushImpressions();
       flushSwipeActions();
+      flushSeen(getViewerIdentity().id);
     };
     window.addEventListener("pagehide", flush);
     return () => {
@@ -841,6 +859,57 @@ function readPendingImpressions() {
   }
 }
 
+function queueSeen(viewerId: string, streamerId: string) {
+  if (!viewerId) return;
+  try {
+    const ids = readPendingSeen();
+    ids.push(streamerId);
+    localStorage.setItem(pendingSeenKey, JSON.stringify(ids.slice(-40)));
+    if (ids.length >= 5) flushSeen(viewerId);
+    scheduleSeenFlush(viewerId);
+  } catch {
+    // 既見記録は失敗してもスワイプ体験を止めない
+  }
+}
+
+function scheduleSeenFlush(viewerId: string) {
+  try {
+    if (sessionStorage.getItem(pendingSeenFlushTimerKey)) return;
+    sessionStorage.setItem(pendingSeenFlushTimerKey, "1");
+    window.setTimeout(() => {
+      sessionStorage.removeItem(pendingSeenFlushTimerKey);
+      flushSeen(viewerId);
+    }, 6000);
+  } catch {
+    // 既見記録は失敗してもスワイプ体験を止めない
+  }
+}
+
+function flushSeen(viewerId: string) {
+  if (!viewerId) return;
+  const ids = readPendingSeen();
+  if (!ids.length) return;
+  localStorage.setItem(pendingSeenKey, "[]");
+  fetch("/api/swipe-state", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    keepalive: true,
+    body: JSON.stringify({ id: viewerId, streamer_ids: ids.slice(0, 40) }),
+  }).catch(() => {
+    const current = readPendingSeen();
+    localStorage.setItem(pendingSeenKey, JSON.stringify([...ids, ...current].slice(-40)));
+  });
+}
+
+function readPendingSeen() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(pendingSeenKey) || "[]");
+    return Array.isArray(parsed) ? parsed.map(String).filter(Boolean).slice(0, 40) : [];
+  } catch {
+    return [];
+  }
+}
+
 function canGuestSwipe() {
   const identity = getViewerIdentity();
   if (identity.registered || readCreatorSwipeProfile()) return true;
@@ -1254,6 +1323,15 @@ function prioritizeSameVtype(streamers: Streamer[], viewerVtypeId: number | null
   if (!sameType.length) return streamers;
   const others = streamers.filter((streamer) => streamer.vtype_id !== viewerVtypeId);
   return [...sameType, ...others];
+}
+
+// スワイプカードの既見管理(48hクールダウン): 直近48h以内に見たVTuberは
+// 一旦デッキから外す。ただし除外しすぎてデッキが極端に少なくなる場合は、
+// 見尽くした利用者が閲覧できなくなるのを避けるため無視して全員を対象に戻す。
+function filterRecentlySeen(streamers: Streamer[], seenIds: Set<string>) {
+  if (!seenIds.size) return streamers;
+  const unseen = streamers.filter((streamer) => !seenIds.has(streamer.id));
+  return unseen.length >= 5 ? unseen : streamers;
 }
 
 // 課金をやめた(有料プランを解約した)配信者は、通常の並び順から外して

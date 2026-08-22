@@ -72,5 +72,9 @@ service cloud.firestore {
     match /matches/{matchId} {
       allow read, write: if false;
     }
+    // スワイプカードの既見管理(48hクールダウン)。サーバーAPI(Admin SDK)経由のみ。
+    match /swipe_state/{viewerId} {
+      allow read, write: if false;
+    }
   }
 }
