@@ -1257,9 +1257,11 @@ function AdCard({ ad, onSkip }: { ad: DeckAd; onSkip: () => void }) {
           href={ad.url}
           target="_blank"
           rel={ad.kind === "house" ? "noreferrer noopener" : "noreferrer noopener sponsored"}
-          onClick={(event) => {
-            // ドラッグ操作を誤クリックとして扱わない
-            if (didDragRef.current) event.preventDefault();
+          onPointerDown={(event) => {
+            // カード全体のドラッグ検出に巻き込まれないようにする。
+            // 巻き込まれると、指の僅かなズレ(8px超)でもドラッグ扱いになり、
+            // onClickのpreventDefaultでリンク遷移がキャンセルされてしまう。
+            event.stopPropagation();
           }}
         >
           <ExternalLink size={16} />
