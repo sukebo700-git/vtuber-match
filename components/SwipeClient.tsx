@@ -202,7 +202,6 @@ export function SwipeClient({
     if (sessionStorage.getItem(impressionKey)) return;
     sessionStorage.setItem(impressionKey, "1");
     queueImpression(current.id);
-    queueSeen(getViewerIdentity().id, current.id);
   }, [current, adminViewerMode]);
 
   useEffect(() => {
@@ -379,6 +378,10 @@ export function SwipeClient({
         setSwipeNotice("自分の配信者プロフィールにはいいねできません。");
         return;
       }
+      // 48hの既見クールダウンは「いいね(=即マッチ)した相手」にのみ適用する。
+      // スキップした相手まで隠すと、配信者数が少ないうちにデッキがすぐ枯渇するうえ、
+      // スキップは何度も出てきて良いという方針のため、スキップではここを呼ばない。
+      queueSeen(getViewerIdentity().id, liked.id);
     }
 
     trackSwipeAnalytics();
