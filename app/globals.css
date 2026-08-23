@@ -7758,9 +7758,23 @@ body::after {
     font-size: 0.84rem !important;
   }
 
-  /* 「VTuberを探す」ボタンは最重要CTAのため、高さを他の1.5倍にして目立たせる */
+  /* 「VTuberを探す」ボタンは最重要CTAのため、高さを他の1.5倍にして目立たせる。
+     高さだけ上げると文字が小さいまま間延びして「バナー」に見えてしまうため、
+     フォント・角丸・光彩も合わせて強め、押せるボタンらしい見た目にする。 */
   .landing-actions .landing-actions-row1 {
     min-height: 66px !important;
+    border-radius: 999px !important;
+    font-size: 1.12rem !important;
+    letter-spacing: 0.02em !important;
+    box-shadow:
+      0 20px 40px rgba(233, 79, 139, 0.34),
+      0 0 26px rgba(255, 138, 82, 0.32),
+      0 0 0 1px rgba(255, 255, 255, 0.5) inset !important;
+  }
+
+  .landing-actions .landing-actions-row1 svg {
+    width: 22px !important;
+    height: 22px !important;
   }
 
   .landing-phone {

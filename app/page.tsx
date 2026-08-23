@@ -7,6 +7,7 @@ import { SmartPromoLink } from "@/components/SmartPromoLink";
 import { XCampaignCreatorEntryLink } from "@/components/XCampaignCreatorEntryLink";
 import { UiButton } from "@/components/ui/UiButton";
 import { UiPanel } from "@/components/ui/UiPanel";
+import { Search } from "lucide-react";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -54,6 +55,7 @@ export default function HomePage() {
             </h1>
             <div className="landing-actions landing-actions-2row">
               <UiButton className="landing-primary-cta landing-actions-row1" href="/swipe">
+                <Search size={20} aria-hidden />
                 VTuberを探す
               </UiButton>
             </div>
