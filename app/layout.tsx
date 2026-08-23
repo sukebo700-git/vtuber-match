@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 import { PublicFooter } from "@/components/PublicFooter";
 import { ServiceWorker } from "@/components/ServiceWorker";
-import { ShortVideoCampaignPopup } from "@/components/ShortVideoCampaignPopup";
 import { VisitTracker } from "@/components/VisitTracker";
 import { absoluteUrl, getSiteUrl, siteDescription, siteKeywords, siteName } from "@/lib/seo";
 import "./globals.css";
@@ -231,7 +230,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ServiceWorker />
         <VisitTracker />
         {children}
-        <ShortVideoCampaignPopup />
         <PublicFooter />
         <script
           type="application/ld+json"
