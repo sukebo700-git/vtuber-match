@@ -7758,6 +7758,11 @@ body::after {
     font-size: 0.84rem !important;
   }
 
+  /* 「VTuberを探す」ボタンは最重要CTAのため、高さを他の1.5倍にして目立たせる */
+  .landing-actions .landing-actions-row1 {
+    min-height: 66px !important;
+  }
+
   .landing-phone {
     width: min(94vw, 400px) !important;
     height: clamp(420px, 60svh, 560px) !important;
