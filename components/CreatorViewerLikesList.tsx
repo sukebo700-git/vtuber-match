@@ -64,7 +64,7 @@ export function CreatorViewerLikesList() {
     });
     setBusyId("");
     if (!response.ok) {
-      setMessage("いいね返しに失敗しました。時間をおいてもう一度お試しください。");
+      setMessage("いいねありがとうの送信に失敗しました。時間をおいてもう一度お試しください。");
       return;
     }
     setLikedIds((current) => new Set(current).add(viewerId));
@@ -92,7 +92,7 @@ export function CreatorViewerLikesList() {
   return (
     <section className="status-band">
       <h1>気になるリスナー</h1>
-      <p>あなたにいいねしたリスナーの一覧です。いいね返しすると、相手に通知が届きます。</p>
+      <p>あなたにいいねしたリスナーの一覧です。いいねありがとうを送ると、相手に通知が届きます。</p>
 
       {candidates.length === 0 ? (
         <p className="help-text">まだいいねが届いていません。</p>
@@ -108,7 +108,7 @@ export function CreatorViewerLikesList() {
                 <p className="match-list-name">{candidate.display_name}</p>
               </div>
               {likedIds.has(candidate.viewer_profile_id) ? (
-                <span className="notification-badge active">いいね返し済み</span>
+                <span className="notification-badge active">いいねありがとう済み</span>
               ) : (
                 <button
                   className="primary-button"
@@ -116,7 +116,7 @@ export function CreatorViewerLikesList() {
                   disabled={busyId === candidate.viewer_profile_id}
                   onClick={() => likeBack(candidate.viewer_profile_id)}
                 >
-                  {busyId === candidate.viewer_profile_id ? "処理中..." : "いいね返し"}
+                  {busyId === candidate.viewer_profile_id ? "処理中..." : "いいねありがとう"}
                 </button>
               )}
             </li>

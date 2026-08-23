@@ -100,7 +100,7 @@ export default function CreatorPage({
             </a>
             <a className="creator-action-card" href="/creator/viewer-likes">
               <strong>気になるリスナー</strong>
-              <span>あなたにいいねしたリスナーを確認し、いいね返しができます。</span>
+              <span>あなたにいいねしたリスナーを確認し、いいねありがとうを送れます。</span>
             </a>
             <a className="creator-action-card" href="/creator/upgrade">
               <strong>アップグレード</strong>
