@@ -115,8 +115,10 @@ export default function HomePage() {
             </p>
           </div>
           <div className="landing-lofi-player" aria-label="Lo-Fi配信ミニプレーヤー">
+            {/* 特定の動画ID直書きだと配信の放送IDが変わるたびに古いまま固定化されるため、
+                「そのチャンネルで今ライブ中の配信」を自動追従するembed形式にしている。 */}
             <iframe
-              src="https://www.youtube.com/embed/D_K9qpR9_rY"
+              src="https://www.youtube.com/embed/live_stream?channel=UCRLCLqBKFyhU7Da1NIc_4RA"
               title="VtuberMatch Lo-Fi配信"
               loading="lazy"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
