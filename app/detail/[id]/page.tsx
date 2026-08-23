@@ -5,7 +5,7 @@ import { ViewerActivityTracker } from "@/components/ViewerActivityTracker";
 import { ProfileShareButton } from "@/components/ProfileShareButton";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { BadgeCheck, CalendarClock, ExternalLink, Radio } from "lucide-react";
+import { BadgeCheck, CalendarClock, ExternalLink, Radio, Search } from "lucide-react";
 import { getStreamerById, publicStreamerPath, streamerImagePath } from "@/lib/streamers";
 import { PLAN_LABELS, virtualRegionLabel } from "@/lib/constants";
 import { isYouTubeVideoAvailable, videoSiteLabel, youtubeSubscribeUrl, youtubeWatchUrl } from "@/lib/youtube";
@@ -118,6 +118,10 @@ export default async function DetailPage({ params }: { params: { id: string } })
             <a className="primary-button" href={youtubeSubscribeUrl(streamer.youtube_url)} target="_blank" rel="noreferrer">
               <ExternalLink size={18} />
               {siteLabel}を開く
+            </a>
+            <a className="secondary-button" href="/swipe">
+              <Search size={18} />
+              他のVTuberも探す
             </a>
             <ProfileShareButton
               title={`${streamer.name} | Vtuberマッチ`}

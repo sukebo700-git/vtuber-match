@@ -109,6 +109,12 @@ export default async function VtuberSeoPage({ params }: VtuberSeoPageProps) {
               <ExternalLink size={18} />
               {siteLabel}を開く
             </a>
+            {/* 「他のVTuberも探す」はVtuberMatch自体の回遊導線として重要なため、
+                YouTube導線と同格(primary-button)にして埋もれないようにする。 */}
+            <a className="primary-button" href="/swipe">
+              <Search size={18} />
+              他のVTuberも探す
+            </a>
             {streamer.promo_video_id && (
               <a
                 className="secondary-button"
@@ -120,10 +126,6 @@ export default async function VtuberSeoPage({ params }: VtuberSeoPageProps) {
                 YouTubeで見る
               </a>
             )}
-            <a className="secondary-button" href="/swipe">
-              <Search size={18} />
-              他のVTuberも探す
-            </a>
           </div>
           <p className="help-text">
             掲載情報はVtuberMatch登録プロフィールをもとに表示しています。最新情報は配信サイトをご確認ください。
