@@ -7707,20 +7707,20 @@ body::after {
     padding-top: 10px !important;
   }
 
-  /* スマホでは「日替わりピックアップ」「無料で宣伝を申し込む」を、
-     VTuberを探すボタンの直下・キャラクター画像より上に自然に続くよう
-     並び替える(DOM順はSEO/読み上げ順を保つため変更せず、
-     表示順だけを負のorderで繰り上げる)。 */
+  /* スマホでは VTuberを探すボタンの直下に「無料で宣伝を申し込む」→
+     折りたたみ式の「もっと見る」(VTYPE診断/履歴書/本日のおすすめ)→
+     キャラクター画像の順に自然に続くよう並び替える(DOM順はSEO/読み上げ順を
+     保つため変更せず、表示順だけを負のorderで繰り上げる)。 */
   .landing-copy {
     order: -4 !important;
     gap: 8px !important;
   }
 
-  .landing-daily-pickup-banner {
+  .landing-creator-promo-banner {
     order: -3 !important;
   }
 
-  .landing-creator-promo-banner {
+  .landing-more-vtubers {
     order: -2 !important;
   }
 
@@ -7729,8 +7729,8 @@ body::after {
   }
 
   .landing-copy h1 {
-    font-size: clamp(1.92rem, 10vw, 2.75rem) !important;
-    line-height: 1.02 !important;
+    font-size: clamp(1.05rem, 5.4vw, 1.55rem) !important;
+    line-height: 1.18 !important;
   }
 
   .landing-hero-lead {
@@ -8060,18 +8060,25 @@ body::after {
     justify-self: stretch !important;
   }
 
+  /* 「渋滞して見える」対策: 見出しは4行固定(JSX側で2spanに変更済み)+フォント縮小、
+     バッジも同じ比率で縮めて、見出し行の高さを半分以下に圧縮する。 */
   .landing-refresh-copy h1 {
     grid-column: 2 !important;
     grid-row: 1 !important;
     align-self: center !important;
     justify-self: stretch !important;
     text-align: left !important;
-    font-size: clamp(1.62rem, 8vw, 2.45rem) !important;
-    line-height: 1.04 !important;
+    font-size: clamp(1.05rem, 5.4vw, 1.55rem) !important;
+    line-height: 1.18 !important;
   }
 
   .landing-hero-milestone strong {
-    font-size: clamp(1.5rem, 7vw, 2.08rem) !important;
+    font-size: clamp(0.98rem, 4.4vw, 1.32rem) !important;
+    line-height: 1.1 !important;
+  }
+
+  .landing-hero-milestone span {
+    font-size: 0.62rem !important;
   }
 
   .landing-hero-badges,
@@ -8080,14 +8087,45 @@ body::after {
   }
 
   .landing-hero-milestone {
-    min-height: clamp(106px, 30vw, 132px) !important;
-    border-radius: 30px !important;
-    padding: 12px 12px !important;
+    min-height: clamp(58px, 16vw, 76px) !important;
+    border-radius: 20px !important;
+    padding: 8px 10px !important;
   }
 
   .landing-hero-lead,
   .landing-actions {
     grid-column: 1 / -1 !important;
+  }
+
+  .landing-more-toggle {
+    display: flex !important;
+    width: 100% !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    min-height: 44px !important;
+    border: 1px solid rgba(124, 91, 216, 0.28) !important;
+    border-radius: 999px !important;
+    background: rgba(255, 255, 255, 0.9) !important;
+    color: #7c5bd8 !important;
+    font-weight: 800 !important;
+    font-size: 0.86rem !important;
+  }
+
+  .landing-more-toggle svg {
+    transition: transform 160ms ease;
+  }
+
+  .landing-more-toggle[aria-expanded="true"] svg {
+    transform: rotate(180deg);
+  }
+
+  .landing-more-content {
+    display: none !important;
+  }
+
+  .landing-more-content.is-open {
+    display: grid !important;
   }
 
   .landing-refresh-scroll {
@@ -8217,6 +8255,25 @@ body::after {
   font-weight: 700;
   font-size: 14px;
   white-space: nowrap;
+}
+
+/* トップページ: VTYPE診断/履歴書作成/本日のおすすめをまとめた「もっと見る」ブロック。
+   デスクトップは常に展開表示、スマホのみ折りたたみ式にする(スマホの「渋滞」対策)。 */
+.landing-more-vtubers {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 14px;
+  width: min(860px, 100%);
+  margin: 0 auto;
+}
+
+.landing-more-toggle {
+  display: none;
+}
+
+.landing-more-content {
+  display: grid;
+  gap: 14px;
 }
 
 @media (max-width: 640px) {

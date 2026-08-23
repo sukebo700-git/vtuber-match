@@ -1,6 +1,7 @@
 import { AuthVisibility } from "@/components/AuthVisibility";
 import { GoogleOneTap } from "@/components/GoogleOneTap";
 import { HeaderAuthStatus } from "@/components/HeaderAuthStatus";
+import { LandingMoreVtubers } from "@/components/LandingMoreVtubers";
 import { LandingRandomVtuberImage } from "@/components/LandingRandomVtuberImage";
 import { SmartPromoLink } from "@/components/SmartPromoLink";
 import { XCampaignCreatorEntryLink } from "@/components/XCampaignCreatorEntryLink";
@@ -48,27 +49,13 @@ export default function HomePage() {
               </div>
             </div>
             <h1>
-              <span>気になる</span>
-              <span>VTuberと、</span>
-              <span>直感で</span>
-              <span>出会える。</span>
+              <span>気になるVTuberと、</span>
+              <span>直感で出会える。</span>
             </h1>
             <div className="landing-actions landing-actions-2row">
               <UiButton className="landing-primary-cta landing-actions-row1" href="/swipe">
                 VTuberを探す
               </UiButton>
-              <div className="landing-actions-row2">
-                <UiButton variant="secondary" className="landing-secondary-cta" href="/diagnosis">
-                  VTYPE診断をする
-                </UiButton>
-                <UiButton
-                  variant="secondary"
-                  className="landing-secondary-cta"
-                  href="/creator?highlight=resume#resume-card"
-                >
-                  履歴書を作る
-                </UiButton>
-              </div>
             </div>
           </div>
 
@@ -78,14 +65,6 @@ export default function HomePage() {
             </div>
           </div>
 
-          <a className="landing-promo-banner landing-daily-pickup-banner" href="/recommended">
-            <div className="landing-promo-banner-copy">
-              <span className="landing-promo-banner-kicker">日替わりピックアップ</span>
-              <strong>本日のおすすめVTuber</strong>
-            </div>
-            <span className="landing-promo-banner-cta">10人を見る</span>
-          </a>
-
           <SmartPromoLink kind="creator-promo" className="landing-promo-banner landing-creator-promo-banner">
             <div className="landing-promo-banner-copy">
               <span className="landing-promo-banner-kicker">ショート動画&amp;24時間宣伝企画</span>
@@ -93,6 +72,8 @@ export default function HomePage() {
             </div>
             <span className="landing-promo-banner-cta">無料で宣伝を申し込む</span>
           </SmartPromoLink>
+
+          <LandingMoreVtubers />
 
           <AuthVisibility role="viewer" mode="logged-out">
             <a className="landing-promo-banner" href="/viewer/register">
