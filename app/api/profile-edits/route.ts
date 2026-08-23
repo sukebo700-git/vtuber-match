@@ -80,6 +80,13 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   const body = await request.json();
+  console.log("[profile-edits] payload shape", {
+    has_youtube_url: Boolean(clean(body.youtube_url, 240)),
+    has_tags: Array.isArray(body.tags) && sanitizeArray(body.tags).length > 0,
+    has_categories: Array.isArray(body.categories) && sanitizeArray(body.categories).length > 0,
+    has_streamer_id: Boolean(body.streamer_id),
+    has_application_id: Boolean(body.application_id),
+  });
   const session = readUserSession<CreatorSession>(request, creatorSessionCookie);
   const email = clean(body.email || session?.email, 120).toLowerCase();
   const password = String(body.password || "");

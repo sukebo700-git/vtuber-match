@@ -4237,6 +4237,12 @@ button {
   font-weight: 720;
 }
 
+.notice-text.notice-error {
+  border-color: rgba(255, 90, 90, 0.84);
+  background: #fff0f0;
+  color: #8a1414;
+}
+
 .push-notice-card {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;

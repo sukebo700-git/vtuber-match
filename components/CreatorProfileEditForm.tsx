@@ -92,6 +92,7 @@ export function CreatorProfileEditForm() {
   const [showXCampaignOptIn, setShowXCampaignOptIn] = useState(true);
   const [vtypeProfile, setVtypeProfile] = useState<VtypeProfileFields | null>(null);
   const [status, setStatus] = useState("");
+  const [loadError, setLoadError] = useState(false);
   const visibleImages = images.slice(0, planImageLimit(planType));
   // 読み込み中(/api/profile-edits の応答待ち)にユーザーが入力を始めた場合、
   // 遅れて届いたサーバー側の値で入力内容を上書きしてしまわないようにするガード。
@@ -148,7 +149,11 @@ export function CreatorProfileEditForm() {
           setStatus("ログインの有効期限が切れています。お手数ですが、配信者ログインからもう一度ログインしてください。");
           return null;
         }
-        return response.ok ? response.json() : null;
+        if (!response.ok) {
+          setLoadError(true);
+          return null;
+        }
+        return response.json();
       })
       .then((data) => {
         if (hasEditedRef.current) return;
@@ -196,7 +201,7 @@ export function CreatorProfileEditForm() {
         localStorage.setItem("vtuber-match-creator-plan", nextPlan);
         localStorage.setItem(creatorDraftKey, JSON.stringify(profile));
       })
-      .catch(() => undefined);
+      .catch(() => setLoadError(true));
   }, []);
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
@@ -393,6 +398,12 @@ export function CreatorProfileEditForm() {
         <p>ログイン中の配信者アカウントで、掲載プロフィールを修正できます。</p>
       </section>
 
+      {loadError && (
+        <p className="notice-text notice-error">
+          現在のプロフィールの読み込みに失敗しました。このまま更新すると、一部の項目が空欄で上書きされる可能性があります。お手数ですが、ページを再読み込みしてからもう一度お試しください。
+        </p>
+      )}
+
       <div className="field">
         <label htmlFor="edit_email">登録メールアドレス</label>
         <input id="edit_email" name="email" type="email" required value={email} onChange={(event) => setEmail(event.target.value)} />
@@ -401,7 +412,7 @@ export function CreatorProfileEditForm() {
 
       <div className="field">
         <label htmlFor="edit_youtube">動画・配信サイトURL</label>
-        <input id="edit_youtube" name="youtube_url" type="url" value={youtubeUrl} onChange={(event) => setYoutubeUrl(event.target.value)} placeholder="https://www.youtube.com/@channel または https://www.twitch.tv/channel" />
+        <input id="edit_youtube" name="youtube_url" type="url" required value={youtubeUrl} onChange={(event) => setYoutubeUrl(event.target.value)} placeholder="https://www.youtube.com/@channel または https://www.twitch.tv/channel" />
       </div>
 
       <div className="field">
@@ -713,7 +724,7 @@ export function CreatorProfileEditForm() {
         </div>
       )}
 
-      <button className="primary-button" type="submit">
+      <button className="primary-button" type="submit" disabled={loadError}>
         <Save size={18} />
         プロフィールを更新する
       </button>
