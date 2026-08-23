@@ -11,7 +11,7 @@ import { isXCampaignActive } from "@/lib/campaign";
 //   視聴者ログイン中は/viewer、未ログインは/viewer/register(視聴者新規登録)へ。
 type SmartPromoLinkKind = "creator-promo" | "x-campaign";
 
-function readLoginKind(): "creator" | "viewer" | null {
+export function readLoginKind(): "creator" | "viewer" | null {
   if (typeof window === "undefined") return null;
   const hasCreator = Boolean(
     localStorage.getItem("vtuber-match-creator-id") ||

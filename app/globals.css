@@ -1539,6 +1539,13 @@ button {
   background: linear-gradient(180deg, rgba(0, 0, 0, 0.01) 18%, rgba(0, 0, 0, 0.24) 48%, rgba(0, 0, 0, 0.78) 100%);
 }
 
+/* 自社枠(house-ad.jpg)は文言・CTAを画像側に描き込み済みのバナーのため、
+   通常広告用の暗いグラデーションを重ねると画像自体の視認性が落ちる。
+   ボタンだけ最低限読めればよいので、グラデーションなしにする。 */
+.card-overlay-plain {
+  background: none;
+}
+
 .pill-row {
   display: flex;
   flex-wrap: wrap;

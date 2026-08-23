@@ -11,6 +11,7 @@ import { videoSiteLabel, youtubeSubscribeUrl } from "@/lib/youtube";
 import type { SwipeAdCard } from "@/lib/swipeAds";
 import type { Streamer, ViewerProfile } from "@/lib/types";
 import type { VtuberGoodsCard } from "@/lib/vtuberGoods";
+import { readLoginKind } from "@/components/SmartPromoLink";
 import { UiBadge } from "@/components/ui/UiBadge";
 import { UiButton } from "@/components/ui/UiButton";
 import { UiPanel } from "@/components/ui/UiPanel";
@@ -48,14 +49,20 @@ type DeckAd = {
   description?: string;
 };
 
-/** 自社枠: グッズ掲載枠(プレミアムプラン特典)の宣伝。在庫や設定に関係なく固定で表示する */
-const HOUSE_AD: DeckAd = {
-  id: "house-goods-slot",
-  kind: "house",
-  title: "あなたのグッズをこの枠で宣伝しませんか？",
-  imageUrl: "/promo/house-ad/house-ad.jpg",
-  url: "/creator/merch",
-};
+/**
+ * 自社枠: グッズ掲載枠(プレミアムプラン特典)の宣伝。在庫や設定に関係なく固定で表示する。
+ * リンク先は視聴者にとって行き止まりにならないよう、配信者ログイン中のみ申込フォーム
+ * (/creator/merch)へ、それ以外(視聴者ログイン中・未ログイン)は説明ページ(/creator)へ。
+ */
+function buildHouseAd(): DeckAd {
+  return {
+    id: "house-goods-slot",
+    kind: "house",
+    title: "あなたのグッズをこの枠で宣伝しませんか？",
+    imageUrl: "/promo/house-ad/house-ad.jpg",
+    url: readLoginKind() === "creator" ? "/creator/merch" : "/creator",
+  };
+}
 
 const viewerProfileKey = "vtuber-match-viewer-profile";
 const analyticsVisitorKey = "vtuber-match-analytics-visitor-id";
@@ -93,8 +100,9 @@ export function SwipeClient({
   // スワイプカードの既見管理(48hクールダウン)。直近48h以内に見たVTuberのID集合。
   const [recentlySeenIds, setRecentlySeenIds] = useState<Set<string>>(new Set());
   const adTurnRef = useRef(0);
-  // 自社枠を除いた、アフィリエイト/グッズの1:1交互ローテーション用カウンタ
-  const normalAdTurnRef = useRef(0);
+  // アフィリエイト/グッズそれぞれの一覧内での巡回位置(在庫種別ごとに独立)
+  const affiliateTurnRef = useRef(0);
+  const goodsTurnRef = useRef(0);
   const adProgressLoadedRef = useRef(false);
   // 広告判定の正となるカウント(stateは永続化と再描画のためのミラー)
   const vtuberViewCountRef = useRef(0);
@@ -261,14 +269,20 @@ export function SwipeClient({
     try {
       const raw = localStorage.getItem(adProgressKey);
       if (raw) {
-        const saved = JSON.parse(raw) as { viewCount?: number; adTurn?: number; normalAdTurn?: number };
+        const saved = JSON.parse(raw) as {
+          viewCount?: number;
+          adTurn?: number;
+          affiliateTurn?: number;
+          goodsTurn?: number;
+        };
         if (Number.isFinite(saved.viewCount)) {
           const restored = Math.max(0, Number(saved.viewCount));
           vtuberViewCountRef.current = restored;
           setVtuberViewCount(restored);
         }
         if (Number.isFinite(saved.adTurn)) adTurnRef.current = Math.max(0, Number(saved.adTurn));
-        if (Number.isFinite(saved.normalAdTurn)) normalAdTurnRef.current = Math.max(0, Number(saved.normalAdTurn));
+        if (Number.isFinite(saved.affiliateTurn)) affiliateTurnRef.current = Math.max(0, Number(saved.affiliateTurn));
+        if (Number.isFinite(saved.goodsTurn)) goodsTurnRef.current = Math.max(0, Number(saved.goodsTurn));
       }
     } catch {
       // 復元に失敗しても先頭から始めれば良いだけなので握りつぶす
@@ -285,7 +299,8 @@ export function SwipeClient({
       localStorage.setItem(adProgressKey, JSON.stringify({
         viewCount: vtuberViewCountRef.current,
         adTurn: adTurnRef.current,
-        normalAdTurn: normalAdTurnRef.current,
+        affiliateTurn: affiliateTurnRef.current,
+        goodsTurn: goodsTurnRef.current,
       }));
     } catch {
       // 保存できなくても進行自体は続けられる
@@ -296,45 +311,43 @@ export function SwipeClient({
   const adInterval = isRegisteredViewer ? adIntervals.free : adIntervals.guest;
 
   /**
-   * 自社枠を挟まない2ターンではアフィリエイトとグッズを1:1で交互に出す
-   * (在庫が無い側は自動でもう一方へ寄せる)。3ターン目は自社枠を出し、
-   * 結果としてアフィリエイト(+グッズ):自社枠 が概ね2:1になる。
+   * 広告ローテーション: アフィリエイト:グッズ:自社枠 = 2:1:1 の固定パターンで出す。
+   * 該当種別の在庫が無い/自社枠オフの場合はアフィリエイト→グッズ→自社枠の順で
+   * 振り替え、広告枠そのものが無駄に空振りしないようにする。
    */
   function pickNextAd(): DeckAd | null {
-    const turn = adTurnRef.current;
-    adTurnRef.current += 1;
-
-    if (houseAdEnabled && turn % 3 === 2) return HOUSE_AD;
-
     const affiliates = adCards;
     const goods = goodsCards;
-    if (!affiliates.length && !goods.length) return null;
 
-    const preferAffiliate = normalAdTurnRef.current % 2 === 0;
-    const useAffiliate = preferAffiliate ? affiliates.length > 0 : goods.length === 0;
-    normalAdTurnRef.current += 1;
-
-    if (useAffiliate) {
-      const card = affiliates[Math.floor(normalAdTurnRef.current / 2) % affiliates.length];
+    const pickAffiliate = (): DeckAd | null => {
+      if (!affiliates.length) return null;
+      const card = affiliates[affiliateTurnRef.current % affiliates.length];
+      affiliateTurnRef.current += 1;
+      return { id: card.id, kind: "affiliate", title: card.title || card.label, imageUrl: card.image_url, url: card.url };
+    };
+    const pickGoods = (): DeckAd | null => {
+      if (!goods.length) return null;
+      const card = goods[goodsTurnRef.current % goods.length];
+      goodsTurnRef.current += 1;
       return {
         id: card.id,
-        kind: "affiliate",
-        title: card.title || card.label,
+        kind: "goods",
+        title: card.title,
         imageUrl: card.image_url,
         url: card.url,
+        ownerName: card.streamer_name,
+        description: card.description,
       };
-    }
-
-    const card = goods[Math.floor(normalAdTurnRef.current / 2) % goods.length];
-    return {
-      id: card.id,
-      kind: "goods",
-      title: card.title,
-      imageUrl: card.image_url,
-      url: card.url,
-      ownerName: card.streamer_name,
-      description: card.description,
     };
+    const pickHouse = (): DeckAd | null => (houseAdEnabled ? buildHouseAd() : null);
+
+    const pattern: Array<"affiliate" | "goods" | "house"> = ["affiliate", "affiliate", "goods", "house"];
+    const slot = pattern[adTurnRef.current % pattern.length];
+    adTurnRef.current += 1;
+
+    if (slot === "affiliate") return pickAffiliate() ?? pickGoods() ?? pickHouse();
+    if (slot === "goods") return pickGoods() ?? pickAffiliate() ?? pickHouse();
+    return pickHouse() ?? pickAffiliate() ?? pickGoods();
   }
 
   function dismissAd() {
@@ -1261,9 +1274,9 @@ function AdCard({ ad, onSkip }: { ad: DeckAd; onSkip: () => void }) {
       ) : (
         <div className="promo-card-placeholder" aria-hidden="true" />
       )}
-      <div className="card-overlay">
+      <div className={ad.kind === "house" ? "card-overlay card-overlay-plain" : "card-overlay"}>
         {ad.ownerName && <div className="pill-row"><UiBadge>{ad.ownerName}</UiBadge></div>}
-        {ad.kind !== "house" && <h1>{ad.title}</h1>}
+        {ad.kind !== "house" && ad.title && <h1>{ad.title}</h1>}
         {ad.description && <p className="promo-card-description">{ad.description}</p>}
         <a
           className="promo-card-cta"
