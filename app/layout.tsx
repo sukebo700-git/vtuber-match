@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { GoogleAnalytics } from "@/components/GoogleAnalytics";
+import { GoogleTagManager, GoogleTagManagerNoscript } from "@/components/GoogleTagManager";
 import { PublicFooter } from "@/components/PublicFooter";
 import { ServiceWorker } from "@/components/ServiceWorker";
 import { VisitTracker } from "@/components/VisitTracker";
@@ -221,10 +222,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ja">
       <head>
+        <GoogleTagManager />
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         <style dangerouslySetInnerHTML={{ __html: mobileCriticalCss }} />
       </head>
       <body>
+        <GoogleTagManagerNoscript />
         <div data-build-marker="mobile-fix-20260612-5" hidden />
         <GoogleAnalytics />
         <ServiceWorker />
