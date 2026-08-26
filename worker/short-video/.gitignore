@@ -1,0 +1,18 @@
+# 作業ディレクトリ（元動画・中間ファイル・完成MP4）はコミットしない
+work/
+selftest_subs.ass
+*.mp4
+*.mkv
+*.mov
+*.ogg
+*.whisper.json
+
+# 認証情報
+.secrets/
+
+# フォント実体（ライセンス表記は必要だがバイナリは配布しない）
+assets/*.ttf
+assets/*.otf
+
+__pycache__/
+*.pyc
