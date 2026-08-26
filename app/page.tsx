@@ -1,6 +1,7 @@
 import { AuthVisibility } from "@/components/AuthVisibility";
 import { GoogleOneTap } from "@/components/GoogleOneTap";
 import { HeaderAuthStatus } from "@/components/HeaderAuthStatus";
+import { LandingHeroHeading } from "@/components/LandingHeroHeading";
 import { LandingMoreVtubers } from "@/components/LandingMoreVtubers";
 import { LandingRandomVtuberImage } from "@/components/LandingRandomVtuberImage";
 import { SmartPromoLink } from "@/components/SmartPromoLink";
@@ -49,10 +50,7 @@ export default function HomePage() {
                 <strong>300名突破</strong>
               </div>
             </div>
-            <h1>
-              <span>気になるVTuberと、</span>
-              <span>直感で出会える。</span>
-            </h1>
+            <LandingHeroHeading lines={["気になるVTuberと、", "直感で出会える。"]} />
             <div className="landing-actions landing-actions-2row">
               <UiButton className="landing-primary-cta landing-actions-row1" href="/swipe">
                 <Search size={20} aria-hidden />
