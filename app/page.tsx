@@ -61,6 +61,17 @@ export default function HomePage() {
             </div>
           </div>
 
+          {/* スマホ専用の複製ボタン。デスクトップの2カラムグリッド内で.landing-copyの
+              外に出すとauto-placementが崩れるため、デスクトップ用(上のボタン)は
+              一切動かさず、スマホ(≤760px)だけこちらを表示してorderで
+              「無料で宣伝を申し込む」バナーと入れ替える(globals.cssで出し分け)。 */}
+          <div className="landing-actions landing-actions-2row landing-actions-mobile-dup">
+            <UiButton className="landing-primary-cta landing-actions-row1" href="/swipe">
+              <Search size={20} aria-hidden />
+              VTuberを探す
+            </UiButton>
+          </div>
+
           <div className="landing-visual landing-refresh-visual" aria-label="VTuberビジュアル">
             <div className="landing-hero-character">
               <LandingRandomVtuberImage randomize variant="hero" />

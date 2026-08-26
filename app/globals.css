@@ -7480,6 +7480,15 @@ body::after {
   grid-template-columns: none !important;
 }
 
+/* スマホ専用の複製ボタン(landing-actions-mobile-dup)は、760px以下の時だけ
+   表示する(下のモバイル用メディアクエリでdisplay:flexに上書き)。デスクトップの
+   グリッド構造は.landing-copyにネストされた元のボタンのみが担うため無変更。
+   上の.landing-actions.landing-actions-2row(2クラス)がdisplay:flex !important
+   を指定しているため、それより詳細度を上げるためクラスを1つ追加している。 */
+.landing-actions.landing-actions-2row.landing-actions-mobile-dup {
+  display: none !important;
+}
+
 .landing-actions-row1 {
   width: 100% !important;
 }
@@ -7740,17 +7749,29 @@ body::after {
     padding-top: 10px !important;
   }
 
-  /* スマホでは「無料で宣伝を申し込む」バナーの直下にVTuberを探すボタン→
-     折りたたみ式の「もっと見る」(VTYPE診断/履歴書/本日のおすすめ)→
+  /* スマホでは 見出し(固定)→「無料で宣伝を申し込む」バナー→VTuberを探す
+     ボタン→折りたたみ式の「もっと見る」(VTYPE診断/履歴書/本日のおすすめ)→
      キャラクター画像の順に自然に続くよう並び替える(DOM順はSEO/読み上げ順を
-     保つため変更せず、表示順だけを負のorderで繰り上げる)。 */
+     保つため変更せず、表示順だけを負のorderで繰り上げる)。見出しの位置は
+     動かさない。デスクトップの2カラムグリッドとの衝突を避けるため、
+     ネストされた元のボタンではなく複製(.landing-actions-mobile-dup、
+     landing-heroの直接の子)側だけをここで表示・並び替える。 */
   .landing-copy {
-    order: -3 !important;
+    order: -5 !important;
     gap: 8px !important;
+  }
+
+  .landing-copy > .landing-actions-2row {
+    display: none !important;
   }
 
   .landing-creator-promo-banner {
     order: -4 !important;
+  }
+
+  .landing-actions.landing-actions-2row.landing-actions-mobile-dup {
+    display: flex !important;
+    order: -3 !important;
   }
 
   .landing-more-vtubers {
