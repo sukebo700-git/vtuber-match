@@ -12,6 +12,8 @@ type AdminDashboardProps = {
   // 全ページ横断の有料/上位プラン配信者(「有料登録のみ」フィルタが2ページ目
   // 以降も絞り込めるようにするため。現在ページ分initialStreamersにマージして使う)。
   initialPaidStreamers?: Streamer[];
+  // 全ページ横断の退会申請中の配信者(「退会申請のみ」フィルタ用、同様にマージして使う)。
+  initialWithdrawalStreamers?: Streamer[];
   adminKey: string;
 };
 
@@ -21,7 +23,7 @@ function mergeStreamersById(a: Streamer[], b: Streamer[]): Streamer[] {
   return [...a, ...b.filter((streamer) => !seen.has(streamer.id))];
 }
 
-type StreamerView = "application" | "paid" | "boost";
+type StreamerView = "application" | "paid" | "boost" | "withdrawal";
 type EditState = Pick<Streamer, "id" | "name" | "youtube_url" | "youtube_channel_id" | "archive_url" | "promo_video_id" | "description" | "one_liner" | "stream_time" | "region" | "plan_type" | "thumbnails" | "categories" | "tags"> & { want_short_video: boolean };
 type PublicImportDraft = {
   name: string;
@@ -50,11 +52,11 @@ const SUPER_BOOST_EFFECT_LABELS: Record<SuperBoostEffect, string> = {
   shake: "揺れ",
 };
 
-export function AdminDashboard({ initialApplications, initialStreamers, initialPaidStreamers = [], adminKey }: AdminDashboardProps) {
+export function AdminDashboard({ initialApplications, initialStreamers, initialPaidStreamers = [], initialWithdrawalStreamers = [], adminKey }: AdminDashboardProps) {
   const [applications, setApplications] = useState(initialApplications);
-  // 現在ページ分 + 全ページ横断の有料/上位プランをマージして1つの状態にする。
+  // 現在ページ分 + 全ページ横断の有料/上位プラン + 退会申請中をマージして1つの状態にする。
   // 編集・削除など既存のsetStreamers操作はこの統合リストに対して行われる。
-  const [streamers, setStreamers] = useState(() => mergeStreamersById(initialStreamers, initialPaidStreamers));
+  const [streamers, setStreamers] = useState(() => mergeStreamersById(mergeStreamersById(initialStreamers, initialPaidStreamers), initialWithdrawalStreamers));
   // デフォルト(申込順)表示は現在ページ分だけに絞るためのID集合。
   // マージした有料配信者(2ページ目以降)がデフォルト表示に混ざらないようにする。
   const [pageStreamerIds, setPageStreamerIds] = useState(() => new Set(initialStreamers.map((streamer) => streamer.id)));
@@ -102,9 +104,16 @@ export function AdminDashboard({ initialApplications, initialStreamers, initialP
     // 有料/上位フィルタは全ページ横断で絞り込む(マージ済みの全有料配信者が対象)。
     if (streamerView === "paid") return sorted.filter((streamer) => streamer.plan_type === "paid" || streamer.plan_type === "boost");
     if (streamerView === "boost") return sorted.filter((streamer) => streamer.plan_type === "boost");
+    // 退会申請フィルタも全ページ横断で絞り込む(マージ済みの全退会申請中配信者が対象)。
+    if (streamerView === "withdrawal") return sorted.filter((streamer) => streamer.withdrawal_status === "requested");
     // デフォルト(申込順)は現在ページ分だけに絞る(マージした2ページ目以降の有料は出さない)。
     return sorted.filter((streamer) => pageStreamerIds.has(streamer.id));
   }, [applicationById, applicationByStreamerId, streamerView, streamers, pageStreamerIds]);
+
+  const withdrawalCount = useMemo(
+    () => streamers.filter((streamer) => streamer.withdrawal_status === "requested").length,
+    [streamers],
+  );
 
   const editCategoryLimit = editing?.plan_type === "free" ? 1 : 3;
   const editTagLimit = editing?.plan_type === "free" ? 1 : 5;
@@ -793,6 +802,7 @@ export function AdminDashboard({ initialApplications, initialStreamers, initialP
           <button type="button" className={streamerView === "application" ? "selected" : ""} onClick={() => setStreamerView("application")}>申込順</button>
           <button type="button" className={streamerView === "paid" ? "selected" : ""} onClick={() => setStreamerView("paid")}>有料登録のみ</button>
           <button type="button" className={streamerView === "boost" ? "selected" : ""} onClick={() => setStreamerView("boost")}>上位表示のみ</button>
+          <button type="button" className={streamerView === "withdrawal" ? "selected" : ""} onClick={() => setStreamerView("withdrawal")}>退会申請のみ{withdrawalCount ? `(${withdrawalCount})` : ""}</button>
         </div>
         <div className="admin-filter-row">
           <button className="secondary-button" type="button" onClick={toggleAllVisible}>表示中を一括選択</button>

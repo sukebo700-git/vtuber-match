@@ -52,6 +52,8 @@ type PagedResult<T> = {
   // ページング対象外でも、有料/上位プランの配信者はクライアント側の
   // 「有料登録のみ」フィルタが全件を絞り込めるよう、全ページ横断で別途返す。
   paidItems?: T[];
+  // 同様に退会申請中の配信者も全ページ横断で別途返す(「退会申請のみ」フィルタ用)。
+  withdrawalItems?: T[];
 };
 
 export default async function AdminPage({ searchParams }: { searchParams?: AdminPageSearchParams }) {
@@ -130,7 +132,7 @@ export default async function AdminPage({ searchParams }: { searchParams?: Admin
         )}
         {activeTab === "ads" && <AdminSwipeAdsPanel adminKey="" />}
         {activeTab === "streamers" && <ShortVideoAdminPanel adminKey="" />}
-        {needsStreamerData && <AdminDashboard initialApplications={applications} initialStreamers={streamers} initialPaidStreamers={streamerPage.paidItems ?? []} adminKey="" />}
+        {needsStreamerData && <AdminDashboard initialApplications={applications} initialStreamers={streamers} initialPaidStreamers={streamerPage.paidItems ?? []} initialWithdrawalStreamers={streamerPage.withdrawalItems ?? []} adminKey="" />}
         {activeTab === "viewers" && <ViewerAdminPanel viewers={viewers} />}
         {(activeTab === "streamers" || activeTab === "viewers") && (
           <AdminPagination
@@ -175,17 +177,43 @@ function normalizeAdminTab(value: string | undefined): AdminTab {
 async function readImportantNotifications(): Promise<AdminImportantNotification[]> {
   const db = getAdminDb();
   if (!db) return [];
-  const [passwordResets, applicationDocs, streamerDocs, shortVideoDocs, tshirtOrderDocs, paymentDocs, goodsDocs] = await Promise.all([
+  const [
+    passwordResets,
+    applicationWithdrawalDocs,
+    applicationPaymentFailedDocs,
+    streamerWithdrawalDocs,
+    streamerPaymentFailedDocs,
+    shortVideoDocs,
+    tshirtOrderDocs,
+    paymentDocs,
+    goodsDocs,
+  ] = await Promise.all([
     db.collection("password_reset_requests")
       .select("email", "name", "user_type", "status", "created_at", "updated_at")
       .limit(40)
       .get(),
+    // 退会申請・支払い失敗は、以前は無条件でlimit(80)件を毎回読んでJS側で絞り込んでいたが、
+    // 登録者が増えると先頭80件に収まらず検知漏れが起きうる上、該当0件の日も常に80件読む
+    // 無駄があった。where句で対象のみ読むよう変更(該当フィールドはfieldOverrides未設定
+    // のため自動インデックス対象、複合indexも不要)。
     db.collection("applications")
-      .select("name", "email", "withdrawal_status", "withdrawal_requested_at", "payment_state", "subscription_status", "stripe_subscription_id", "created_at", "updated_at")
+      .where("withdrawal_status", "==", "requested")
+      .select("name", "email", "withdrawal_requested_at", "created_at", "updated_at")
+      .limit(80)
+      .get(),
+    db.collection("applications")
+      .where("payment_state", "==", "past_due")
+      .select("name", "email", "created_at", "updated_at")
       .limit(80)
       .get(),
     db.collection("streamers")
-      .select("name", "creator_email", "withdrawal_status", "withdrawal_requested_at", "payment_state", "subscription_status", "stripe_subscription_id", "created_at", "updated_at")
+      .where("withdrawal_status", "==", "requested")
+      .select("name", "creator_email", "withdrawal_requested_at", "source_application_id", "created_at", "updated_at")
+      .limit(80)
+      .get(),
+    db.collection("streamers")
+      .where("payment_state", "==", "past_due")
+      .select("name", "creator_email", "source_application_id", "created_at", "updated_at")
       .limit(80)
       .get(),
     db.collection("short_video_requests")
@@ -233,54 +261,55 @@ async function readImportantNotifications(): Promise<AdminImportantNotification[
       href: "/admin?tab=inbox",
     });
   });
-  applicationDocs.docs.forEach((doc) => {
+  applicationWithdrawalDocs.docs.forEach((doc) => {
     const data = doc.data();
-    if (data.withdrawal_status === "requested") {
-      notifiedApplicationWithdrawalIds.add(doc.id);
-      items.push({
-        id: `application_withdrawal:${doc.id}`,
-        type: "withdrawal",
-        title: "退会申請",
-        body: `${data.name || data.email || doc.id} から退会申請があります。`,
-        created_at: timestampToIso(data.withdrawal_requested_at ?? data.updated_at ?? data.created_at),
-        href: "/admin?tab=sales",
-      });
-    }
-    if (data.payment_state === "past_due") {
-      notifiedApplicationPaymentFailedIds.add(doc.id);
-      items.push({
-        id: `application_payment_failed:${doc.id}`,
-        type: "payment_failed",
-        title: "支払い失敗",
-        body: `${data.name || data.email || doc.id} の支払い確認が必要です。`,
-        created_at: timestampToIso(data.updated_at ?? data.created_at),
-        href: "/admin?tab=sales",
-      });
-    }
+    notifiedApplicationWithdrawalIds.add(doc.id);
+    items.push({
+      id: `application_withdrawal:${doc.id}`,
+      type: "withdrawal",
+      title: "退会申請",
+      body: `${data.name || data.email || doc.id} から退会申請があります。`,
+      created_at: timestampToIso(data.withdrawal_requested_at ?? data.updated_at ?? data.created_at),
+      href: "/admin?tab=sales",
+    });
   });
-  streamerDocs.docs.forEach((doc) => {
+  applicationPaymentFailedDocs.docs.forEach((doc) => {
+    const data = doc.data();
+    notifiedApplicationPaymentFailedIds.add(doc.id);
+    items.push({
+      id: `application_payment_failed:${doc.id}`,
+      type: "payment_failed",
+      title: "支払い失敗",
+      body: `${data.name || data.email || doc.id} の支払い確認が必要です。`,
+      created_at: timestampToIso(data.updated_at ?? data.created_at),
+      href: "/admin?tab=sales",
+    });
+  });
+  streamerWithdrawalDocs.docs.forEach((doc) => {
     const data = doc.data();
     const sourceApplicationId = String(data.source_application_id || "");
-    if (data.withdrawal_status === "requested" && !notifiedApplicationWithdrawalIds.has(sourceApplicationId)) {
-      items.push({
-        id: `streamer_withdrawal:${doc.id}`,
-        type: "withdrawal",
-        title: "退会申請",
-        body: `${data.name || data.creator_email || doc.id} から退会申請があります。`,
-        created_at: timestampToIso(data.withdrawal_requested_at ?? data.updated_at ?? data.created_at),
-        href: "/admin?tab=streamers",
-      });
-    }
-    if (data.payment_state === "past_due" && !notifiedApplicationPaymentFailedIds.has(sourceApplicationId)) {
-      items.push({
-        id: `streamer_payment_failed:${doc.id}`,
-        type: "payment_failed",
-        title: "支払い失敗",
-        body: `${data.name || data.creator_email || doc.id} の支払い確認が必要です。`,
-        created_at: timestampToIso(data.updated_at ?? data.created_at),
-        href: "/admin?tab=streamers",
-      });
-    }
+    if (notifiedApplicationWithdrawalIds.has(sourceApplicationId)) return;
+    items.push({
+      id: `streamer_withdrawal:${doc.id}`,
+      type: "withdrawal",
+      title: "退会申請",
+      body: `${data.name || data.creator_email || doc.id} から退会申請があります。`,
+      created_at: timestampToIso(data.withdrawal_requested_at ?? data.updated_at ?? data.created_at),
+      href: "/admin?tab=streamers",
+    });
+  });
+  streamerPaymentFailedDocs.docs.forEach((doc) => {
+    const data = doc.data();
+    const sourceApplicationId = String(data.source_application_id || "");
+    if (notifiedApplicationPaymentFailedIds.has(sourceApplicationId)) return;
+    items.push({
+      id: `streamer_payment_failed:${doc.id}`,
+      type: "payment_failed",
+      title: "支払い失敗",
+      body: `${data.name || data.creator_email || doc.id} の支払い確認が必要です。`,
+      created_at: timestampToIso(data.updated_at ?? data.created_at),
+      href: "/admin?tab=streamers",
+    });
   });
   shortVideoDocs.docs.forEach((doc) => {
     const data = doc.data();
@@ -723,7 +752,11 @@ async function readAllFirestoreStreamers({ cursor, xFilter }: { cursor?: string;
   ]);
   const decodedCursor = decodeAdminCursor(cursor);
   const sorted = snapshot.docs
-    .filter((doc) => doc.data().is_deleted !== true)
+    // is_deleted=trueは通常は完全削除済みとして除外するが、退会申請直後の
+    // 配信者もis_deleted=trueになる(/api/withdrawal)ため、それだけは
+    // 一覧から消えてしまわないよう例外的に残す(管理画面で退会希望者を
+    // 見つけられなくなる問題があったため)。
+    .filter((doc) => doc.data().is_deleted !== true || doc.data().withdrawal_status === "requested")
     .map((doc) => {
       const data = doc.data();
       const streamer = normalizeStreamer(doc.id, { ...data, thumbnails: [], description: "" });
@@ -742,7 +775,9 @@ async function readAllFirestoreStreamers({ cursor, xFilter }: { cursor?: string;
   // 有料/上位プランは全ページ横断で別途返す(クライアントの「有料登録のみ」
   // フィルタが2ページ目以降の有料配信者も絞り込めるようにするため)。
   const paidItems = sorted.filter((streamer) => streamer.plan_type === "paid" || streamer.plan_type === "boost");
-  return { items, nextCursor: hasNext && items.length ? encodeAdminCursor(items[items.length - 1]) : undefined, totalCount: activeCount ?? sorted.length, paidItems };
+  // 退会申請中も同様に全ページ横断で返す(「退会申請のみ」フィルタ用)。
+  const withdrawalItems = sorted.filter((streamer) => streamer.withdrawal_status === "requested");
+  return { items, nextCursor: hasNext && items.length ? encodeAdminCursor(items[items.length - 1]) : undefined, totalCount: activeCount ?? sorted.length, paidItems, withdrawalItems };
 }
 
 function normalizePlan(plan: string): PlanType {
