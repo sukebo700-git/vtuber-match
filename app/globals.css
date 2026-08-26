@@ -7740,17 +7740,17 @@ body::after {
     padding-top: 10px !important;
   }
 
-  /* スマホでは VTuberを探すボタンの直下に「無料で宣伝を申し込む」→
+  /* スマホでは「無料で宣伝を申し込む」バナーの直下にVTuberを探すボタン→
      折りたたみ式の「もっと見る」(VTYPE診断/履歴書/本日のおすすめ)→
      キャラクター画像の順に自然に続くよう並び替える(DOM順はSEO/読み上げ順を
      保つため変更せず、表示順だけを負のorderで繰り上げる)。 */
   .landing-copy {
-    order: -4 !important;
+    order: -3 !important;
     gap: 8px !important;
   }
 
   .landing-creator-promo-banner {
-    order: -3 !important;
+    order: -4 !important;
   }
 
   .landing-more-vtubers {
