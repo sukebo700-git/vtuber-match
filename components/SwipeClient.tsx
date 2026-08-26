@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { BadgeCheck, ChevronDown, ExternalLink, Heart, Info, Search, Sparkles, Star, X } from "lucide-react";
+import { BadgeCheck, ChevronDown, ExternalLink, Heart, Info, Search, Share2, Sparkles, Star, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { CATEGORIES, REGIONS, virtualRegionLabel } from "@/lib/constants";
 import { diagnosisTypes } from "@/lib/diagnosis";
@@ -168,10 +168,6 @@ export function SwipeClient({
     const pick = Math.abs(hash(`${current.id}-${index}`)) % current.thumbnails.length;
     return current.thumbnails[pick];
   }, [current, index]);
-
-  useEffect(() => {
-    if (isDeckComplete && redirectOnComplete) window.location.assign(redirectOnComplete);
-  }, [isDeckComplete, redirectOnComplete]);
 
   useEffect(() => {
     setIndex(0);
@@ -590,9 +586,27 @@ export function SwipeClient({
         </div>
         )}
 
+        {minimal && streamers.length > 0 && (
+          <p className="swipe-minimal-progress">
+            {Math.min(index + 1, streamers.length)} / {streamers.length}
+          </p>
+        )}
+
         {isDeckComplete ? (
-          <div className="status-band">
-            <h2>移動しています...</h2>
+          <div className="status-band swipe-minimal-complete">
+            <h2>今日のおすすめは以上です</h2>
+            <p>また明日、新しい10人が入れ替わります。</p>
+            <div className="empty-swipe-actions">
+              <button className="primary-button" type="button" onClick={() => window.open(createRecommendedShareUrl(), "_blank", "noopener,noreferrer")}>
+                <Share2 size={16} />
+                Xでシェア
+              </button>
+              {redirectOnComplete && (
+                <a className="secondary-button" href={redirectOnComplete}>
+                  他のVTuberも探す
+                </a>
+              )}
+            </div>
           </div>
         ) : !current ? (
           <div className="status-band">
@@ -1394,6 +1408,19 @@ async function getSwipeUserId() {
 
 function hash(input: string) {
   return input.split("").reduce((acc, char) => ((acc << 5) - acc + char.charCodeAt(0)) | 0, 0);
+}
+
+function createRecommendedShareUrl() {
+  const text = [
+    "今日のおすすめVTuber10人、見終わりました🔟",
+    "",
+    "VtuberMatchで日替わりのピックアップをやってます。気になる人がいたら早めにチェック👇",
+    "",
+    "https://www.vtubermatch.com/recommended",
+    "",
+    "#vtubermatch",
+  ].join("\n");
+  return `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
 }
 
 const swipePlanScore: Record<Streamer["plan_type"], number> = {

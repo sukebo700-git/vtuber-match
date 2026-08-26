@@ -15,6 +15,12 @@ export const metadata: Metadata = {
 
 export default async function RecommendedPage() {
   const todaysPicks = await getTodaysPicks();
+  const today = new Date().toLocaleDateString("ja-JP", {
+    timeZone: "Asia/Tokyo",
+    month: "long",
+    day: "numeric",
+    weekday: "short",
+  });
 
   return (
     <div className="app-shell">
@@ -29,6 +35,11 @@ export default async function RecommendedPage() {
       </header>
 
       <main className="main swipe-page-main">
+        <section className="status-band recommended-hero">
+          <p className="recommended-hero-kicker">{today}のピックアップ</p>
+          <h2>本日のおすすめVTuber10人</h2>
+          <p>今日はこの10人だけ。日付が変わると入れ替わります。</p>
+        </section>
         <SwipeClient
           initialStreamers={todaysPicks}
           minimal
