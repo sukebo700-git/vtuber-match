@@ -53,12 +53,13 @@ def transcribe(
     prompt: str = "",
     speaker: int = 0,
     model_path: str = "",
+    use_hotwords: bool = True,
 ) -> list[Word]:
     """音声ファイルからWord列を返す。speakerは呼び出し側が割り当てる。"""
     if backend == "openai":
         words = _openai_whisper1(audio, language, prompt)
     elif backend == "faster-whisper":
-        words = _faster_whisper(audio, language, prompt)
+        words = _faster_whisper(audio, language, prompt, use_hotwords)
     elif backend == "ffmpeg-whisper":
         words = _ffmpeg_whisper(audio, language, model_path)
     else:
@@ -232,7 +233,7 @@ def register_cuda_dlls() -> list[str]:
     return added
 
 
-def _faster_whisper(audio: Path, language: str, prompt: str) -> list[Word]:
+def _faster_whisper(audio: Path, language: str, prompt: str, use_hotwords: bool = True) -> list[Word]:
     register_cuda_dlls()
     try:
         from faster_whisper import WhisperModel  # type: ignore[import-not-found]
@@ -252,13 +253,19 @@ def _faster_whisper(audio: Path, language: str, prompt: str) -> list[Word]:
     except Exception as exc:  # モデルDL失敗・CUDA未対応など理由が多岐にわたる
         raise TranscribeError(f"faster-whisperの初期化に失敗しました: {exc}") from exc
 
-    segments, _info = model.transcribe(
-        str(audio),
-        language=language,
-        word_timestamps=True,
-        initial_prompt=prompt or None,
-        vad_filter=True,
-    )
+    # initial_prompt は最初のウィンドウにしか効きにくく、固有名詞辞書としては弱い。
+    # faster-whisper の hotwords は各ウィンドウに効くため、辞書はこちらで渡す。
+    kwargs: dict = {
+        "language": language,
+        "word_timestamps": True,
+        "vad_filter": True,
+    }
+    if prompt:
+        if use_hotwords:
+            kwargs["hotwords"] = prompt
+        else:
+            kwargs["initial_prompt"] = prompt
+    segments, _info = model.transcribe(str(audio), **kwargs)
 
     words: list[Word] = []
     for seg_index, seg in enumerate(segments):
