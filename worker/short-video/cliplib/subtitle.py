@@ -504,6 +504,13 @@ def _style_block(speaker_count: int) -> str:
     return "\n".join(rows)
 
 
+def slant_tag(text: str) -> str:
+    """「ｗ」表記の笑いを斜めに倒す。真っ直ぐだと勢いが出ない。"""
+    if not text.startswith("ｗ"):
+        return ""
+    return "{" + chr(92) + f"frz{config.LAUGH_SLANT_DEG}" + "}"
+
+
 def _intro_tags(emphasis: int) -> str:
     """字幕の登場演出。
 
@@ -612,7 +619,7 @@ def close_reset() -> str:
     return (
         "{" + b + "r"
         + b + f"c&H{config.COLOR_WHITE[-6:]}&"
-        + b + f"2c&H{config.COLOR_KARAOKE[-6:]}&" + b + "2a&HFF&" + b + "3a&H00&"
+        + b + f"2c&H{config.COLOR_KARAOKE[-6:]}&" + b + "2a&HFF&"
         + "}"
     )
 
@@ -632,7 +639,7 @@ def _word_tags(word: Word) -> tuple[str, str]:
             # 色を上書きするときは \2c(未発話色)も併せて透明にする
             tag = "{" + b + f"c&H{config.KEYWORD_COLOR[-6:]}&"
             if config.REVEAL_ENABLED:
-                tag += b + f"2c&H{config.COLOR_KARAOKE[-6:]}&" + b + "2a&HFF&" + b + "3a&H00&"
+                tag += b + f"2c&H{config.COLOR_KARAOKE[-6:]}&" + b + "2a&HFF&"
             return tag + "}", close_reset()
         return "", ""
     size = int(config.FONT_SIZE * config.WORD_EMPHASIS_SCALE * config.FONT_EMPHASIS_SIZE_ADJUST)
@@ -644,7 +651,7 @@ def _word_tags(word: Word) -> tuple[str, str]:
         + b + f"fn{config.FONT_EMPHASIS_NAME}"
         + b + f"fs{size}"
         + b + f"c&H{config.EMPHASIS_COLOR[-6:]}&"
-        + (b + f"2c&H{config.COLOR_KARAOKE[-6:]}&" + b + "2a&HFF&" + b + "3a&H00&" if config.REVEAL_ENABLED else "")
+        + (b + f"2c&H{config.COLOR_KARAOKE[-6:]}&" + b + "2a&HFF&" if config.REVEAL_ENABLED else "")
         + b + f"bord{config.EMPHASIS_OUTLINE}"
         + b + f"t(0,{half}," + b + f"fscx{over}" + b + f"fscy{over})"
         + b + f"t({half},{full}," + b + "fscx100" + b + "fscy100)"
@@ -657,7 +664,7 @@ def _word_tags(word: Word) -> tuple[str, str]:
 
 
 def _dialogue_text(seg: Segment, karaoke: bool) -> str:
-    parts = [_intro_tags(0)]
+    parts = [_intro_tags(0), slant_tag(seg.text)]
     cursor = seg.start
     for i, word in enumerate(seg.words):
         if i in seg.line_breaks:
@@ -665,9 +672,9 @@ def _dialogue_text(seg: Segment, karaoke: bool) -> str:
         if karaoke:
             gap_cs = int(round(max(0.0, word.start - cursor) * 100))
             if gap_cs > 0:
-                parts.append("{" + "\\k" + str(gap_cs) + "}")
+                parts.append("{" + "\\ko" + str(gap_cs) + "}")
             dur_cs = max(1, int(round(word.duration * 100)))
-            parts.append("{" + "\\k" + str(dur_cs) + "}")
+            parts.append("{" + "\\ko" + str(dur_cs) + "}")
             cursor = word.end
         open_tag, close_tag = _word_tags(word)
         parts.append(open_tag + escape_ass(telop_text(word.text)) + close_tag)

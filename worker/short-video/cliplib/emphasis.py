@@ -304,7 +304,34 @@ def peak_pulse_rate(track: LevelTrack, start: float, end: float) -> float:
     return best
 
 
-def laughter_text(duration: float, pulse_hz: float, index: int = 0) -> str:
+def breath_count(track: LevelTrack, start: float, end: float) -> int:
+    """笑いの途中で息を継いだ回数。包絡が大きく落ち込む箇所を数える。
+
+    「あははは」と続けて笑うのではなく、途中で息を吸っている場合、
+    表記に「…っ」を挟むと実際の聞こえ方に近づく。
+    """
+    i0 = max(0, int(start / track.fine_step))
+    i1 = min(len(track.fine), int(math.ceil(end / track.fine_step)))
+    seg = [v for v in track.fine[i0:i1] if v > -math.inf]
+    if len(seg) < 8:
+        return 0
+    peak = max(seg)
+    thr = peak - config.LAUGH_BREATH_DROP_DB
+    breaths, below = 0, 0
+    for v in track.fine[i0:i1]:
+        if v > -math.inf and v < thr:
+            below += 1
+        else:
+            # 0.25秒以上の落ち込みだけを息継ぎとみなす。
+            # 0.1秒だと「ハハハ」の脈動そのものを拾ってしまい、
+            # 「あはは…っはは…っはは…っはは」のように過剰になる
+            if below >= 10:
+                breaths += 1
+            below = 0
+    return min(breaths, config.LAUGH_MAX_BREATHS)
+
+
+def laughter_text(duration: float, pulse_hz: float, index: int = 0, breaths: int = 0) -> str:
     """笑いのテロップ。長さと脈動の速さで表現を変える。
 
     毎回「あははは」だと機械的に見える。実際の切り抜きでは、短い笑いは
@@ -314,15 +341,21 @@ def laughter_text(duration: float, pulse_hz: float, index: int = 0) -> str:
     """
     n = max(2, min(config.LAUGH_MAX_HA, int(duration / 0.35)))
 
+    tail = "…っｗ" if breaths else ""
+
     if duration < config.LAUGH_SHORT_SEC:
         # 短い笑いは「ｗ」で軽く見せる
-        return "ｗ" * max(2, min(5, int(duration / 0.25)))
+        return "ｗ" * max(2, min(5, int(duration / 0.25))) + tail
 
     if pulse_hz >= config.LAUGH_FAST_HZ:
         # 速く刻む笑いは草表現の方が近い
-        return "ｗ" * max(3, min(8, n + 1))
+        return "ｗ" * max(3, min(8, n + 1)) + tail
 
     # 長く続く笑いは声として書く。表記は交互に変えて単調さを避ける
+    if breaths:
+        # 息継ぎがあるなら、その回数ぶん「は」を割って間を挟む
+        per = max(2, n // (breaths + 1))
+        return "…っ".join(["あ" + "は" * per] + ["は" * per] * breaths) + "ｗ"
     if index % 2:
         return "は" * n + "っ"
     return "あ" + "は" * n + "っ"

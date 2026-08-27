@@ -326,7 +326,8 @@ def _insert_laughs(track, segments: list, duration: float) -> int:
     added = 0
     for a, b in gaps:
         for s0, s1, rate in emph.find_laughs(track, a, b):
-            text = emph.laughter_text(s1 - s0, rate, added)
+            breaths = emph.breath_count(track, s0, s1)
+            text = emph.laughter_text(s1 - s0, rate, added, breaths)
             # 笑いは1語として扱う。強調も付けて跳ねさせる
             word = Word(text=text, start=s0, end=s1, speaker=0,
                         segment=-1, emphasis=1)
