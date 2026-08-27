@@ -476,6 +476,16 @@ def format_time(seconds: float) -> str:
     return f"{h}:{m:02d}:{s:05.2f}"
 
 
+def _shadow() -> int:
+    """影の太さ。順次表示中は 0 にする。
+
+    ASSのカラオケ(\\ko)は本文色と縁取りしか制御せず、影は常に描かれる。
+    未発話部分の影だけが黒い塊として残り「文字の残骸」に見えるため、
+    順次表示のときは影を使わない。縁取りが9pxあるので視認性は保てる。
+    """
+    return 0 if config.REVEAL_ENABLED else config.SHADOW
+
+
 def _style_block(speaker_count: int) -> str:
     fmt = (
         "Format: Name,Fontname,Fontsize,PrimaryColour,SecondaryColour,OutlineColour,BackColour,"
@@ -491,7 +501,7 @@ def _style_block(speaker_count: int) -> str:
         rows.append(
             f"Style: Speaker{i},{config.FONT_NAME},{config.FONT_SIZE},{color},{config.COLOR_KARAOKE},"
             f"{config.COLOR_OUTLINE},{config.COLOR_BACK},1,0,0,0,100,100,0,0,1,"
-            f"{config.OUTLINE},{config.SHADOW},2,{config.MARGIN_H},{config.MARGIN_H},{margin_v},1"
+            f"{config.OUTLINE},{_shadow()},2,{config.MARGIN_H},{config.MARGIN_H},{margin_v},1"
         )
         # 叫んでいる箇所用。文字を大きく、色を変え、縁取りを太くする。
         # 手直しのときは Dialogue の Style 列を Speaker0 ⇔ Speaker0Hot で入れ替えるだけでよい
@@ -499,7 +509,7 @@ def _style_block(speaker_count: int) -> str:
         rows.append(
             f"Style: Speaker{i}Hot,{config.FONT_NAME},{hot_size},{config.EMPHASIS_COLOR},"
             f"{config.COLOR_KARAOKE},{config.COLOR_OUTLINE},{config.COLOR_BACK},1,0,0,0,100,100,0,0,1,"
-            f"{config.EMPHASIS_OUTLINE},{config.SHADOW},2,{config.MARGIN_H},{config.MARGIN_H},{margin_v},1"
+            f"{config.EMPHASIS_OUTLINE},{_shadow()},2,{config.MARGIN_H},{config.MARGIN_H},{margin_v},1"
         )
     return "\n".join(rows)
 
