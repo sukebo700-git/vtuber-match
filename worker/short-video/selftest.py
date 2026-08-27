@@ -112,6 +112,30 @@ def main() -> int:
     mixed = [s.text for s in segments if len({w.segment for w in s.words}) > 1]
     passed &= check("セグメント境界を跨いでいない", not mixed, f"混在={mixed}")
 
+    # 回帰防止: 改行しても片側が長すぎて画面外へはみ出さない。
+    # 読点の直後を無条件に選ぶと「今日はですね、/ モンハンワイルズを…思います。」
+    # のように2行目が21文字になり、実際に画面外へ切れた。
+    long_line = [
+        Word(text=t, start=i * 0.3, end=i * 0.3 + 0.28, speaker=0, segment=0)
+        for i, t in enumerate(
+            ["今日", "は", "ですね", "、", "モンハン", "ワイルズ", "を",
+             "やって", "いこう", "と", "思います", "。"]
+        )
+    ]
+    widest = 0.0
+    for b in group_words(long_line):
+        cur = 0
+        for i, w in enumerate(b.words):
+            if i in b.line_breaks:
+                widest = max(widest, text_width("".join(x.text for x in b.words[cur:i])))
+                cur = i
+        widest = max(widest, text_width("".join(x.text for x in b.words[cur:])))
+    passed &= check(
+        "長文でも各行が上限内に収まる",
+        widest <= config.MAX_LINE_WIDTH + 0.01,
+        f"最長行={widest:.0f}文字相当 (上限{config.MAX_LINE_WIDTH:.0f})",
+    )
+
     # 回帰防止: 2人が同時に喋っても字幕が粉砕されない。
     # 時刻順の1本の列にしてから話者の変わり目で切ると、マルチトラック収録で
     # 「行くよア」「はいみ」「イ」「なさん」のように1〜3文字に割れる。

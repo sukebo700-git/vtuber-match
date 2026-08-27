@@ -105,6 +105,71 @@ def _split_to_fit(words: list[Word]) -> list[list[Word]]:
     return [words[:best_index], *_split_to_fit(words[best_index:])]
 
 
+def _line_texts(words: list[Word], breaks: set[int]) -> list[str]:
+    lines: list[str] = []
+    cursor = 0
+    for i in range(1, len(words)):
+        if i in breaks:
+            lines.append("".join(w.text for w in words[cursor:i]))
+            cursor = i
+    lines.append("".join(w.text for w in words[cursor:]))
+    return lines
+
+
+def _clean_cut(words: list[Word]) -> int:
+    """2行に割るのに使える「文節境界の」改行位置を返す。無ければ -1。
+
+    budouxが使えない環境では判定できないので 0 を返し、呼び出し側で
+    分割しない(過剰分割を避ける)。
+    """
+    full = "".join(w.text for w in words)
+    boundaries = _budoux_boundaries(full)
+    if not boundaries:
+        return 0
+
+    offsets: list[int] = []
+    pos = 0
+    for w in words:
+        offsets.append(pos)
+        pos += len(w.text)
+
+    best, best_gap = -1, float("inf")
+    for i in range(1, len(words)):
+        if offsets[i] not in boundaries:
+            continue
+        left = text_width("".join(w.text for w in words[:i]))
+        right = text_width("".join(w.text for w in words[i:]))
+        if left <= config.MAX_LINE_WIDTH and right <= config.MAX_LINE_WIDTH:
+            return -2  # 文節境界で2行に収まる。分割不要
+        if abs(left - right) < best_gap:
+            best_gap, best = abs(left - right), i
+    return best
+
+
+def _build_segments(words: list[Word], speaker: int, depth: int = 0) -> list[Segment]:
+    """1つの語列から字幕ブロックを作る。
+
+    2行に詰め込むと文節の途中で改行せざるを得ない場合は、無理に詰めず
+    **ブロックごと分割**する。詰め込むと
+    「前回のアップデートで、ゼン / ゼロも触りたいんですけど、」のように
+    単語の途中で割れ、行幅が収まっていても読みにくくなる。
+    """
+    if not words:
+        return []
+
+    full = "".join(w.text for w in words)
+    if depth < 4 and len(words) >= 2 and text_width(full) > config.MAX_LINE_WIDTH:
+        cut = _clean_cut(words)
+        if cut > 0:  # 文節境界で2行に収める術がない → ブロックを分ける
+            return _build_segments(words[:cut], speaker, depth + 1) + _build_segments(
+                words[cut:], speaker, depth + 1
+            )
+
+    seg = Segment(words=words, speaker=speaker)
+    seg.line_breaks = _decide_line_breaks(words)
+    return [seg]
+
+
 def group_words(words: list[Word]) -> list[Segment]:
     """Word列を字幕ブロックに分割する。
 
@@ -140,11 +205,7 @@ def group_words(words: list[Word]) -> list[Segment]:
 
         for chunk in chunks:
             for piece in _split_to_fit(chunk):
-                if not piece:
-                    continue
-                seg = Segment(words=piece, speaker=speaker)
-                seg.line_breaks = _decide_line_breaks(piece)
-                segments.append(seg)
+                segments.extend(_build_segments(piece, speaker))
 
     # ASSは重なったDialogueを同時に描画する。話者ごとにMarginVを変えて段積みする
     segments.sort(key=lambda s: (s.start, s.speaker))
@@ -195,7 +256,13 @@ def _break_score(prev_text: str, next_text: str) -> int:
 
 
 def _decide_line_breaks(words: list[Word]) -> set[int]:
-    """words のどのindexの直前で改行するかを決める(最大 MAX_LINES-1 箇所)。"""
+    """words のどのindexの直前で改行するかを決める(最大 MAX_LINES-1 箇所)。
+
+    改行位置は「両側が1行に収まるか」を最優先で選ぶ。読点の直後など
+    スコアの高い位置を無条件に採ると、片側だけが極端に長くなる。
+    実際に「今日はですね、/ モンハンワイルズをやっていこうと思います。」で
+    2行目が21文字になり、画面外へはみ出す不具合が出た。
+    """
     if len(words) < 2:
         return set()
 
@@ -215,30 +282,44 @@ def _decide_line_breaks(words: list[Word]) -> set[int]:
     breaks: set[int] = set()
     line_start = 0
     for _ in range(config.MAX_LINES - 1):
+        if text_width("".join(w.text for w in words[line_start:])) <= config.MAX_LINE_WIDTH:
+            break  # 残りが1行に収まっているので改行不要
+
         best_index = -1
         best_score = -10_000
+        # 両側を収められる位置が無い場合に備え、最も均等に割れる位置を控えておく
+        fallback_index = -1
+        fallback_worst = float("inf")
 
         for i in range(line_start + 1, len(words)):
-            width = text_width("".join(w.text for w in words[line_start:i]))
-            if width > config.MAX_LINE_WIDTH:
-                break  # これ以上は1行に収まらない
+            left = text_width("".join(w.text for w in words[line_start:i]))
+            if left > config.MAX_LINE_WIDTH:
+                break  # これ以上は左側が1行に収まらない
+            right = text_width("".join(w.text for w in words[i:]))
+
+            worst = max(left, right)
+            if worst < fallback_worst:
+                fallback_worst = worst
+                fallback_index = i
+
+            if right > config.MAX_LINE_WIDTH:
+                continue  # 右側がはみ出す位置は選ばない
 
             score = _break_score(words[i - 1].text, words[i].text)
             if boundaries and offsets[i] in boundaries:
                 score += 50  # budouxが文節の切れ目と判断した位置を優遇
             # 行がある程度埋まっている方が見栄えがよい
-            score += int(width / config.MAX_LINE_WIDTH * 30)
+            score += int(left / config.MAX_LINE_WIDTH * 30)
 
             if score >= best_score:
                 best_score = score
                 best_index = i
 
-        if best_index <= line_start:
+        chosen = best_index if best_index > line_start else fallback_index
+        if chosen <= line_start:
             break
-        breaks.add(best_index)
-        line_start = best_index
-        if text_width("".join(w.text for w in words[line_start:])) <= config.MAX_LINE_WIDTH:
-            break
+        breaks.add(chosen)
+        line_start = chosen
 
     return breaks
 
@@ -318,7 +399,9 @@ def build_ass(segments: list[Segment], karaoke: bool = True) -> str:
         "ScriptType: v4.00+\n"
         f"PlayResX: {config.OUT_WIDTH}\n"
         f"PlayResY: {config.OUT_HEIGHT}\n"
-        "WrapStyle: 2\n"  # 自動折り返しを止め、\N の位置だけで改行する
+        # 1 = 行末で自動折り返し。明示改行はそのまま効く。
+        # 2(折り返しなし)だと、計算漏れがあったとき画面外へ流れて切れてしまう
+        "WrapStyle: 1\n"
         "ScaledBorderAndShadow: yes\n"
         "YCbCr Matrix: TV.709\n\n"
         "[V4+ Styles]\n"

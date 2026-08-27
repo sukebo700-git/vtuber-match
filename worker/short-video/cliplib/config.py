@@ -91,7 +91,9 @@ SPEAKER_MARGIN_STEP = 200
 MARGIN_H = 60
 
 MAX_LINES = 2
-MAX_LINE_WIDTH = 14.0  # 全角換算
+# 全角換算。実測で14文字が約910px、使える幅は 1080-60-60=960px しかなく余裕がない。
+# 縁取り7pxの張り出しも考慮して13に設定している。
+MAX_LINE_WIDTH = 13.0
 SEGMENT_GAP_SEC = 0.6  # これ以上の無音で字幕を分割
 MAX_SEGMENT_SEC = 6.0
 
