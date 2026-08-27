@@ -130,13 +130,14 @@ def ensure_font(workdir: Path) -> None:
     if any(workdir.glob("*.ttf")) or any(workdir.glob("*.otf")):
         return
     for candidate in (
+        ROOT / "assets" / config.FONT_FILE,
         ROOT / "assets" / "NotoSansJP-VF.ttf",
         Path("C:/Windows/Fonts/NotoSansJP-VF.ttf"),
     ):
         if candidate.exists():
             shutil.copy2(candidate, workdir / candidate.name)
             return
-    print("  ! Noto Sans JP が見つかりません。フォントが代替されると字形が崩れます")
+    print(f"  ! {config.FONT_NAME} が見つかりません。フォントが代替されると字形が崩れます")
 
 
 # --------------------------------------------------------------------------
@@ -355,9 +356,16 @@ def cmd_subs(args: argparse.Namespace) -> int:
             ]
             levels = emph.classify(track, spans)
             by_seg = dict(zip(seg_ids, levels))
-            for w in words:
-                w.emphasis = by_seg.get(w.segment, 0)
+            # 強調セグメントの中で、さらに音が大きい語だけを跳ねさせる。
+            # 行全体を大きくすると読みにくく、素人っぽい仕上がりになる。
+            for sid, lv in by_seg.items():
+                if not lv:
+                    continue
+                group = [w for w in words if w.segment == sid]
+                emph.mark_peak_words(track, group)
             print(emph.describe_blocks(track, spans, levels))
+            hot = sum(1 for w in words if w.emphasis)
+            print(f"  語単位の強調: {hot}/{len(words)}語")
         except Exception as exc:  # 演出は本質でないので、失敗しても字幕は出す
             print(f"  ! 音量解析に失敗しました（強調なしで続行）: {exc}")
 

@@ -129,3 +129,28 @@ def analyze(source: Path, start: float, duration: float, audio_index: int = 0) -
     voiced.sort()
     median = voiced[len(voiced) // 2] if voiced else -math.inf
     return LevelTrack(step_sec=step, values=values, median=median)
+
+
+def mark_peak_words(track: LevelTrack, words: list) -> None:
+    """語列のうち、そのブロック内で特に音が大きい語に emphasis を立てる。
+
+    ブロック全体を大きくするのではなく、行の中の1〜数語だけを跳ねさせる。
+    プロのテロップは行全体を拡大せず、キーワードだけが動く。
+    """
+    peaks = [track.peak_between(w.start, w.end) for w in words]
+    valid = sorted(p for p in peaks if p > -math.inf)
+    if len(valid) < 2:
+        for w in words:
+            w.emphasis = 1
+        return
+    median = valid[len(valid) // 2]
+    threshold = median + config.WORD_EMPHASIS_DB
+    hit = False
+    for w, p in zip(words, peaks):
+        if p > -math.inf and p >= threshold:
+            w.emphasis = 1
+            hit = True
+    if not hit:
+        # 全語が横並びなら、最大の語だけを跳ねさせる(必ず1語は強調する)
+        best = max(range(len(words)), key=lambda i: peaks[i])
+        words[best].emphasis = 1

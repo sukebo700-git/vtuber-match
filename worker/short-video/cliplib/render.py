@@ -234,10 +234,11 @@ def _compose_filter(
 
 
 def hot_spans(ass_path: Path) -> list[tuple[float, float]]:
-    """ASSから強調ブロック(Styleが Hot で終わる行)の時間範囲を読む。
+    """ASSから強調ブロック(Name列が HOT の行)の時間範囲を読む。
 
-    映像側の演出をASSから駆動することで、運営が subs.ass のStyle列を
-    手で書き換えれば、字幕だけでなくズームや揺れもそれに追随する。
+    映像側の演出をASSから駆動することで、運営が subs.ass の Name列に
+    HOT と書けばズームと揺れが付き、消せば外れる。
+    Name列は描画に影響しないので、字幕の見た目とは独立して調整できる。
     """
     if not ass_path.exists():
         return []
@@ -251,7 +252,8 @@ def hot_spans(ass_path: Path) -> list[tuple[float, float]]:
         if not line.startswith("Dialogue:"):
             continue
         cols = line.split(",", 9)
-        if len(cols) < 10 or not cols[3].endswith("Hot"):
+        # Name列(cols[4])の目印で判定する。Style列だと字幕の見た目と結合してしまう
+        if len(cols) < 10 or cols[4].strip() != "HOT":
             continue
         try:
             spans.append((to_sec(cols[1]), to_sec(cols[2])))

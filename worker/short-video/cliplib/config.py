@@ -92,7 +92,15 @@ ASR_AUDIO_ARGS = [
 ]
 
 # --- 字幕スタイル(調査報告書 第4部) ---
-FONT_NAME = "Noto Sans JP"
+# Noto Sans JP は可変フォントだが、libass は wght 軸を指定できず Regular で描かれる。
+# Bold=1 の合成太字も弱く、テロップとしては細すぎた。
+# そこで fontTools で wght=900 の静的インスタンスを生成し、
+# 既存の "Noto Sans JP" と衝突しない一意な名前を付けて assets/ に置いている。
+# 生成元は Noto Sans JP (SIL OFL 1.1) なので商用利用に問題はない。
+#   python -c "from fontTools.ttLib import TTFont; from fontTools.varLib import instancer; ..."
+#   詳細は README の「フォント」を参照
+FONT_NAME = "VMClip Gothic Black"
+FONT_FILE = "VMClipGothicBlack.ttf"
 FONT_SIZE = 86
 OUTLINE = 7
 SHADOW = 3
@@ -109,6 +117,12 @@ EMPHASIS_STEP_SEC = 0.1       # 音量を測る間隔
 EMPHASIS_LOUD_DB = 6.0        # ブロックピークの中央値より何dB大きければ強調するか
 EMPHASIS_MIN_BLOCKS = 4       # これ未満のブロック数では中央値が不安定なので強調しない
 EMPHASIS_SCALE = 1.30         # 強調時の文字サイズ倍率
+# 語単位の強調。行全体ではなく、その行の中で一番音が大きい語だけを跳ねさせる。
+# プロのテロップは行全体を大きくせず、キーワードだけ跳ねる。
+WORD_EMPHASIS_DB = 3.0        # 同じブロック内の中央値より何dB大きければ跳ねさせるか
+WORD_EMPHASIS_SCALE = 1.45    # 跳ねる語の文字サイズ倍率
+WORD_POP_MS = 130             # 語が跳ねる時間
+WORD_POP_OVERSHOOT = 118      # 一度この%まで拡大してから戻る
 EMPHASIS_COLOR = "&H003C5AFF"  # 強調色(BGR順なので赤寄りオレンジ)
 EMPHASIS_OUTLINE = 9          # 強調時は縁取りも太くする
 
