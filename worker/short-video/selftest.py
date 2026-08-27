@@ -136,6 +136,28 @@ def main() -> int:
         f"最長行={widest:.0f}文字相当 (上限{config.MAX_LINE_WIDTH:.0f})",
     )
 
+    # 回帰防止: 助詞の文字マッチがbudouxの文節判断を上書きしない。
+    # 「おやすみなさい」の『や』を助詞と誤認し「おや / すみなさい」と割れていた。
+    oyasumi = [
+        Word(text=t, start=i * 0.2, end=i * 0.2 + 0.18, speaker=0, segment=0)
+        for i, t in enumerate(["もう", "いい", "です", "寝", "ます", "お", "や", "す", "み", "な", "さい"])
+    ]
+    ob = group_words(oyasumi)
+    ob_lines = []
+    for b in ob:
+        cur = 0
+        for i, w in enumerate(b.words):
+            if i in b.line_breaks:
+                ob_lines.append("".join(x.text for x in b.words[cur:i]))
+                cur = i
+        ob_lines.append("".join(x.text for x in b.words[cur:]))
+    passed &= check(
+        "単語の途中で改行しない(おやすみなさい)",
+        all("おやすみなさい" not in ln or ln.endswith("おやすみなさい") or ln == "おやすみなさい"
+            for ln in ob_lines) and not any(ln.endswith("おや") for ln in ob_lines),
+        " / ".join(ob_lines),
+    )
+
     # 回帰防止: 2人が同時に喋っても字幕が粉砕されない。
     # 時刻順の1本の列にしてから話者の変わり目で切ると、マルチトラック収録で
     # 「行くよア」「はいみ」「イ」「なさん」のように1〜3文字に割れる。

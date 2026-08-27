@@ -352,6 +352,7 @@ def cmd_subs(args: argparse.Namespace) -> int:
         "offset": args.offset,
         "duration": duration,
         "template": args.template,
+        "source_crop": _rect_to_dict(args.source_crop),
         "game_rect": _rect_to_dict(args.game_rect),
         "live2d_rect": _rect_to_dict(args.live2d_rect),
         "audio_index": tracks[0],
@@ -408,6 +409,7 @@ def cmd_render(args: argparse.Namespace) -> int:
             game=_rect_from_dict(job.get("game_rect")),
             live2d=_rect_from_dict(job.get("live2d_rect")),
             audio_index=audio_index,
+            source_crop=_rect_from_dict(job.get("source_crop")),
             outputs=args.outputs,
             loudness=stats,
         )
@@ -440,6 +442,7 @@ def cmd_preview(args: argparse.Namespace) -> int:
             game=_rect_from_dict(job.get("game_rect")),
             live2d=_rect_from_dict(job.get("live2d_rect")),
             audio_index=int(job.get("audio_index", 0)),
+            source_crop=_rect_from_dict(job.get("source_crop")),
         )
     except RenderError as exc:
         print(f"プレビュー生成エラー: {exc}", file=sys.stderr)
@@ -494,6 +497,9 @@ def build_parser() -> argparse.ArgumentParser:
                        help="ゲーム画面の領域 x,y,w,h (比率。テンプレA/Cで必須)")
         p.add_argument("--live2d-rect", type=parse_rect, default=None,
                        help="Live2Dの領域 x,y,w,h (比率。テンプレA/Cで必須)")
+        p.add_argument("--source-crop", type=parse_rect, default=None,
+                       help="テンプレ適用前に元動画を切り取る x,y,w,h (比率)。"
+                            "コメント欄など不要領域を落とすのに使う (例: 0.23,0,0.77,1)")
         p.add_argument("--asr", default=DEFAULT_BACKEND, choices=BACKENDS, help="文字起こしエンジン")
         p.add_argument("--whisper-model", default="", help="ffmpeg-whisper 用の ggml モデルパス")
         p.add_argument("--dict", default=None, help="固有名詞辞書 (1行1語のテキスト)")

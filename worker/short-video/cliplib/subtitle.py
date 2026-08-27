@@ -87,8 +87,7 @@ def _split_to_fit(words: list[Word]) -> list[list[Word]]:
         if width > capacity:
             break
         score = _break_score(words[i - 1].text, words[i].text)
-        if boundaries and offsets[i] in boundaries:
-            score += 50
+        score += _boundary_adjust(boundaries, offsets[i])
         score += int(width / capacity * 30)
         if score >= best_score:
             best_score = score
@@ -255,6 +254,19 @@ def _break_score(prev_text: str, next_text: str) -> int:
     return 10
 
 
+def _boundary_adjust(boundaries: set[int], offset: int) -> int:
+    """budouxの文節境界かどうかで加点/減点する。
+
+    budouxが使える場合は、その判断を助詞ヒューリスティックより優先する。
+    _break_score は「直前の語が助詞で終わるか」を文字マッチで見ているだけなので、
+    「おやすみなさい」の『や』のように、助詞ではない文字を助詞と誤認する。
+    実際に「もういいです寝ますおや / すみなさい」と割れる不具合が出た。
+    """
+    if not boundaries:
+        return 0  # budouxが無い環境では判断材料がないので中立
+    return 50 if offset in boundaries else -40
+
+
 def _decide_line_breaks(words: list[Word]) -> set[int]:
     """words のどのindexの直前で改行するかを決める(最大 MAX_LINES-1 箇所)。
 
@@ -306,8 +318,7 @@ def _decide_line_breaks(words: list[Word]) -> set[int]:
                 continue  # 右側がはみ出す位置は選ばない
 
             score = _break_score(words[i - 1].text, words[i].text)
-            if boundaries and offsets[i] in boundaries:
-                score += 50  # budouxが文節の切れ目と判断した位置を優遇
+            score += _boundary_adjust(boundaries, offsets[i])
             # 行がある程度埋まっている方が見栄えがよい
             score += int(left / config.MAX_LINE_WIDTH * 30)
 

@@ -162,17 +162,33 @@ def _loudnorm_filter(stats: LoudnessStats | None) -> str:
 # --------------------------------------------------------------------------
 
 def _compose_filter(
-    template: str, info: ProbeResult, game: Rect | None, live2d: Rect | None
+    template: str, info: ProbeResult, game: Rect | None, live2d: Rect | None,
+    source_crop: Rect | None = None,
 ) -> str:
-    """入力[0:v]から縦型のベース映像[base]までを作るフィルタ列を返す。"""
+    """入力[0:v]から縦型のベース映像[base]までを作るフィルタ列を返す。
+
+    source_crop を指定すると、テンプレートを適用する前に元動画を切り取る。
+    配信画面の左端にあるコメント欄など、Shortsでは読めない領域を落とすのに使う。
+    切り落とすとゲーム画面を大きく使えるので、縦型にしたときの見栄えが上がる。
+    """
     w, h = config.OUT_WIDTH, config.OUT_HEIGHT
+
+    # 先頭に切り取りを差し込む。以降のフィルタは[0:v]ではなく[src]を使う
+    pre = ""
+    src = "0:v"
+    if source_crop is not None:
+        cx, cy, cw, ch = source_crop.to_pixels(info.width, info.height)
+        pre = f"[0:v]crop={cw}:{ch}:{cx}:{cy}[src];"
+        src = "src"
+        # 切り取り後のサイズを基準に矩形を再計算する必要があるため、
+        # source_crop と game/live2d の併用は現時点では未対応。
 
     if template == "B":
         # 背景ぼかし + 中央原寸。領域指定が不要なので既定に据えている。
         # gblurは重いが、疑似ぼかし(縮小→拡大)は出力ビットレートが上がり
         # egressで食い返すため、実測の結果gblurを採用している。
-        return (
-            f"[0:v]fps={config.OUT_FPS},split=2[bg][fg];"
+        return pre + (
+            f"[{src}]fps={config.OUT_FPS},split=2[bg][fg];"
             f"[bg]scale={w}:{h}:force_original_aspect_ratio=increase,crop={w}:{h},"
             f"gblur=sigma=40,eq=brightness=-0.12:saturation=0.85[bgb];"
             f"[fg]scale={w}:-2:flags=lanczos[fgs];"
@@ -188,8 +204,8 @@ def _compose_filter(
         # 単に scale={w}:-2 にすると縦長のLive2D領域が画面外まで伸びて切れるため、
         # 枠に内接させて中央に置く。
         l2d_h = h - 1300
-        return (
-            f"[0:v]fps={config.OUT_FPS},split=2[g][l];"
+        return pre + (
+            f"[{src}]fps={config.OUT_FPS},split=2[g][l];"
             f"[g]crop={gw}:{gh}:{gx}:{gy},scale={w}:1080:force_original_aspect_ratio=increase,"
             f"crop={w}:1080[gs];"
             f"[l]crop={lw}:{lh}:{lx}:{ly},"
@@ -204,8 +220,8 @@ def _compose_filter(
             raise RenderError("テンプレートCには --game-rect と --live2d-rect の指定が必要です")
         gx, gy, gw, gh = game.to_pixels(info.width, info.height)
         lx, ly, lw, lh = live2d.to_pixels(info.width, info.height)
-        return (
-            f"[0:v]fps={config.OUT_FPS},split=3[bg][g][l];"
+        return pre + (
+            f"[{src}]fps={config.OUT_FPS},split=3[bg][g][l];"
             f"[bg]scale={w}:{h}:force_original_aspect_ratio=increase,crop={w}:{h},"
             f"gblur=sigma=40,eq=brightness=-0.15[bgb];"
             f"[g]crop={gw}:{gh}:{gx}:{gy},scale={w}:-2:flags=lanczos[gs];"
@@ -241,6 +257,7 @@ def render(
     audio_index: int = 0,
     watermark_name: str = "watermark.png",
     outputs: str = "both",
+    source_crop: Rect | None = None,
     loudness: LoudnessStats | None = None,
 ) -> RenderResult:
     """字幕を焼き込んだ縦型MP4を生成する。
@@ -256,7 +273,7 @@ def render(
     if not (want_clean or want_wm):
         raise RenderError(f"outputs の指定が不正です: {outputs}")
 
-    compose = _compose_filter(template, info, game, live2d)
+    compose = _compose_filter(template, info, game, live2d, source_crop)
     # fontsdir=. で作業ディレクトリ内のフォントも拾えるようにする
     graph = f"{compose};[base]ass={ass_name}:fontsdir=.[sub]"
 
@@ -330,10 +347,11 @@ def render_preview(
     game: Rect | None = None,
     live2d: Rect | None = None,
     audio_index: int = 0,
+    source_crop: Rect | None = None,
 ) -> Path:
     """確認用の低解像度プレビュー。原価が本番の約1/20なので回数を絞る必要がない。"""
     dur = min(duration, float(config.PREVIEW_MAX_SEC))
-    compose = _compose_filter(template, info, game, live2d)
+    compose = _compose_filter(template, info, game, live2d, source_crop)
     graph = (
         f"{compose};[base]ass={ass_name}:fontsdir=.[sub]"
         f";[sub]scale={config.PREVIEW_WIDTH}:{config.PREVIEW_HEIGHT},fps={config.PREVIEW_FPS}[pv]"
