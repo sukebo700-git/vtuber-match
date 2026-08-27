@@ -432,6 +432,7 @@ def cmd_render(args: argparse.Namespace) -> int:
             live2d=_rect_from_dict(job.get("live2d_rect")),
             audio_index=audio_index,
             source_crop=_rect_from_dict(job.get("source_crop")),
+            no_punch=args.no_punch,
             outputs=args.outputs,
             loudness=stats,
         )
@@ -478,7 +479,7 @@ def cmd_all(args: argparse.Namespace) -> int:
     if code != 0:
         return code
     workdir = sorted((ROOT / "work").glob("*"))[-1] if not args.work else Path(args.work)
-    render_args = argparse.Namespace(work=str(workdir), outputs=args.outputs)
+    render_args = argparse.Namespace(work=str(workdir), outputs=args.outputs, no_punch=False)
     return cmd_render(render_args)
 
 
@@ -538,6 +539,8 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_render = sub.add_parser("render", help="subs.ass を焼き込んで完成MP4を出力する")
     p_render.add_argument("--work", required=True, help="subs で作られた作業ディレクトリ")
+    p_render.add_argument("--no-punch", action="store_true",
+                          help="強調区間のズーム・揺れ演出を無効にする（既定は有効）")
     p_render.add_argument("--outputs", default="both", choices=("both", "clean", "wm"),
                           help="both: 両方 / clean: 透かしなしのみ / wm: 透かしありのみ")
     p_render.set_defaults(func=cmd_render)

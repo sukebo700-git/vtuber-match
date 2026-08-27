@@ -356,6 +356,23 @@ def _decide_line_breaks(words: list[Word]) -> set[int]:
 # ASS生成
 # --------------------------------------------------------------------------
 
+def telop_text(text: str) -> str:
+    """テロップ表示用に句読点を落とす。
+
+    日本語のテロップは「、」「。」をそのまま出さない。読点は半角空白にして
+    「間」を残し、句点は削除する。全部消すと語が繋がって読みにくくなる。
+    幅計算には句読点を含んだまま使うので、実際の描画は必ず計算値より狭くなる
+    (安全側に振れる)。感嘆符・疑問符は感情を伝えるため残す。
+    """
+    if not config.TELOP_STRIP_PUNCTUATION:
+        return text
+    for ch in config.TELOP_SPACE_CHARS:
+        text = text.replace(ch, " ")
+    for ch in config.TELOP_DROP_CHARS:
+        text = text.replace(ch, "")
+    return text
+
+
 def escape_ass(text: str) -> str:
     """ASSタグ注入を防ぐ(調査報告書 第11部 #15)。
 
@@ -449,7 +466,7 @@ def _dialogue_text(seg: Segment, karaoke: bool) -> str:
             dur_cs = max(1, int(round(word.duration * 100)))
             parts.append(f"{{\\k{dur_cs}}}")
             cursor = word.end
-        parts.append(escape_ass(word.text))
+        parts.append(escape_ass(telop_text(word.text)))
     return "".join(parts)
 
 

@@ -233,6 +233,70 @@ def _compose_filter(
     raise RenderError(f"未知のテンプレートです: {template}")
 
 
+def hot_spans(ass_path: Path) -> list[tuple[float, float]]:
+    """ASSから強調ブロック(Styleが Hot で終わる行)の時間範囲を読む。
+
+    映像側の演出をASSから駆動することで、運営が subs.ass のStyle列を
+    手で書き換えれば、字幕だけでなくズームや揺れもそれに追随する。
+    """
+    if not ass_path.exists():
+        return []
+
+    def to_sec(v: str) -> float:
+        h, m, rest = v.split(":")
+        return int(h) * 3600 + int(m) * 60 + float(rest)
+
+    spans: list[tuple[float, float]] = []
+    for line in ass_path.read_text(encoding="utf-8").splitlines():
+        if not line.startswith("Dialogue:"):
+            continue
+        cols = line.split(",", 9)
+        if len(cols) < 10 or not cols[3].endswith("Hot"):
+            continue
+        try:
+            spans.append((to_sec(cols[1]), to_sec(cols[2])))
+        except (ValueError, IndexError):
+            continue
+    return _merge_spans(spans)
+
+
+def _merge_spans(spans: list[tuple[float, float]]) -> list[tuple[float, float]]:
+    """重なる区間をまとめる。式が短くなり、二重にズームするのも防げる。"""
+    if not spans:
+        return []
+    spans = sorted(spans)
+    merged = [spans[0]]
+    for start, end in spans[1:]:
+        last_start, last_end = merged[-1]
+        if start <= last_end + 0.05:
+            merged[-1] = (last_start, max(last_end, end))
+        else:
+            merged.append((start, end))
+    return merged
+
+
+def _punch_filter(spans: list[tuple[float, float]]) -> str:
+    """強調区間だけ軽くズームして揺らすフィルタ。区間が無ければ空文字。
+
+    scale は時間式を取れないため zoompan を使う。d=1 で1フレームずつ通し、
+    s= で出力サイズを固定する。x/y を明示しないと左上を基準に寄るので中央に置く。
+    """
+    if not spans:
+        return ""
+    z = config.PUNCH_ZOOM
+    cond = "+".join(f"between(in_time,{a:.3f},{b:.3f})" for a, b in spans)
+    active = f"min(1,{cond})"
+    zoom = f"if({active},{z},1)"
+    px, hz = config.PUNCH_SHAKE_PX, config.PUNCH_SHAKE_HZ
+    shake = f"{active}*{px}*sin(in_time*{hz * 6.2832:.3f})"
+    x = f"iw/2-(iw/zoom/2)+({shake})"
+    y = f"ih/2-(ih/zoom/2)"
+    return (
+        f"zoompan=z='{zoom}':x='{x}':y='{y}'"
+        f":d=1:s={config.OUT_WIDTH}x{config.OUT_HEIGHT}:fps={config.OUT_FPS}"
+    )
+
+
 # --------------------------------------------------------------------------
 # 本レンダリング
 # --------------------------------------------------------------------------
@@ -259,6 +323,7 @@ def render(
     outputs: str = "both",
     source_crop: Rect | None = None,
     loudness: LoudnessStats | None = None,
+    no_punch: bool = False,
 ) -> RenderResult:
     """字幕を焼き込んだ縦型MP4を生成する。
 
@@ -277,6 +342,15 @@ def render(
     # fontsdir=. で作業ディレクトリ内のフォントも拾えるようにする
     graph = f"{compose};[base]ass={ass_name}:fontsdir=.[sub]"
 
+    # 強調区間だけ軽くズームして揺らす。区間はASSのStyle列から読むので、
+    # 運営が subs.ass を手で直せば映像側の演出もそれに追随する。
+    punch = "" if no_punch else _punch_filter(hot_spans(workdir / ass_name))
+    if punch:
+        graph += f";[sub]{punch}[sub2]"
+        sub_label = "sub2"
+    else:
+        sub_label = "sub"
+
     # -t は必ず -i の *前* に置く。後ろに置くと、続く -i watermark.png の
     # 入力オプションとして解釈され、元動画側が無制限に読まれてしまう。
     cmd: list[str] = [
@@ -292,17 +366,17 @@ def render(
 
     if want_clean and want_wm:
         graph += (
-            ";[sub]split=2[clean][towm]"
+            f";[{sub_label}]split=2[clean][towm]"
             f";[1:v]scale={config.WATERMARK_WIDTH}:-1[wm]"
             f";[towm][wm]overlay=W-w-{config.WATERMARK_MARGIN_X}:H-h-{config.WATERMARK_MARGIN_Y}[wmout]"
         )
     elif want_wm:
         graph += (
             f";[1:v]scale={config.WATERMARK_WIDTH}:-1[wm]"
-            f";[sub][wm]overlay=W-w-{config.WATERMARK_MARGIN_X}:H-h-{config.WATERMARK_MARGIN_Y}[wmout]"
+            f";[{sub_label}][wm]overlay=W-w-{config.WATERMARK_MARGIN_X}:H-h-{config.WATERMARK_MARGIN_Y}[wmout]"
         )
     else:
-        graph += ";[sub]null[clean]"
+        graph += f";[{sub_label}]null[clean]"
 
     audio_filter = _loudnorm_filter(loudness)
     cmd += ["-filter_complex", graph]
