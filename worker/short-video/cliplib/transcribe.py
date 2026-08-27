@@ -92,6 +92,10 @@ def _clean(words: list[Word]) -> list[Word]:
             # Whisperは稀に区間が重なるので、直前の終端に合わせる
             start = out[-1].end
             end = max(start, end)
+        # Whisperは区間の境目で直前の語を繰り返すことがある。
+        # そのまま出すと「またお前か!か!」のように重複して見える。
+        if out and out[-1].text == text and start - out[-1].end < 0.25:
+            continue
         out.append(Word(text=text, start=start, end=end, speaker=w.speaker,
                         segment=w.segment, emphasis=w.emphasis, keyword=w.keyword))
     return out

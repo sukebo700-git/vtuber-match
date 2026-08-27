@@ -196,11 +196,12 @@ def _build_segments(words: list[Word], speaker: int, depth: int = 0) -> list[Seg
 
 
 def _split_long(words: list[Word], depth: int = 0) -> list[list[Word]]:
-    """表示時間が長すぎるブロックを、内部の最大無音位置で割る。
+    """表示時間が長すぎるブロックを、内部の無音位置で割る。
 
-    Whisperのセグメントは長い無音を巻き込むことがあり、実素材では
-    「な、なんだ。またおまえか!」が16.3秒表示される状態になった。
-    字幕が出っぱなしだと素人くさく見えるので、上限を超えたら割る。
+    割る位置は「文節境界」に限る。Whisperのタイムスタンプは長い発話の途中に
+    誤差で1秒以上の空白を作ることがあり、それを本物の間と誤認すると
+    「パスカル使って」が「パ」「ス」「カル使」「って」に砕ける。
+    budouxが使えない環境では、割らずにそのまま出す(砕けるよりましなため)。
     """
     if len(words) < 2 or depth >= 4:
         return [words]
@@ -208,14 +209,59 @@ def _split_long(words: list[Word], depth: int = 0) -> list[list[Word]]:
     if span <= config.MAX_SEGMENT_SEC:
         return [words]
 
+    full = "".join(w.text for w in words)
+    boundaries = _budoux_boundaries(full)
+    if not boundaries:
+        return [words]
+
+    offsets: list[int] = []
+    pos = 0
+    for w in words:
+        offsets.append(pos)
+        pos += len(w.text)
+
     gap, cut = 0.0, -1
     for i in range(1, len(words)):
+        if offsets[i] not in boundaries:
+            continue  # 文節の途中では割らない
         g = words[i].start - words[i - 1].end
         if g > gap:
             gap, cut = g, i
     if cut < 1 or gap < config.SEGMENT_GAP_SEC:
-        return [words]  # 割れる無音が無い。そのまま出す
+        # 無音では割れない。文節境界のうち時間的な中点に最も近い位置で割る。
+        # 17秒の字幕が出っぱなしになるより、文の途中でも区切った方がよい。
+        mid = (words[0].start + words[-1].end) / 2
+        best, best_d = -1, float("inf")
+        for i in range(1, len(words)):
+            if offsets[i] not in boundaries:
+                continue
+            d = abs(words[i].start - mid)
+            if d < best_d:
+                best_d, best = d, i
+        if best < 1:
+            return [words]
+        cut = best
     return _split_long(words[:cut], depth + 1) + _split_long(words[cut:], depth + 1)
+
+
+def _merge_tiny(segments: list[Segment]) -> list[Segment]:
+    """極端に短いブロックを直前に併合する。
+
+    語の長さを打ち切ったり分割した結果、「か!」のように0.1秒だけ映る
+    取り残しが出ることがある。一瞬だけ光って消えるので目障りになる。
+    """
+    out: list[Segment] = []
+    for seg in segments:
+        too_short = seg.end - seg.start < config.MIN_BLOCK_SEC
+        if too_short and out and out[-1].speaker == seg.speaker:
+            prev = out[-1]
+            merged = prev.words + seg.words
+            if words_width(merged) <= config.MAX_LINE_WIDTH * config.MAX_LINES:
+                prev.words = merged
+                prev.line_breaks = _decide_line_breaks(merged)
+                continue
+        out.append(seg)
+    return out
 
 
 def group_words(words: list[Word]) -> list[Segment]:
@@ -258,7 +304,7 @@ def group_words(words: list[Word]) -> list[Segment]:
 
     # ASSは重なったDialogueを同時に描画する。話者ごとにMarginVを変えて段積みする
     segments.sort(key=lambda s: (s.start, s.speaker))
-    return segments
+    return _merge_tiny(segments)
 
 
 # --------------------------------------------------------------------------
