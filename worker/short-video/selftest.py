@@ -181,8 +181,23 @@ def main() -> int:
 
     # 回帰防止: 話者が複数いるとMarginVを段積みして重なりを避ける
     multi_ass = build_ass(ov_blocks, karaoke=False)
-    margins = [line.rsplit(",", 2)[-2] for line in multi_ass.splitlines() if line.startswith("Style: Speaker")]
+    # 話者ごとに通常/強調(Hot)の2スタイルが出るので、通常スタイルだけを見る
+    base = [ln for ln in multi_ass.splitlines()
+            if ln.startswith("Style: Speaker") and "Hot," not in ln]
+    margins = [ln.rsplit(",", 2)[-2] for ln in base]
     passed &= check("話者ごとにMarginVが段積みされる", len(set(margins)) == len(margins), f"MarginV={margins}")
+
+    # 強調スタイルが話者ぶん定義されているか
+    hot = [ln for ln in multi_ass.splitlines() if ln.startswith("Style: Speaker") and "Hot," in ln]
+    passed &= check("話者ごとに強調スタイルが定義される", len(hot) == len(base), f"{len(hot)}件")
+
+    # 登場アニメーション(ポップイン)が全ブロックに入っているか
+    dlg = [ln for ln in multi_ass.splitlines() if ln.startswith("Dialogue:")]
+    passed &= check(
+        "全ブロックにポップインが入る",
+        all("\\fscx62\\fscy62" in d for d in dlg),
+        f"{len(dlg)}ブロック",
+    )
 
     # 回帰防止: 語間ギャップで単語の途中を割らない。
     # 割ると「これがア」「イギス、エ」のように破綻する。
@@ -206,7 +221,7 @@ def main() -> int:
     passed &= check("全角に置換されている", "｛" in joined and "＼" in joined)
 
     passed &= check("カラオケタグが入っている", "{\\k" in joined)
-    passed &= check("フェードが入っている", "{\\fad(80,80)}" in joined)
+    passed &= check("フェードが入っている", "{\\fad(" in joined)
     passed &= check("escape_ass単体", escape_ass(r"a{b}c\d") == "a｛b｝c＼d")
 
     out = ROOT / "selftest_subs.ass"

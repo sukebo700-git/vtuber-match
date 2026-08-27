@@ -24,7 +24,7 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-from cliplib import config
+from cliplib import config, emphasis as emph
 from cliplib.probe import ProbeError, ProbeResult, format_summary, probe, validate_clip_range
 from cliplib.render import (
     Rect,
@@ -339,6 +339,28 @@ def cmd_subs(args: argparse.Namespace) -> int:
         print("\n発話が検出されませんでした。切り抜き範囲を確認してください。", file=sys.stderr)
         return 3
 
+    # 音量から「叫んでいる箇所」を検出し、whisperセグメント単位で強調を付ける。
+    # 語のグルーピング前に決めるのは、強調ブロックは文字が大きくなるぶん
+    # 1行に入る文字数が減り、改行位置の計算に影響するため。
+    if not args.no_emphasis:
+        try:
+            track = emph.analyze(source, start, duration, tracks[0])
+            seg_ids = sorted({w.segment for w in words})
+            spans = [
+                (
+                    min(w.start for w in words if w.segment == sid),
+                    max(w.end for w in words if w.segment == sid),
+                )
+                for sid in seg_ids
+            ]
+            levels = emph.classify(track, spans)
+            by_seg = dict(zip(seg_ids, levels))
+            for w in words:
+                w.emphasis = by_seg.get(w.segment, 0)
+            print(emph.describe_blocks(track, spans, levels))
+        except Exception as exc:  # 演出は本質でないので、失敗しても字幕は出す
+            print(f"  ! 音量解析に失敗しました（強調なしで続行）: {exc}")
+
     segments = group_words(words)
     ensure_font(workdir)
     (workdir / "subs.ass").write_text(build_ass(segments, karaoke=args.karaoke), encoding="utf-8")
@@ -507,6 +529,8 @@ def build_parser() -> argparse.ArgumentParser:
                        help="tracks: 音声トラックごとに話者を分ける / single: 常に1話者")
         p.add_argument("--karaoke", action="store_true",
                        help="カラオケ強調を付ける(既定は単色)。話者色分けと配色が衝突するため複数話者では非推奨")
+        p.add_argument("--no-emphasis", action="store_true",
+                       help="音量による強調演出を無効にする（既定は有効）")
 
     p_subs = sub.add_parser("subs", help="文字起こしして subs.ass を作る（ここで停止）")
     add_subs_args(p_subs)

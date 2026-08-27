@@ -43,6 +43,11 @@ class Segment:
     def text(self) -> str:
         return "".join(w.text for w in self.words)
 
+    @property
+    def emphasis(self) -> int:
+        """ブロック内に1語でも強調指定があれば強調扱いにする。"""
+        return max((w.emphasis for w in self.words), default=0)
+
 
 # --------------------------------------------------------------------------
 # 文字幅
@@ -57,6 +62,16 @@ def text_width(text: str) -> float:
     return sum(char_width(c) for c in text)
 
 
+def max_line_width(words: list[Word]) -> float:
+    """この語列で1行に入れてよい幅。強調ブロックは文字が大きいぶん短くなる。
+
+    これを考慮しないと、強調で1.3倍に拡大した瞬間に画面外へはみ出す。
+    """
+    if any(w.emphasis for w in words):
+        return config.MAX_LINE_WIDTH / config.EMPHASIS_SCALE
+    return config.MAX_LINE_WIDTH
+
+
 # --------------------------------------------------------------------------
 # セグメント分割
 # --------------------------------------------------------------------------
@@ -68,7 +83,7 @@ def _split_to_fit(words: list[Word]) -> list[list[Word]]:
     「お/しゃ/べ/り」のような断片を1語として返すため、語間ギャップで切ると
     単語の途中で割れてしまう。
     """
-    capacity = config.MAX_LINE_WIDTH * config.MAX_LINES
+    capacity = max_line_width(words) * config.MAX_LINES
     if text_width("".join(w.text for w in words)) <= capacity or len(words) < 2:
         return [words]
 
@@ -121,6 +136,7 @@ def _clean_cut(words: list[Word]) -> int:
     budouxが使えない環境では判定できないので 0 を返し、呼び出し側で
     分割しない(過剰分割を避ける)。
     """
+    limit = max_line_width(words)
     full = "".join(w.text for w in words)
     boundaries = _budoux_boundaries(full)
     if not boundaries:
@@ -138,7 +154,7 @@ def _clean_cut(words: list[Word]) -> int:
             continue
         left = text_width("".join(w.text for w in words[:i]))
         right = text_width("".join(w.text for w in words[i:]))
-        if left <= config.MAX_LINE_WIDTH and right <= config.MAX_LINE_WIDTH:
+        if left <= limit and right <= limit:
             return -2  # 文節境界で2行に収まる。分割不要
         if abs(left - right) < best_gap:
             best_gap, best = abs(left - right), i
@@ -157,7 +173,7 @@ def _build_segments(words: list[Word], speaker: int, depth: int = 0) -> list[Seg
         return []
 
     full = "".join(w.text for w in words)
-    if depth < 4 and len(words) >= 2 and text_width(full) > config.MAX_LINE_WIDTH:
+    if depth < 4 and len(words) >= 2 and text_width(full) > max_line_width(words):
         cut = _clean_cut(words)
         if cut > 0:  # 文節境界で2行に収める術がない → ブロックを分ける
             return _build_segments(words[:cut], speaker, depth + 1) + _build_segments(
@@ -278,8 +294,9 @@ def _decide_line_breaks(words: list[Word]) -> set[int]:
     if len(words) < 2:
         return set()
 
+    limit = max_line_width(words)
     full = "".join(w.text for w in words)
-    if text_width(full) <= config.MAX_LINE_WIDTH:
+    if text_width(full) <= limit:
         return set()  # 1行に収まる
 
     # 各語の開始文字オフセット
@@ -294,7 +311,7 @@ def _decide_line_breaks(words: list[Word]) -> set[int]:
     breaks: set[int] = set()
     line_start = 0
     for _ in range(config.MAX_LINES - 1):
-        if text_width("".join(w.text for w in words[line_start:])) <= config.MAX_LINE_WIDTH:
+        if text_width("".join(w.text for w in words[line_start:])) <= limit:
             break  # 残りが1行に収まっているので改行不要
 
         best_index = -1
@@ -305,7 +322,7 @@ def _decide_line_breaks(words: list[Word]) -> set[int]:
 
         for i in range(line_start + 1, len(words)):
             left = text_width("".join(w.text for w in words[line_start:i]))
-            if left > config.MAX_LINE_WIDTH:
+            if left > limit:
                 break  # これ以上は左側が1行に収まらない
             right = text_width("".join(w.text for w in words[i:]))
 
@@ -314,13 +331,13 @@ def _decide_line_breaks(words: list[Word]) -> set[int]:
                 fallback_worst = worst
                 fallback_index = i
 
-            if right > config.MAX_LINE_WIDTH:
+            if right > limit:
                 continue  # 右側がはみ出す位置は選ばない
 
             score = _break_score(words[i - 1].text, words[i].text)
             score += _boundary_adjust(boundaries, offsets[i])
             # 行がある程度埋まっている方が見栄えがよい
-            score += int(left / config.MAX_LINE_WIDTH * 30)
+            score += int(left / limit * 30)
 
             if score >= best_score:
                 best_score = score
@@ -373,16 +390,53 @@ def _style_block(speaker_count: int) -> str:
         color = config.SPEAKER_COLORS[i % len(config.SPEAKER_COLORS)]
         # 話者が複数いる場合、発話が重なると字幕も重なる。段積みして読めるようにする
         margin_v = config.MARGIN_V + (i * config.SPEAKER_MARGIN_STEP if speaker_count > 1 else 0)
+
         rows.append(
             f"Style: Speaker{i},{config.FONT_NAME},{config.FONT_SIZE},{color},{config.COLOR_KARAOKE},"
             f"{config.COLOR_OUTLINE},{config.COLOR_BACK},1,0,0,0,100,100,0,0,1,"
             f"{config.OUTLINE},{config.SHADOW},2,{config.MARGIN_H},{config.MARGIN_H},{margin_v},1"
         )
+        # 叫んでいる箇所用。文字を大きく、色を変え、縁取りを太くする。
+        # 手直しのときは Dialogue の Style 列を Speaker0 ⇔ Speaker0Hot で入れ替えるだけでよい
+        hot_size = int(config.FONT_SIZE * config.EMPHASIS_SCALE)
+        rows.append(
+            f"Style: Speaker{i}Hot,{config.FONT_NAME},{hot_size},{config.EMPHASIS_COLOR},"
+            f"{config.COLOR_KARAOKE},{config.COLOR_OUTLINE},{config.COLOR_BACK},1,0,0,0,100,100,0,0,1,"
+            f"{config.EMPHASIS_OUTLINE},{config.SHADOW},2,{config.MARGIN_H},{config.MARGIN_H},{margin_v},1"
+        )
     return "\n".join(rows)
 
 
+def _intro_tags(emphasis: int) -> str:
+    """字幕の登場演出。
+
+    全ブロックに軽いポップイン(小さく出て原寸に戻る)を掛け、
+    音量から強調と判定されたブロックにはさらに一往復の傾きを足す。
+    傾きは小さく短くする。大きいと読みにくくなり、Shortsでは逆効果。
+    """
+    b = '\\'
+    p0 = config.POP_IN_START_SCALE
+    dur = config.POP_IN_MS
+    tags = [
+        "{" + b + "fad(60,80)}",
+        "{" + b + f"fscx{p0}" + b + f"fscy{p0}"
+        + b + f"t(0,{dur}," + b + "fscx100" + b + "fscy100)}",
+    ]
+    if emphasis:
+        d = config.SHAKE_DEG
+        ms = config.SHAKE_MS
+        tags.append(
+            "{"
+            + b + f"t(0,{ms}," + b + f"frz{d})"
+            + b + f"t({ms},{ms * 2}," + b + f"frz-{d})"
+            + b + f"t({ms * 2},{ms * 3}," + b + "frz0)"
+            + "}"
+        )
+    return "".join(tags)
+
+
 def _dialogue_text(seg: Segment, karaoke: bool) -> str:
-    parts = ["{\\fad(80,80)}"]
+    parts = [_intro_tags(seg.emphasis)]
     cursor = seg.start
     for i, word in enumerate(seg.words):
         if i in seg.line_breaks:
@@ -432,7 +486,7 @@ def build_ass(segments: list[Segment], karaoke: bool = False) -> str:
 
     rows = []
     for seg in segments:
-        style = f"Speaker{seg.speaker}"
+        style = f"Speaker{seg.speaker}" + ("Hot" if seg.emphasis else "")
         rows.append(
             f"Dialogue: 0,{format_time(seg.start)},{format_time(seg.end)},{style},,0,0,0,,"
             f"{_dialogue_text(seg, karaoke)}"

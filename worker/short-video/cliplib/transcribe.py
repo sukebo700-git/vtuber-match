@@ -40,6 +40,8 @@ class Word:
     # 断片になり語間ギャップが当てにならないため、字幕の分割はセグメント境界を
     # 優先する(語間ギャップで切ると「これがア」「イギス、エ」のように割れる)。
     segment: int = 0
+    # 音量から決まる強調レベル(0=通常, 1=叫び)。emphasis.py が後から設定する
+    emphasis: int = 0
 
     @property
     def duration(self) -> float:
@@ -83,7 +85,8 @@ def _clean(words: list[Word]) -> list[Word]:
             # Whisperは稀に区間が重なるので、直前の終端に合わせる
             start = out[-1].end
             end = max(start, end)
-        out.append(Word(text=text, start=start, end=end, speaker=w.speaker, segment=w.segment))
+        out.append(Word(text=text, start=start, end=end, speaker=w.speaker,
+                        segment=w.segment, emphasis=w.emphasis))
     return out
 
 
