@@ -52,6 +52,17 @@ def parse_time(value: str) -> float:
     if not text:
         raise argparse.ArgumentTypeError("時刻が空です")
     parts = text.split(":")
+    # HH:MM:SS:FF (SMPTEタイムコード)にも対応する。編集ソフトや依頼メモでは
+    # この表記が使われることが多い。フレームは30fps換算で秒に足す。
+    if len(parts) == 4:
+        try:
+            frames = float(parts[3])
+        except ValueError as exc:
+            raise argparse.ArgumentTypeError(f"時刻の形式が不正です: {value}") from exc
+        parts = parts[:3]
+        extra = frames / 30.0
+    else:
+        extra = 0.0
     if len(parts) > 3:
         raise argparse.ArgumentTypeError(f"時刻の形式が不正です: {value}")
     try:
@@ -60,7 +71,7 @@ def parse_time(value: str) -> float:
             seconds = seconds * 60 + float(part)
     except ValueError as exc:
         raise argparse.ArgumentTypeError(f"時刻の形式が不正です: {value}") from exc
-    return seconds
+    return seconds + extra
 
 
 def parse_rect(value: str) -> Rect:
@@ -363,7 +374,7 @@ def cmd_subs(args: argparse.Namespace) -> int:
                     continue
                 group = [w for w in words if w.segment == sid]
                 emph.mark_peak_words(track, group)
-            print(emph.describe_blocks(track, spans, levels))
+            print(emph.describe(track, spans, levels))
             hot = sum(1 for w in words if w.emphasis)
             print(f"  語単位の強調: {hot}/{len(words)}語")
         except Exception as exc:  # 演出は本質でないので、失敗しても字幕は出す
