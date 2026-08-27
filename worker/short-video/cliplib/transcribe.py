@@ -287,6 +287,8 @@ def _faster_whisper(audio: Path, language: str, prompt: str, use_hotwords: bool 
             kwargs["hotwords"] = prompt
         else:
             kwargs["initial_prompt"] = prompt
+    if config.ASR_KEEP_FILLERS and "initial_prompt" not in kwargs:
+        kwargs["initial_prompt"] = config.ASR_FILLER_PROMPT
     segments, _info = model.transcribe(str(audio), **kwargs)
 
     words: list[Word] = []

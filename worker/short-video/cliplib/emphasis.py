@@ -304,17 +304,35 @@ def peak_pulse_rate(track: LevelTrack, start: float, end: float) -> float:
     return best
 
 
-def laughter_text(duration: float) -> str:
-    """長さに応じた笑いのテロップ。長いほど「は」を増やす。"""
+def laughter_text(duration: float, pulse_hz: float, index: int = 0) -> str:
+    """笑いのテロップ。長さと脈動の速さで表現を変える。
+
+    毎回「あははは」だと機械的に見える。実際の切り抜きでは、短い笑いは
+    「ｗｗｗ」、長く続く笑いは「あははは」と使い分けられている。
+    脈動が速い(≒早口の笑い)ほど「ｗ」寄りにする。
+    連続して同じ表現にならないよう index でも振り分ける。
+    """
     n = max(2, min(config.LAUGH_MAX_HA, int(duration / 0.35)))
+
+    if duration < config.LAUGH_SHORT_SEC:
+        # 短い笑いは「ｗ」で軽く見せる
+        return "ｗ" * max(2, min(5, int(duration / 0.25)))
+
+    if pulse_hz >= config.LAUGH_FAST_HZ:
+        # 速く刻む笑いは草表現の方が近い
+        return "ｗ" * max(3, min(8, n + 1))
+
+    # 長く続く笑いは声として書く。表記は交互に変えて単調さを避ける
+    if index % 2:
+        return "は" * n + "っ"
     return "あ" + "は" * n + "っ"
 
 
-def find_laughs(track: LevelTrack, start: float, end: float) -> list[tuple[float, float]]:
-    """区間内の笑い箇所だけを切り出す。
+def find_laughs(track: LevelTrack, start: float, end: float) -> list[tuple[float, float, float]]:
+    """区間内の笑い箇所を (開始, 終了, 脈動Hz) で返す。
 
-    区間全体を1つの笑いとすると、13秒の空白がまるごと1枚の字幕になってしまう。
-    1秒窓で条件を満たす場所を拾い、隣接するものを繋いで実際の笑いの塊にする。
+    検出窓は1秒刻みなので、そのまま使うと実際の発声より最大1秒早く
+    字幕が出てしまう。窓の中で音が立ち上がる位置まで開始を詰める。
     """
     win = int(1.0 / track.fine_step)
     i0 = max(0, int(start / track.fine_step))
@@ -322,7 +340,7 @@ def find_laughs(track: LevelTrack, start: float, end: float) -> list[tuple[float
     if i1 - i0 < win:
         return []
 
-    hits: list[tuple[float, float]] = []
+    hits: list[tuple[float, float, float]] = []
     step = max(1, win // 4)
     for i in range(i0, i1 - win + 1, step):
         seg = track.fine[i:i + win]
@@ -333,16 +351,44 @@ def find_laughs(track: LevelTrack, start: float, end: float) -> list[tuple[float
         t1 = t0 + 1.0
         if track.bright_peak(t0, t1) < config.LAUGH_MIN_BRIGHT_DB:
             continue
-        if _pulse_rate(seg, track.fine_step) < config.LAUGH_PULSE_MIN_HZ:
+        rate = _pulse_rate(seg, track.fine_step)
+        if rate < config.LAUGH_PULSE_MIN_HZ:
             continue
-        hits.append((t0, t1))
+        hits.append((t0, t1, rate))
 
     if not hits:
         return []
-    merged = [hits[0]]
-    for a, b in hits[1:]:
+    merged = [list(hits[0])]
+    for a, b, r in hits[1:]:
         if a <= merged[-1][1] + 0.3:
-            merged[-1] = (merged[-1][0], max(merged[-1][1], b))
+            merged[-1][1] = max(merged[-1][1], b)
+            merged[-1][2] = max(merged[-1][2], r)
         else:
-            merged.append((a, b))
-    return [(a, min(b, end)) for a, b in merged if b - a >= config.LAUGH_MIN_SEC]
+            merged.append([a, b, r])
+
+    out: list[tuple[float, float, float]] = []
+    for a, b, r in merged:
+        b = min(b, end)
+        a = _onset(track, a, b)
+        if b - a >= config.LAUGH_MIN_SEC:
+            out.append((a, b, r))
+    return out
+
+
+def _onset(track: LevelTrack, start: float, end: float) -> float:
+    """区間内で実際に音が立ち上がる位置を返す。
+
+    検出窓の頭は無音を含むことがあり、そのまま字幕の開始にすると
+    「声を出していないのに先にテキストが出る」状態になる。
+    """
+    i0 = max(0, int(start / track.fine_step))
+    i1 = min(len(track.fine), int(math.ceil(end / track.fine_step)))
+    seg = [v for v in track.fine[i0:i1] if v > -math.inf]
+    if not seg:
+        return start
+    thr = max(seg) - config.LAUGH_ONSET_DROP_DB
+    for k in range(i0, i1):
+        v = track.fine[k]
+        if v > -math.inf and v >= thr:
+            return k * track.fine_step
+    return start

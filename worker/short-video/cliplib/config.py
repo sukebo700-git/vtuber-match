@@ -86,6 +86,12 @@ PREVIEW_MAX_SEC = 30
 ASR_VAD_FILTER = False
 # VADを切るぶん、無音でのハルシネーションはこちらで抑える(既定0.6より強め)
 ASR_NO_SPEECH_THRESHOLD = 0.7
+# Whisperは「あの」「えー」「ね」といったフィラーを整形して落とすことがある。
+# 配信の切り抜きでは話し方の癖も含めて字幕にした方が自然なので、
+# フィラー込みの文例を initial_prompt に置いて残す方向へ寄せる。
+# (hotwords は固有名詞辞書に使っているため、こちらは別枠で渡す)
+ASR_KEEP_FILLERS = True
+ASR_FILLER_PROMPT = "えーっと、あのー、なんかね、そうそう、まあ、うーん、っていうかさ、ね。"
 
 # --- 笑い声の検出 ---
 # Whisperは「あははは」のような非言語音声を文字にしない(VADを切っても同じ)。
@@ -98,6 +104,10 @@ LAUGH_MIN_BRIGHT_DB = -6.0     # 高域が持ち上がっていること(息の�
 LAUGH_PULSE_MIN_HZ = 3.0
 LAUGH_PULSE_MAX_HZ = 9.0
 LAUGH_MAX_HA = 6               # テロップの「は」の最大数
+LAUGH_SHORT_SEC = 1.5          # これ未満の短い笑いは「ｗ」表記にする
+LAUGH_FAST_HZ = 5.5            # これ以上の速さで刻む笑いも「ｗ」寄りにする
+# 検出窓の頭は無音を含む。ピークからこのdB以内に立ち上がった位置を発声開始とみなす
+LAUGH_ONSET_DROP_DB = 12.0
 
 # --- 文字起こし用の音声抽出 ---
 # 25MB上限のAPIに送れるよう、モノラル16kHz Opusまで落とす
