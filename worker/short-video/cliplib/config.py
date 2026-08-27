@@ -7,9 +7,20 @@
 
 from __future__ import annotations
 
+import os
+
 # --- 入力制限(調査報告書 第12部 J-2) ---
-MAX_INPUT_BYTES = 2 * 1024 * 1024 * 1024  # 2 GB
-MAX_INPUT_DURATION_SEC = 1800  # 30分
+# ローカルCLIは配信アーカイブ全体を受け取る前提で緩めに設定している。
+# YouTube Studio からのダウンロードは動画まるごとになるため、
+# 「30分・2GB」では3時間配信が弾かれてしまう。
+#
+# 処理自体は入力側シーク(-ss を -i の前)で必要な区間しか読まないので、
+# 長い動画でも処理時間はほぼ変わらない。ボトルネックは転送だけ。
+#
+# サーバ実装(Cloud Run)へ移す際は、ephemeral-disk と転送コストの都合で
+# ここを 2GB / 30分 に戻すこと。
+MAX_INPUT_BYTES = int(os.environ.get("CLIP_MAX_BYTES", 8 * 1024 * 1024 * 1024))  # 8 GB
+MAX_INPUT_DURATION_SEC = int(os.environ.get("CLIP_MAX_DURATION", 4 * 3600))  # 4時間
 MAX_INPUT_WIDTH = 3840
 MAX_INPUT_HEIGHT = 2160
 MAX_INPUT_FPS = 60.0

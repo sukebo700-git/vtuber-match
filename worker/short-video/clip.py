@@ -192,6 +192,59 @@ def cmd_check(_args: argparse.Namespace) -> int:
     return 0 if ok else 1
 
 
+def cmd_peek(args: argparse.Namespace) -> int:
+    """指定時刻の静止画を抜き出して、切り抜き位置が合っているか目視確認する。
+
+    顧客はYouTubeのプレイヤーを見ながら時刻を伝えてくる。送られてきたファイルが
+    YouTube Studio からのダウンロードなら時刻はそのまま一致するが、OBSの
+    ローカル録画だと待機画面の分だけずれる。処理を回す前にここで確かめる。
+    """
+    source = Path(args.input).resolve()
+    try:
+        info = probe(source)
+    except ProbeError as exc:
+        print(f"入力エラー: {exc}", file=sys.stderr)
+        return 2
+
+    at = args.at + args.offset
+    if at < 0 or at > info.duration_sec:
+        print(
+            f"エラー: 指定位置 {at:.1f}秒 が動画の範囲外です（動画長 {info.duration_sec:.1f}秒）",
+            file=sys.stderr,
+        )
+        return 2
+
+    outdir = Path(args.out).resolve() if args.out else (ROOT / "work" / "peek")
+    outdir.mkdir(parents=True, exist_ok=True)
+
+    print(f"動画長 {info.duration_sec / 60:.1f}分 / 指定 {args.at:.1f}秒", end="")
+    print(f" + 補正 {args.offset:+.1f}秒 = {at:.1f}秒" if args.offset else "")
+
+    written: list[Path] = []
+    for delta in (-5.0, 0.0, 5.0):
+        t = at + delta
+        if t < 0 or t > info.duration_sec:
+            continue
+        out = outdir / f"peek_{int(at)}{'' if delta == 0 else f'{delta:+.0f}'}.jpg"
+        cmd = [
+            "ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
+            "-ss", f"{t:.3f}", "-i", str(source),
+            "-frames:v", "1", "-vf", "scale=640:-2", "-q:v", "3", str(out),
+        ]
+        subprocess.run(cmd, capture_output=True, timeout=300)
+        if out.exists():
+            written.append(out)
+            label = "← 指定位置" if delta == 0 else f"{delta:+.0f}秒"
+            print(f"  {out.name}  ({t:.1f}秒) {label}")
+
+    if not written:
+        print("フレームを抽出できませんでした", file=sys.stderr)
+        return 3
+    print(f"\n{outdir} を開いて、切り抜きたい場面か確認してください。")
+    print("ずれている場合は --offset で補正できます（例: --offset -90 で90秒前へ）。")
+    return 0
+
+
 def cmd_probe(args: argparse.Namespace) -> int:
     try:
         info = probe(Path(args.input).resolve())
@@ -240,8 +293,10 @@ def cmd_subs(args: argparse.Namespace) -> int:
     source = Path(args.input).resolve()
     try:
         info = probe(source)
-        start = args.start
-        end = args.end
+        # 顧客はYouTubeの再生位置で時刻を伝えてくる。OBSのローカル録画のように
+        # 時間軸がずれている素材では --offset で補正する。
+        start = args.start + args.offset
+        end = args.end + args.offset
         validate_clip_range(info, start, end)
     except ProbeError as exc:
         print(f"入力エラー: {exc}", file=sys.stderr)
@@ -251,7 +306,14 @@ def cmd_subs(args: argparse.Namespace) -> int:
     workdir = make_workdir(args.work)
     print("=== 入力動画 ===")
     print(format_summary(info))
-    print(f"\n=== 切り抜き {start:.1f}s → {end:.1f}s ({duration:.1f}秒) ===")
+    if args.offset:
+        print(
+            f"\n=== 切り抜き 依頼 {args.start:.1f}s〜{args.end:.1f}s "
+            f"／ 補正 {args.offset:+.1f}s "
+            f"→ 実位置 {start:.1f}s〜{end:.1f}s ({duration:.1f}秒) ==="
+        )
+    else:
+        print(f"\n=== 切り抜き {start:.1f}s → {end:.1f}s ({duration:.1f}秒) ===")
     print(f"  作業ディレクトリ: {workdir}")
 
     prompt = ""
@@ -286,6 +348,8 @@ def cmd_subs(args: argparse.Namespace) -> int:
         "source": str(source),
         "start": start,
         "end": end,
+        "requested_start": args.start,
+        "offset": args.offset,
         "duration": duration,
         "template": args.template,
         "game_rect": _rect_to_dict(args.game_rect),
@@ -405,6 +469,13 @@ def build_parser() -> argparse.ArgumentParser:
 
     sub.add_parser("check", help="実行環境を確認する").set_defaults(func=cmd_check)
 
+    p_peek = sub.add_parser("peek", help="指定時刻の静止画を抜き出して位置を目視確認する")
+    p_peek.add_argument("--in", dest="input", required=True, help="元動画のパス")
+    p_peek.add_argument("--at", required=True, type=parse_time, help="確認したい時刻 (例 1:25:30)")
+    p_peek.add_argument("--offset", type=float, default=0.0, help="補正秒数 (例 -90)")
+    p_peek.add_argument("--out", default="", help="出力先ディレクトリ (既定: work/peek)")
+    p_peek.set_defaults(func=cmd_peek)
+
     p_probe = sub.add_parser("probe", help="入力動画を検証して構成を表示する")
     p_probe.add_argument("--in", dest="input", required=True, help="元動画のパス")
     p_probe.set_defaults(func=cmd_probe)
@@ -414,6 +485,9 @@ def build_parser() -> argparse.ArgumentParser:
         p.add_argument("--start", required=True, type=parse_time, help="開始時刻 (例 12:34)")
         p.add_argument("--end", required=True, type=parse_time, help="終了時刻 (例 13:20)")
         p.add_argument("--work", default=None, help="作業ディレクトリ (既定: work/日時)")
+        p.add_argument("--offset", type=float, default=0.0,
+                       help="指定時刻に加える補正秒数。顧客がYouTubeの再生位置で時刻を伝え、"
+                            "送られてきたファイルの時間軸がずれている場合に使う (例: -90)")
         p.add_argument("--template", default=config.DEFAULT_TEMPLATE, choices=config.TEMPLATE_IDS,
                        help="レイアウト " + " / ".join(f"{k}:{v}" for k, v in config.TEMPLATE_LABELS.items()))
         p.add_argument("--game-rect", type=parse_rect, default=None,
