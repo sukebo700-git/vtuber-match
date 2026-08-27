@@ -35,7 +35,7 @@ from cliplib.render import (
     render,
     render_preview,
 )
-from cliplib.subtitle import build_ass, group_words, mark_keywords, preview_text
+from cliplib.subtitle import build_ass, group_words, mark_keywords, preview_text, snap_emphasis
 from cliplib.transcribe import BACKENDS, DEFAULT_BACKEND, TranscribeError, Word, transcribe
 
 ROOT = Path(__file__).resolve().parent
@@ -414,6 +414,7 @@ def cmd_subs(args: argparse.Namespace) -> int:
                     continue
                 group = [w for w in words if w.segment == sid]
                 emph.mark_peak_words(track, group)
+                snap_emphasis(group)
             print(emph.describe(track, spans, levels))
             hot = sum(1 for w in words if w.emphasis)
             print(f"  語単位の強調: {hot}/{len(words)}語")

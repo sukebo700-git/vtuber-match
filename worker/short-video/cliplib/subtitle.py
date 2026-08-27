@@ -532,6 +532,48 @@ def _intro_tags(emphasis: int) -> str:
     return "".join(tags)
 
 
+def snap_emphasis(words: list[Word]) -> None:
+    """強調範囲を文節境界に合わせる。合わせられなければ強調を取り消す。
+
+    音量ベースの選択は言語構造を知らないため、「真・女神転生」の
+    「女神転」だけが色付くといった中途半端な範囲になる。
+    文節の途中で色が変わると、狙って強調したようには見えない。
+    確信の持てる範囲に合わせられないなら、何もしない方がよい。
+    """
+    if not any(w.emphasis for w in words):
+        return
+    full = "".join(w.text for w in words)
+    boundaries = _budoux_boundaries(full)
+    if not boundaries:
+        return
+
+    offsets: list[int] = []
+    pos = 0
+    for w in words:
+        offsets.append(pos)
+        pos += len(w.text)
+    ends = set(boundaries) | {pos}
+
+    lo = min(i for i, w in enumerate(words) if w.emphasis)
+    hi = max(i for i, w in enumerate(words) if w.emphasis) + 1
+
+    # 開始は手前の文節境界へ、終端は先の文節境界へ広げる
+    while lo > 0 and offsets[lo] not in boundaries:
+        lo -= 1
+    end_off = offsets[hi] if hi < len(words) else pos
+    while hi < len(words) and end_off not in ends:
+        hi += 1
+        end_off = offsets[hi] if hi < len(words) else pos
+
+    for w in words:
+        w.emphasis = 0
+    # 広げた結果が行の大半を占めるなら「強調」の意味がないので取り消す
+    if text_width("".join(w.text for w in words[lo:hi])) > text_width(full) * config.EMPHASIS_MAX_SHARE:
+        return
+    for i in range(lo, hi):
+        words[i].emphasis = 1
+
+
 def mark_keywords(words: list[Word], terms: list[str]) -> int:
     """固有名詞辞書に載っている語に keyword を立てる。
 
