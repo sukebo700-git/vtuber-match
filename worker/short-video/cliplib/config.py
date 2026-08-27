@@ -140,9 +140,11 @@ BUNDLED_FONTS = (
     "MPLUSRounded1c-Black.ttf",
 )
 FONT_SIZE = 86
-OUTLINE = 7
-SHADOW = 3
-MARGIN_V = 300  # Shorts UI(いいね/コメント/タイトル)との干渉回避
+OUTLINE = 9          # 参考動画に合わせて太く。細いと映像に負ける
+SHADOW = 4
+# 参考動画では字幕が画面中央付近にある。下端だとアバターの体にかぶり、
+# Shorts UI(いいね/コメント)とも近くなるため、中央寄りに上げる。
+MARGIN_V = 700
 # 話者が複数いるとき、2人目以降を段積みする間隔。発話が重なっても両方読める
 SPEAKER_MARGIN_STEP = 200
 MARGIN_H = 60
@@ -178,8 +180,15 @@ WORD_EMPHASIS_DB = 3.0        # 同じブロック内の中央値より何dB大�
 WORD_EMPHASIS_SCALE = 1.45    # 跳ねる語の文字サイズ倍率
 WORD_POP_MS = 130             # 語が跳ねる時間
 WORD_POP_OVERSHOOT = 118      # 一度この%まで拡大してから戻る
+# 固有名詞辞書に載っている語は意味的なキーワードとして色を変える。
+# 参考動画は「オタク衣装」のように意味で色を分けており、
+# 音量ベースの強調だけでは拾えない語をここで拾う。
+KEYWORD_ENABLED = True
+KEYWORD_COLOR = "&H0030C0FF"   # 山吹色(BGR順)
+KEYWORD_MIN_CHARS = 2
+
 EMPHASIS_COLOR = "&H003C5AFF"  # 強調色(BGR順なので赤寄りオレンジ)
-EMPHASIS_OUTLINE = 9          # 強調時は縁取りも太くする
+EMPHASIS_OUTLINE = 12         # 強調時はさらに太く
 
 # 登場アニメーション。全字幕に軽く掛ける(ポップイン)
 POP_IN_MS = 110
@@ -218,7 +227,7 @@ WORD_MAX_SEC = 1.6
 # ASSは &HAABBGGRR (AA=00で不透明)
 COLOR_WHITE = "&H00FFFFFF"
 COLOR_KARAOKE = "&H0000E5FF"  # カラオケ未発話色(オレンジ)
-COLOR_OUTLINE = "&H00202020"
+COLOR_OUTLINE = "&H00301A10"  # 濃紺寄りの黒。純黒より締まって見える
 COLOR_BACK = "&H80000000"
 
 # 話者ごとの本文色。コラボ切り抜きの色分けに使う(第3部/方式A・C)
@@ -232,14 +241,23 @@ SPEAKER_COLORS = [
 # --- テンプレート ---
 # 各テンプレートはfilter_complexの「背景+前景の合成」部分だけを担い、
 # 字幕焼き込みと透かしはrender.py側で共通に付ける。
-TEMPLATE_IDS = ("A", "B", "C")
+# テンプレートの選び方
+#   雑談・トーク  → D (Live2Dを大きく。誰が喋っているかが主役)
+#   ゲーム実況    → B / C (ゲーム画面を含める。プレイ内容が主役)
+# 同じ配信でも場面によって変わるため、依頼時に切り抜く場面の性質を確認する。
+TEMPLATE_IDS = ("A", "B", "C", "D")
 DEFAULT_TEMPLATE = "B"
 
 TEMPLATE_LABELS = {
     "A": "上下分割(上:ゲーム画面 / 下:Live2D)",
     "B": "背景ぼかし + 中央原寸(領域指定不要・既定)",
     "C": "ゲーム中央 + Live2D右下",
+    "D": "Live2D主役(上:ゲーム小 / 下:Live2D大)。雑談向け",
 }
+
+# テンプレートDでゲーム画面に割く高さ。残りがLive2Dになる。
+# 760/1920 で上から4割。参考動画はアバターが6割を占めていた。
+TEMPLATE_D_GAME_H = 760
 
 # --- 透かし ---
 WATERMARK_WIDTH = 260

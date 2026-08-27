@@ -35,7 +35,7 @@ from cliplib.render import (
     render,
     render_preview,
 )
-from cliplib.subtitle import build_ass, group_words, preview_text
+from cliplib.subtitle import build_ass, group_words, mark_keywords, preview_text
 from cliplib.transcribe import BACKENDS, DEFAULT_BACKEND, TranscribeError, Word, transcribe
 
 ROOT = Path(__file__).resolve().parent
@@ -362,6 +362,7 @@ def cmd_subs(args: argparse.Namespace) -> int:
     print(f"  作業ディレクトリ: {workdir}")
 
     prompt = ""
+    dict_terms: list[str] = []
     if args.dict:
         dict_path = Path(args.dict)
         if not dict_path.exists():
@@ -369,6 +370,7 @@ def cmd_subs(args: argparse.Namespace) -> int:
             return 2
         terms = [t.strip() for t in dict_path.read_text(encoding="utf-8").splitlines() if t.strip()]
         prompt = "、".join(terms[:200])
+        dict_terms = terms
         print(f"  固有名詞辞書: {len(terms)}語")
 
     try:
@@ -413,6 +415,11 @@ def cmd_subs(args: argparse.Namespace) -> int:
             print(f"  語単位の強調: {hot}/{len(words)}語")
         except Exception as exc:  # 演出は本質でないので、失敗しても字幕は出す
             print(f"  ! 音量解析に失敗しました（強調なしで続行）: {exc}")
+
+    if config.KEYWORD_ENABLED and dict_terms:
+        n = mark_keywords(words, dict_terms)
+        if n:
+            print(f"  辞書キーワードを色分け: {n}語")
 
     segments = group_words(words)
 

@@ -44,6 +44,8 @@ class Word:
     segment: int = 0
     # 音量から決まる強調レベル(0=通常, 1=叫び)。emphasis.py が後から設定する
     emphasis: int = 0
+    # 固有名詞辞書に載っている語。意味的なキーワードとして色を変える
+    keyword: bool = False
 
     @property
     def duration(self) -> float:
@@ -91,7 +93,7 @@ def _clean(words: list[Word]) -> list[Word]:
             start = out[-1].end
             end = max(start, end)
         out.append(Word(text=text, start=start, end=end, speaker=w.speaker,
-                        segment=w.segment, emphasis=w.emphasis))
+                        segment=w.segment, emphasis=w.emphasis, keyword=w.keyword))
     return out
 
 

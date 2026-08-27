@@ -230,6 +230,33 @@ def _compose_filter(
             f"[t1][ls]overlay=W-w-30:H-h-430[base]"
         )
 
+    if template == "D":
+        # Live2D主役型。参考にした実際の切り抜きでは、アバターが画面の6割を占め
+        # ゲーム画面は上部に小さく置かれていた。トーク主体の切り抜きでは
+        # 「誰が喋っているか」が主役なので、この配置が読みやすい。
+        # テンプレートBは16:9全体を中央に置くため、結果的に全員が小さくなる。
+        if live2d is None:
+            raise RenderError("テンプレートDには --live2d-rect の指定が必要です")
+        lx, ly, lw, lh = live2d.to_pixels(info.width, info.height)
+        game_h = config.TEMPLATE_D_GAME_H
+        l2d_h = h - game_h
+        if game is not None:
+            gx, gy, gw, gh = game.to_pixels(info.width, info.height)
+            game_src = f"[g]crop={gw}:{gh}:{gx}:{gy},"
+        else:
+            game_src = "[g]"  # 指定が無ければ画面全体を使う
+        return pre + (
+            f"[{src}]fps={config.OUT_FPS},split=3[bg][g][l];"
+            f"[bg]scale={w}:{h}:force_original_aspect_ratio=increase,crop={w}:{h},"
+            f"gblur=sigma=45,eq=brightness=-0.18:saturation=0.8[bgb];"
+            f"{game_src}scale={w}:{game_h}:force_original_aspect_ratio=increase,"
+            f"crop={w}:{game_h}[gs];"
+            f"[l]crop={lw}:{lh}:{lx}:{ly},"
+            f"scale={w}:{l2d_h}:force_original_aspect_ratio=increase,crop={w}:{l2d_h}[ls];"
+            f"[bgb][gs]overlay=0:0[t1];"
+            f"[t1][ls]overlay=0:{game_h}[base]"
+        )
+
     raise RenderError(f"未知のテンプレートです: {template}")
 
 

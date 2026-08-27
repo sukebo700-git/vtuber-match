@@ -486,6 +486,36 @@ def _intro_tags(emphasis: int) -> str:
     return "".join(tags)
 
 
+def mark_keywords(words: list[Word], terms: list[str]) -> int:
+    """固有名詞辞書に載っている語に keyword を立てる。
+
+    Whisperの語は「ケ/ル/ベ/ロ/ス」のように分かれるため、語単体ではなく
+    連結したテキスト上で辞書語を探し、その範囲に重なる語すべてに印を付ける。
+    """
+    if not terms:
+        return 0
+    full = "".join(w.text for w in words)
+    starts, pos = [], 0
+    for w in words:
+        starts.append(pos)
+        pos += len(w.text)
+
+    hit = 0
+    for term in sorted(terms, key=len, reverse=True):
+        if len(term) < config.KEYWORD_MIN_CHARS:
+            continue
+        at = full.find(term)
+        while at >= 0:
+            lo, hi = at, at + len(term)
+            for i, w in enumerate(words):
+                if starts[i] < hi and starts[i] + len(w.text) > lo:
+                    if not w.keyword:
+                        hit += 1
+                    w.keyword = True
+            at = full.find(term, at + 1)
+    return hit
+
+
 def _word_tags(word: Word) -> tuple[str, str]:
     """跳ねる語に付ける開始タグと、元に戻すタグを返す。
 
@@ -493,9 +523,12 @@ def _word_tags(word: Word) -> tuple[str, str]:
     プロのテロップは行全体ではなくキーワードだけが動く。
     一度 overshoot まで拡大してから原寸へ戻すことで「弾む」感じを出す。
     """
+    b = chr(92)
     if not word.emphasis:
+        if config.KEYWORD_ENABLED and word.keyword:
+            # 意味的なキーワードは色だけ変える。大きさは変えない
+            return "{" + b + f"c&H{config.KEYWORD_COLOR[-6:]}&" + "}", "{" + b + "r}"
         return "", ""
-    b = '\\'
     size = int(config.FONT_SIZE * config.WORD_EMPHASIS_SCALE * config.FONT_EMPHASIS_SIZE_ADJUST)
     over = config.WORD_POP_OVERSHOOT
     half = config.WORD_POP_MS // 2
