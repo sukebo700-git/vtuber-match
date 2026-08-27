@@ -140,6 +140,10 @@ def ensure_font(workdir: Path) -> None:
     """ass の fontsdir=. 用に日本語フォントを作業ディレクトリへ用意する。"""
     if any(workdir.glob("*.ttf")) or any(workdir.glob("*.otf")):
         return
+    se_src = ROOT / "assets" / config.SE_DIR
+    if config.SE_ENABLED and se_src.is_dir():
+        shutil.copytree(se_src, workdir / config.SE_DIR, dirs_exist_ok=True)
+
     copied = 0
     for name in config.BUNDLED_FONTS:
         src = ROOT / "assets" / name

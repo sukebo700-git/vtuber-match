@@ -261,6 +261,21 @@ TEMPLATE_LABELS = {
 # 760/1920 で上から4割。参考動画はアバターが6割を占めていた。
 TEMPLATE_D_GAME_H = 760
 
+# --- 効果音 ---
+# 効果音ラボ等の配布サイトは直リンクを弾く(403)ため、ffmpegで自前生成した音を
+# assets/se/ に同梱している。生成音なので配布・商用利用の制約が一切ない。
+#   pop.wav     笑いのテロップに合わせる軽い音
+#   impact.wav  強調(叫び)に合わせる低い衝撃音
+#   whoosh.wav  未使用(場面転換用に用意)
+SE_ENABLED = True
+SE_DIR = "se"
+SE_LAUGH = "pop.wav"
+SE_EMPHASIS = "impact.wav"
+# 元の配信音声に対する音量。上げすぎると喋りが聞き取れなくなる。
+# -18dB は「言われないと気づかないが、無いと物足りない」程度。
+SE_VOLUME_DB = -18.0
+SE_MAX_COUNT = 24        # 1本あたりの上限。鳴らしすぎるとうるさい
+
 # --- 透かし ---
 WATERMARK_WIDTH = 260
 WATERMARK_MARGIN_X = 40

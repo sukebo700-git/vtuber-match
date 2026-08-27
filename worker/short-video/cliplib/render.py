@@ -326,6 +326,72 @@ def _punch_filter(spans: list[tuple[float, float]]) -> str:
     )
 
 
+def se_cues(ass_path: Path, workdir: Path) -> list[tuple[float, str]]:
+    """ASSから効果音を鳴らす時刻を拾う。
+
+    笑いのテロップ(本文が「あは…」で始まる)には軽いポップ音、
+    Name列が HOT の強調ブロックには低い衝撃音を当てる。
+    ASSを情報源にしているので、運営が subs.ass を直せば音も追随する。
+    """
+    if not config.SE_ENABLED or not ass_path.exists():
+        return []
+    se_dir = workdir / config.SE_DIR
+    if not (se_dir / config.SE_LAUGH).exists():
+        return []
+
+    def to_sec(v: str) -> float:
+        h, m, rest = v.split(":")
+        return int(h) * 3600 + int(m) * 60 + float(rest)
+
+    cues: list[tuple[float, str]] = []
+    for line in ass_path.read_text(encoding="utf-8").splitlines():
+        if not line.startswith("Dialogue:"):
+            continue
+        cols = line.split(",", 9)
+        if len(cols) < 10:
+            continue
+        body = re.sub(r"\{[^}]*\}", "", cols[9])
+        try:
+            start = to_sec(cols[1])
+        except (ValueError, IndexError):
+            continue
+        if body.startswith("あは"):
+            cues.append((start, config.SE_LAUGH))
+        elif cols[4].strip() == "HOT":
+            cues.append((start, config.SE_EMPHASIS))
+    cues.sort()
+    return cues[: config.SE_MAX_COUNT]
+
+
+def _se_filter(
+    cues: list[tuple[float, str]], audio_filter: str, base_index: int
+) -> tuple[list[str], str, str]:
+    """効果音を重ねる入力と filter_complex 断片を組み立てる。
+
+    元の音声を先に loudnorm で整えてから重ねる。順序が逆だと
+    効果音の分だけ全体の音量が下がり、狙ったバランスにならない。
+    """
+    if not cues:
+        return [], "", ""
+    inputs: list[str] = []
+    parts: list[str] = [f"[0:a]{audio_filter}[voice]"]
+    labels: list[str] = ["voice"]
+    for i, (at, name) in enumerate(cues):
+        inputs += ["-i", f"{config.SE_DIR}/{name}"]
+        # 入力番号は 0=元動画、透かしがあれば1、その次から効果音。
+        # 透かし無しのときに固定で2から始めると番号がずれて
+        # 'Error binding filtergraph inputs/outputs' になる
+        idx = base_index + i
+        parts.append(
+            f"[{idx}:a]adelay={int(at * 1000)}|{int(at * 1000)},"
+            f"volume={config.SE_VOLUME_DB}dB,aresample=48000[se{i}]"
+        )
+        labels.append(f"se{i}")
+    mix = "".join(f"[{l}]" for l in labels)
+    parts.append(f"{mix}amix=inputs={len(labels)}:duration=first:normalize=0[aout]")
+    return inputs, ";".join(parts), "aout"
+
+
 # --------------------------------------------------------------------------
 # 本レンダリング
 # --------------------------------------------------------------------------
@@ -408,6 +474,15 @@ def render(
         graph += f";[{sub_label}]null[clean]"
 
     audio_filter = _loudnorm_filter(loudness)
+
+    # 効果音。ASSから鳴らす時刻を拾い、元音声に重ねる
+    se_inputs, se_graph, se_label = _se_filter(
+        se_cues(workdir / ass_name, workdir), audio_filter, 2 if want_wm else 1
+    )
+    if se_graph:
+        cmd += se_inputs
+        graph += ";" + se_graph
+
     cmd += ["-filter_complex", graph]
 
     clean_path = workdir / "out.mp4"
@@ -415,15 +490,15 @@ def render(
 
     if want_clean:
         cmd += [
-            "-map", "[clean]", "-map", f"0:a:{audio_index}",
-            "-af", audio_filter,
+            "-map", "[clean]",
+            *(["-map", f"[{se_label}]"] if se_label else ["-map", f"0:a:{audio_index}", "-af", audio_filter]),
             *config.VIDEO_ARGS, *config.AUDIO_ARGS, *config.CONTAINER_ARGS,
             "out.mp4",
         ]
     if want_wm:
         cmd += [
-            "-map", "[wmout]", "-map", f"0:a:{audio_index}",
-            "-af", audio_filter,
+            "-map", "[wmout]",
+            *(["-map", f"[{se_label}]"] if se_label else ["-map", f"0:a:{audio_index}", "-af", audio_filter]),
             *config.VIDEO_ARGS, *config.AUDIO_ARGS, *config.CONTAINER_ARGS,
             "out_wm.mp4",
         ]

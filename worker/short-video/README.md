@@ -159,6 +159,21 @@ python clip.py all --in "配信.mp4" --start 12:34 --end 13:20
 使う場合は配色の設計から見直すこと（`config.SPEAKER_COLORS` と
 `config.COLOR_KARAOKE`）。
 
+## 効果音
+
+`assets/se/` に同梱。**ffmpegで自前生成した音**なので、配布・商用利用の制約が一切ない。
+効果音ラボ等の配布サイトは直リンクを弾く(403)ため、取得ではなく生成を選んだ。
+
+| ファイル | 用途 |
+|---|---|
+| `pop.wav` | 笑いのテロップに合わせる軽い音 |
+| `impact.wav` | 強調(叫び)に合わせる低い衝撃音 |
+| `whoosh.wav` | 場面転換用（現時点では未使用） |
+
+鳴らす時刻は `subs.ass` から拾う（本文が「あは…」で始まる行、Name列が `HOT` の行）。
+運営が `subs.ass` を直せば音も追随する。音量は `config.SE_VOLUME_DB`（既定 −18dB）。
+`config.SE_ENABLED = False` で無効化できる。
+
 ## 出力仕様
 
 YouTube Shortsの推奨設定に合わせてある（変更する場合は根拠を添えること）。
