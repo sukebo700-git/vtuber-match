@@ -87,6 +87,18 @@ ASR_VAD_FILTER = False
 # VADを切るぶん、無音でのハルシネーションはこちらで抑える(既定0.6より強め)
 ASR_NO_SPEECH_THRESHOLD = 0.7
 
+# --- 笑い声の検出 ---
+# Whisperは「あははは」のような非言語音声を文字にしない(VADを切っても同じ)。
+# 音響特徴から拾って字幕を自前で挿入する。
+LAUGH_ENABLED = True
+LAUGH_MIN_SEC = 1.0            # これ未満は拾わない(短い相槌を除く)
+LAUGH_MIN_DB = -22.0           # 十分に大きいこと
+LAUGH_MIN_BRIGHT_DB = -6.0     # 高域が持ち上がっていること(息の成分)
+# 「ハハハ」の脈動。叫びは持続音なので脈動が少なく、ここで区別できる
+LAUGH_PULSE_MIN_HZ = 3.0
+LAUGH_PULSE_MAX_HZ = 9.0
+LAUGH_MAX_HA = 6               # テロップの「は」の最大数
+
 # --- 文字起こし用の音声抽出 ---
 # 25MB上限のAPIに送れるよう、モノラル16kHz Opusまで落とす
 ASR_AUDIO_ARGS = [

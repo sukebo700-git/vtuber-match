@@ -305,6 +305,35 @@ def _transcribe_all(
     return all_words, use_tracks
 
 
+def _insert_laughs(track, segments: list, duration: float) -> int:
+    """字幕の空白区間から笑い声を検出し、テロップとして挿入する。"""
+    from cliplib.subtitle import Segment
+
+    covered = sorted((s.start, s.end) for s in segments)
+    gaps: list[tuple[float, float]] = []
+    prev = 0.0
+    for a, b in covered:
+        if a - prev >= config.LAUGH_MIN_SEC:
+            gaps.append((prev, a))
+        prev = max(prev, b)
+    if duration - prev >= config.LAUGH_MIN_SEC:
+        gaps.append((prev, duration))
+
+    added = 0
+    for a, b in gaps:
+        for s0, s1 in emph.find_laughs(track, a, b):
+            text = emph.laughter_text(s1 - s0)
+            # 笑いは1語として扱う。強調も付けて跳ねさせる
+            word = Word(text=text, start=s0, end=s1, speaker=0,
+                        segment=-1, emphasis=1)
+            seg = Segment(words=[word], speaker=0)
+            segments.append(seg)
+            added += 1
+    if added:
+        segments.sort(key=lambda s: (s.start, s.speaker))
+    return added
+
+
 def cmd_subs(args: argparse.Namespace) -> int:
     source = Path(args.input).resolve()
     try:
@@ -358,6 +387,7 @@ def cmd_subs(args: argparse.Namespace) -> int:
     # 音量から「叫んでいる箇所」を検出し、whisperセグメント単位で強調を付ける。
     # 語のグルーピング前に決めるのは、強調ブロックは文字が大きくなるぶん
     # 1行に入る文字数が減り、改行位置の計算に影響するため。
+    track = None
     if not args.no_emphasis:
         try:
             track = emph.analyze(source, start, duration, tracks[0])
@@ -385,6 +415,15 @@ def cmd_subs(args: argparse.Namespace) -> int:
             print(f"  ! 音量解析に失敗しました（強調なしで続行）: {exc}")
 
     segments = group_words(words)
+
+    # Whisperが落とした笑い声を、音響特徴から拾って字幕に足す。
+    # 「あははは」のような非言語音声はVADを切っても文字にならないため、
+    # ここで補わないと画面が無言のまま流れる。
+    if config.LAUGH_ENABLED and track is not None:
+        added = _insert_laughs(track, segments, duration)
+        if added:
+            print(f"  笑い声を検出して字幕を追加: {added}箇所")
+
     ensure_font(workdir)
     (workdir / "subs.ass").write_text(build_ass(segments, karaoke=args.karaoke), encoding="utf-8")
     (workdir / "subs.txt").write_text(preview_text(segments), encoding="utf-8")

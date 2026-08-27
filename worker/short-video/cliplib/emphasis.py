@@ -43,6 +43,10 @@ class LevelTrack:
     step_sec: float
     loud: list[float] = field(default_factory=list)    # 全帯域 dBFS
     bright: list[float] = field(default_factory=list)  # 高域比 (高域dB - 全域dB)
+    # 笑いの検出用。振幅の脈動(ハハハ)を見るには0.1秒では粗すぎるため、
+    # 25ms刻みの包絡線を別に持つ
+    fine_step: float = 0.025
+    fine: list[float] = field(default_factory=list)
 
     def _peak(self, values: list[float], start: float, end: float) -> float:
         if not values or end <= start:
@@ -108,7 +112,9 @@ def analyze(source: Path, start: float, duration: float, audio_index: int = 0) -
         else:
             h = _rms_db(high, lo, lo + win)
             bright.append(h - f if h > -math.inf else -math.inf)
-    return LevelTrack(step_sec=step, loud=loud, bright=bright)
+    fine_win = max(1, int(_RATE * 0.025))
+    fine = [_rms_db(full, lo, lo + fine_win) for lo in range(0, len(full) - fine_win + 1, fine_win)]
+    return LevelTrack(step_sec=step, loud=loud, bright=bright, fine_step=0.025, fine=fine)
 
 
 def _stats(values: list[float]) -> tuple[float, float]:
@@ -233,3 +239,110 @@ def describe(track: LevelTrack, blocks: list[tuple[float, float]], levels: list[
     loud = sum(1 for lv in levels if lv == LEVEL_LOUD)
     lines.append(f"  強調ブロック: {loud}/{len(blocks)}")
     return "\n".join(lines)
+
+def _pulse_rate(values: list[float], step: float) -> float:
+    """包絡線が1秒あたり何回上向きに平均を横切るか。笑いの「ハハハ」を数える。
+
+    笑いは4〜8Hz程度で振幅が脈動する。叫びは持続音なので脈動が少なく、
+    通常発話は音節ごとに揺れるがそこまで規則的に速くない。
+    """
+    valid = [v for v in values if v > -math.inf]
+    if len(valid) < 8:
+        return 0.0
+    mean = sum(valid) / len(valid)
+    crossings = 0
+    prev_above = values[0] > mean if values[0] > -math.inf else False
+    for v in values[1:]:
+        above = v > mean if v > -math.inf else False
+        if above and not prev_above:
+            crossings += 1
+        prev_above = above
+    return crossings / (len(values) * step)
+
+
+def detect_laughter(track: LevelTrack, start: float, end: float) -> bool:
+    """区間が笑い声かどうかを判定する。
+
+    Whisperは「あははは」のような非言語音声を文字にしない。VADを切っても同じ。
+    そこで音響特徴から拾い、字幕を自前で挿入する。
+
+    条件は3つ。
+      1. 十分に大きい      … 小さな相槌を拾わない
+      2. 高域が持ち上がる  … 笑いは息の成分が多く高域に寄る
+      3. 振幅が脈動する    … 「ハハハ」の周期。叫びとの決定的な違い
+    """
+    if end - start < config.LAUGH_MIN_SEC:
+        return False
+    if track.loud_peak(start, end) < config.LAUGH_MIN_DB:
+        return False
+    if track.bright_peak(start, end) < config.LAUGH_MIN_BRIGHT_DB:
+        return False
+
+    return peak_pulse_rate(track, start, end) >= config.LAUGH_PULSE_MIN_HZ
+
+
+def peak_pulse_rate(track: LevelTrack, start: float, end: float) -> float:
+    """1秒窓をスライドさせたときの脈動率の最大値。
+
+    区間全体をまとめて測ると、笑いの前後の無音や通常発話に薄められて
+    数値が出ない。実素材では13秒の区間で 1.3Hz しか出なかった。
+    笑いは数秒の塊なので、短い窓の最大値で見る。
+    """
+    win = int(1.0 / track.fine_step)
+    i0 = max(0, int(start / track.fine_step))
+    i1 = min(len(track.fine), int(math.ceil(end / track.fine_step)))
+    if i1 - i0 < win:
+        return _pulse_rate(track.fine[i0:i1], track.fine_step)
+    best = 0.0
+    for i in range(i0, i1 - win + 1, max(1, win // 4)):
+        seg = track.fine[i:i + win]
+        # 窓内が十分に鳴っていること(無音の揺らぎを拾わない)
+        loud = [v for v in seg if v > -math.inf]
+        if not loud or max(loud) < config.LAUGH_MIN_DB:
+            continue
+        best = max(best, _pulse_rate(seg, track.fine_step))
+    return best
+
+
+def laughter_text(duration: float) -> str:
+    """長さに応じた笑いのテロップ。長いほど「は」を増やす。"""
+    n = max(2, min(config.LAUGH_MAX_HA, int(duration / 0.35)))
+    return "あ" + "は" * n + "っ"
+
+
+def find_laughs(track: LevelTrack, start: float, end: float) -> list[tuple[float, float]]:
+    """区間内の笑い箇所だけを切り出す。
+
+    区間全体を1つの笑いとすると、13秒の空白がまるごと1枚の字幕になってしまう。
+    1秒窓で条件を満たす場所を拾い、隣接するものを繋いで実際の笑いの塊にする。
+    """
+    win = int(1.0 / track.fine_step)
+    i0 = max(0, int(start / track.fine_step))
+    i1 = min(len(track.fine), int(math.ceil(end / track.fine_step)))
+    if i1 - i0 < win:
+        return []
+
+    hits: list[tuple[float, float]] = []
+    step = max(1, win // 4)
+    for i in range(i0, i1 - win + 1, step):
+        seg = track.fine[i:i + win]
+        loud = [v for v in seg if v > -math.inf]
+        if not loud or max(loud) < config.LAUGH_MIN_DB:
+            continue
+        t0 = i * track.fine_step
+        t1 = t0 + 1.0
+        if track.bright_peak(t0, t1) < config.LAUGH_MIN_BRIGHT_DB:
+            continue
+        if _pulse_rate(seg, track.fine_step) < config.LAUGH_PULSE_MIN_HZ:
+            continue
+        hits.append((t0, t1))
+
+    if not hits:
+        return []
+    merged = [hits[0]]
+    for a, b in hits[1:]:
+        if a <= merged[-1][1] + 0.3:
+            merged[-1] = (merged[-1][0], max(merged[-1][1], b))
+        else:
+            merged.append((a, b))
+    return [(a, min(b, end)) for a, b in merged if b - a >= config.LAUGH_MIN_SEC]
