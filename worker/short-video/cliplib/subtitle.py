@@ -399,8 +399,17 @@ def _dialogue_text(seg: Segment, karaoke: bool) -> str:
     return "".join(parts)
 
 
-def build_ass(segments: list[Segment], karaoke: bool = True) -> str:
-    """字幕ブロック列からASSファイルの中身を作る。"""
+def build_ass(segments: list[Segment], karaoke: bool = False) -> str:
+    r"""字幕ブロック列からASSファイルの中身を作る。
+
+    karaoke は既定で無効。理由が2つある。
+      1. 配色が直感と逆になる。ASSの \k は PrimaryColour(発話済み)と
+         SecondaryColour(発話前)を切り替えるため、静止画で見ると
+         「これから喋る部分」が着色されて見える。
+      2. 話者の色分けと衝突する。話者1の色とカラオケ未発話色が
+         どちらも黄系で、コラボ回では区別がつかない。
+    日本語の切り抜きでは単色が主流でもあるため、既定は単色とする。
+    """
     speaker_count = max((s.speaker for s in segments), default=0) + 1
 
     head = (

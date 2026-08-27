@@ -341,7 +341,7 @@ def cmd_subs(args: argparse.Namespace) -> int:
 
     segments = group_words(words)
     ensure_font(workdir)
-    (workdir / "subs.ass").write_text(build_ass(segments, karaoke=not args.no_karaoke), encoding="utf-8")
+    (workdir / "subs.ass").write_text(build_ass(segments, karaoke=args.karaoke), encoding="utf-8")
     (workdir / "subs.txt").write_text(preview_text(segments), encoding="utf-8")
 
     save_job(workdir, {
@@ -505,7 +505,8 @@ def build_parser() -> argparse.ArgumentParser:
         p.add_argument("--dict", default=None, help="固有名詞辞書 (1行1語のテキスト)")
         p.add_argument("--speakers", default="tracks", choices=("tracks", "single"),
                        help="tracks: 音声トラックごとに話者を分ける / single: 常に1話者")
-        p.add_argument("--no-karaoke", action="store_true", help="カラオケ強調(\\k)を付けない")
+        p.add_argument("--karaoke", action="store_true",
+                       help="カラオケ強調を付ける(既定は単色)。話者色分けと配色が衝突するため複数話者では非推奨")
 
     p_subs = sub.add_parser("subs", help="文字起こしして subs.ass を作る（ここで停止）")
     add_subs_args(p_subs)
