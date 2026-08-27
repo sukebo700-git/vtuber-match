@@ -604,6 +604,19 @@ def mark_keywords(words: list[Word], terms: list[str]) -> int:
     return hit
 
 
+def close_reset() -> str:
+    """語ごとの上書きを閉じる。順次表示中は本文色と未発話色を明示して戻す。"""
+    b = chr(92)
+    if not config.REVEAL_ENABLED:
+        return "{" + b + "r}"
+    return (
+        "{" + b + "r"
+        + b + f"c&H{config.COLOR_WHITE[-6:]}&"
+        + b + f"2c&H{config.COLOR_KARAOKE[-6:]}&" + b + "2a&HFF&" + b + "3a&H00&"
+        + "}"
+    )
+
+
 def _word_tags(word: Word) -> tuple[str, str]:
     """跳ねる語に付ける開始タグと、元に戻すタグを返す。
 
@@ -615,7 +628,12 @@ def _word_tags(word: Word) -> tuple[str, str]:
     if not word.emphasis:
         if config.KEYWORD_ENABLED and word.keyword:
             # 意味的なキーワードは色だけ変える。大きさは変えない
-            return "{" + b + f"c&H{config.KEYWORD_COLOR[-6:]}&" + "}", "{" + b + "r}"
+            # \c だけ指定すると未発話色が効かず、順次表示でも最初から見えてしまう。
+            # 色を上書きするときは \2c(未発話色)も併せて透明にする
+            tag = "{" + b + f"c&H{config.KEYWORD_COLOR[-6:]}&"
+            if config.REVEAL_ENABLED:
+                tag += b + f"2c&H{config.COLOR_KARAOKE[-6:]}&" + b + "2a&HFF&" + b + "3a&H00&"
+            return tag + "}", close_reset()
         return "", ""
     size = int(config.FONT_SIZE * config.WORD_EMPHASIS_SCALE * config.FONT_EMPHASIS_SIZE_ADJUST)
     over = config.WORD_POP_OVERSHOOT
@@ -626,13 +644,16 @@ def _word_tags(word: Word) -> tuple[str, str]:
         + b + f"fn{config.FONT_EMPHASIS_NAME}"
         + b + f"fs{size}"
         + b + f"c&H{config.EMPHASIS_COLOR[-6:]}&"
+        + (b + f"2c&H{config.COLOR_KARAOKE[-6:]}&" + b + "2a&HFF&" + b + "3a&H00&" if config.REVEAL_ENABLED else "")
         + b + f"bord{config.EMPHASIS_OUTLINE}"
         + b + f"t(0,{half}," + b + f"fscx{over}" + b + f"fscy{over})"
         + b + f"t({half},{full}," + b + "fscx100" + b + "fscy100)"
         + "}"
     )
     # \r でスタイル既定へ戻す。戻さないと以降の語まで大きいままになる
-    return open_tag, "{" + b + "r}"
+    # \r はスタイル既定へ戻すが、順次表示中は未発話色(透明)も戻るため
+    # 本文色を明示して閉じる
+    return open_tag, close_reset()
 
 
 def _dialogue_text(seg: Segment, karaoke: bool) -> str:
@@ -653,7 +674,7 @@ def _dialogue_text(seg: Segment, karaoke: bool) -> str:
     return "".join(parts)
 
 
-def build_ass(segments: list[Segment], karaoke: bool = False) -> str:
+def build_ass(segments: list[Segment], karaoke: bool | None = None) -> str:
     r"""字幕ブロック列からASSファイルの中身を作る。
 
     karaoke は既定で無効。理由が2つある。
@@ -664,6 +685,8 @@ def build_ass(segments: list[Segment], karaoke: bool = False) -> str:
          どちらも黄系で、コラボ回では区別がつかない。
     日本語の切り抜きでは単色が主流でもあるため、既定は単色とする。
     """
+    if karaoke is None:
+        karaoke = config.REVEAL_ENABLED
     speaker_count = max((s.speaker for s in segments), default=0) + 1
 
     head = (

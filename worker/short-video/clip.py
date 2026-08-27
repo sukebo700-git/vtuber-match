@@ -437,7 +437,7 @@ def cmd_subs(args: argparse.Namespace) -> int:
             print(f"  笑い声を検出して字幕を追加: {added}箇所")
 
     ensure_font(workdir)
-    (workdir / "subs.ass").write_text(build_ass(segments, karaoke=args.karaoke), encoding="utf-8")
+    (workdir / "subs.ass").write_text(build_ass(segments, karaoke=True if args.karaoke else None), encoding="utf-8")
     (workdir / "subs.txt").write_text(preview_text(segments), encoding="utf-8")
 
     save_job(workdir, {
