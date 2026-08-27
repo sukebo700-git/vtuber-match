@@ -140,14 +140,18 @@ def ensure_font(workdir: Path) -> None:
     """ass の fontsdir=. 用に日本語フォントを作業ディレクトリへ用意する。"""
     if any(workdir.glob("*.ttf")) or any(workdir.glob("*.otf")):
         return
-    for candidate in (
-        ROOT / "assets" / config.FONT_FILE,
-        ROOT / "assets" / "NotoSansJP-VF.ttf",
-        Path("C:/Windows/Fonts/NotoSansJP-VF.ttf"),
-    ):
-        if candidate.exists():
-            shutil.copy2(candidate, workdir / candidate.name)
-            return
+    copied = 0
+    for name in config.BUNDLED_FONTS:
+        src = ROOT / "assets" / name
+        if src.exists():
+            shutil.copy2(src, workdir / name)
+            copied += 1
+    if copied:
+        return
+    fallback = Path("C:/Windows/Fonts/NotoSansJP-VF.ttf")
+    if fallback.exists():
+        shutil.copy2(fallback, workdir / fallback.name)
+        return
     print(f"  ! {config.FONT_NAME} が見つかりません。フォントが代替されると字形が崩れます")
 
 

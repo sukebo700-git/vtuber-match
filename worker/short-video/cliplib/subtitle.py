@@ -195,6 +195,29 @@ def _build_segments(words: list[Word], speaker: int, depth: int = 0) -> list[Seg
     return [seg]
 
 
+def _split_long(words: list[Word], depth: int = 0) -> list[list[Word]]:
+    """表示時間が長すぎるブロックを、内部の最大無音位置で割る。
+
+    Whisperのセグメントは長い無音を巻き込むことがあり、実素材では
+    「な、なんだ。またおまえか!」が16.3秒表示される状態になった。
+    字幕が出っぱなしだと素人くさく見えるので、上限を超えたら割る。
+    """
+    if len(words) < 2 or depth >= 4:
+        return [words]
+    span = words[-1].end - words[0].start
+    if span <= config.MAX_SEGMENT_SEC:
+        return [words]
+
+    gap, cut = 0.0, -1
+    for i in range(1, len(words)):
+        g = words[i].start - words[i - 1].end
+        if g > gap:
+            gap, cut = g, i
+    if cut < 1 or gap < config.SEGMENT_GAP_SEC:
+        return [words]  # 割れる無音が無い。そのまま出す
+    return _split_long(words[:cut], depth + 1) + _split_long(words[cut:], depth + 1)
+
+
 def group_words(words: list[Word]) -> list[Segment]:
     """Word列を字幕ブロックに分割する。
 
@@ -229,8 +252,9 @@ def group_words(words: list[Word]) -> list[Segment]:
             chunks.append(current)
 
         for chunk in chunks:
-            for piece in _split_to_fit(chunk):
-                segments.extend(_build_segments(piece, speaker))
+            for part in _split_long(chunk):
+                for piece in _split_to_fit(part):
+                    segments.extend(_build_segments(piece, speaker))
 
     # ASSは重なったDialogueを同時に描画する。話者ごとにMarginVを変えて段積みする
     segments.sort(key=lambda s: (s.start, s.speaker))
@@ -472,12 +496,13 @@ def _word_tags(word: Word) -> tuple[str, str]:
     if not word.emphasis:
         return "", ""
     b = '\\'
-    size = int(config.FONT_SIZE * config.WORD_EMPHASIS_SCALE)
+    size = int(config.FONT_SIZE * config.WORD_EMPHASIS_SCALE * config.FONT_EMPHASIS_SIZE_ADJUST)
     over = config.WORD_POP_OVERSHOOT
     half = config.WORD_POP_MS // 2
     full = config.WORD_POP_MS
     open_tag = (
         "{"
+        + b + f"fn{config.FONT_EMPHASIS_NAME}"
         + b + f"fs{size}"
         + b + f"c&H{config.EMPHASIS_COLOR[-6:]}&"
         + b + f"bord{config.EMPHASIS_OUTLINE}"

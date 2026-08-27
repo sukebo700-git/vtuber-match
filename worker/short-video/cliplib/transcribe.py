@@ -18,6 +18,8 @@ import urllib.error
 import urllib.request
 import uuid
 from dataclasses import dataclass
+
+from . import config
 from pathlib import Path
 
 BACKENDS = ("openai", "faster-whisper", "ffmpeg-whisper")
@@ -81,6 +83,9 @@ def _clean(words: list[Word]) -> list[Word]:
             continue
         start = max(0.0, w.start)
         end = max(start, w.end)
+        # Whisperは長い無音を語の継続時間に含めることがある。
+        # 1語が数秒続くことはないので上限で切る(字幕が出っぱなしになるのを防ぐ)
+        end = min(end, start + config.WORD_MAX_SEC)
         if out and start < out[-1].end:
             # Whisperは稀に区間が重なるので、直前の終端に合わせる
             start = out[-1].end
@@ -258,10 +263,18 @@ def _faster_whisper(audio: Path, language: str, prompt: str, use_hotwords: bool 
 
     # initial_prompt は最初のウィンドウにしか効きにくく、固有名詞辞書としては弱い。
     # faster-whisper の hotwords は各ウィンドウに効くため、辞書はこちらで渡す。
+    # vad_filter は既定でオフにする。
+    # 実素材(遊楽木たいむ)では VAD が笑い声や叫びを「非音声」と判定して
+    # 丸ごと捨ててしまい、98秒中48秒ぶんの発話が字幕化されなかった。
+    # 例: 15秒の区間が VAD あり=「なんて、俺の?」1件だけ、
+    #     VAD なし=「俺のパスカルがー!」×3件と正しく取れる。
+    # 無音でのハルシネーションは no_speech_threshold で抑える。
     kwargs: dict = {
         "language": language,
         "word_timestamps": True,
-        "vad_filter": True,
+        "vad_filter": config.ASR_VAD_FILTER,
+        "no_speech_threshold": config.ASR_NO_SPEECH_THRESHOLD,
+        "condition_on_previous_text": False,
     }
     if prompt:
         if use_hotwords:

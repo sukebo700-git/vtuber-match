@@ -80,6 +80,13 @@ PREVIEW_HEIGHT = 640
 PREVIEW_FPS = 15
 PREVIEW_MAX_SEC = 30
 
+# --- 文字起こしの挙動 ---
+# VADは笑い声・叫び・裏声を「非音声」と誤判定して捨てるため既定でオフ。
+# 実素材では98秒中48秒ぶんの発話が丸ごと落ちていた。
+ASR_VAD_FILTER = False
+# VADを切るぶん、無音でのハルシネーションはこちらで抑える(既定0.6より強め)
+ASR_NO_SPEECH_THRESHOLD = 0.7
+
 # --- 文字起こし用の音声抽出 ---
 # 25MB上限のAPIに送れるよう、モノラル16kHz Opusまで落とす
 ASR_AUDIO_ARGS = [
@@ -101,6 +108,25 @@ ASR_AUDIO_ARGS = [
 #   詳細は README の「フォント」を参照
 FONT_NAME = "VMClip Gothic Black"
 FONT_FILE = "VMClipGothicBlack.ttf"
+
+# 強調語は本文と書体を変える。プロのテロップは通常テキストと強調テキストで
+# 書体を分け、書体そのものでも「ここが山場」と伝える。
+# 同じ級数でも書体ごとに字面の大きさが違うため、倍率で揃える。
+FONT_EMPHASIS_NAME = "RocknRoll One"
+FONT_EMPHASIS_FILE = "RocknRollOne-Regular.ttf"
+FONT_EMPHASIS_SIZE_ADJUST = 1.12
+
+# 同梱している書体(すべて SIL OFL 1.1 / 商用利用可)
+#   VMClipGothicBlack.ttf     Noto Sans JP を wght=900 で静的化したもの(本文)
+#   RocknRollOne-Regular.ttf  Fontworks RocknRoll One(強調)
+#   ZenMaruGothic-Bold.ttf    Zen Maru Gothic Bold(丸ゴシック・任意)
+#   MPLUSRounded1c-Black.ttf  M PLUS Rounded 1c Black(丸ゴシック・任意)
+BUNDLED_FONTS = (
+    "VMClipGothicBlack.ttf",
+    "RocknRollOne-Regular.ttf",
+    "ZenMaruGothic-Bold.ttf",
+    "MPLUSRounded1c-Black.ttf",
+)
 FONT_SIZE = 86
 OUTLINE = 7
 SHADOW = 3
@@ -171,7 +197,11 @@ MAX_LINES = 2
 # 縁取り7pxの張り出しも考慮して13に設定している。
 MAX_LINE_WIDTH = 13.0
 SEGMENT_GAP_SEC = 0.6  # これ以上の無音で字幕を分割
-MAX_SEGMENT_SEC = 6.0
+MAX_SEGMENT_SEC = 6.0          # これを超えるブロックは内部の最大無音で分割する
+# Whisperは長い無音を語の継続時間に含めることがあり、実素材では
+# 「な、なんだ。またおまえか!」が16.3秒表示される不具合が出た。
+# 1語がこれ以上続くことはないので、超えたぶんは切り詰める。
+WORD_MAX_SEC = 1.6
 
 # ASSは &HAABBGGRR (AA=00で不透明)
 COLOR_WHITE = "&H00FFFFFF"

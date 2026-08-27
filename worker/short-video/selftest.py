@@ -136,6 +136,22 @@ def main() -> int:
         f"最長行={widest:.0f}文字相当 (上限{config.MAX_LINE_WIDTH:.0f})",
     )
 
+    # 回帰防止: 表示時間が長すぎるブロックは内部の無音で割る。
+    # Whisperが長い無音を巻き込み「な、なんだ。またおまえか!」が
+    # 16.3秒表示される不具合が実素材で出た。
+    long_gap = [
+        Word(text="ああ", start=0.0, end=0.6, speaker=0, segment=0),
+        Word(text="びっくりした", start=0.8, end=1.6, speaker=0, segment=0),
+        Word(text="もう", start=9.0, end=9.5, speaker=0, segment=0),
+        Word(text="大丈夫", start=9.6, end=10.4, speaker=0, segment=0),
+    ]
+    lg = group_words(long_gap)
+    passed &= check(
+        "長い無音を含むブロックは分割される",
+        len(lg) == 2 and all(b.end - b.start <= config.MAX_SEGMENT_SEC for b in lg),
+        " / ".join(f"{b.text}({b.end-b.start:.1f}s)" for b in lg),
+    )
+
     # 回帰防止: 助詞の文字マッチがbudouxの文節判断を上書きしない。
     # 「おやすみなさい」の『や』を助詞と誤認し「おや / すみなさい」と割れていた。
     oyasumi = [
@@ -201,7 +217,8 @@ def main() -> int:
 
     # 回帰防止: 語間ギャップで単語の途中を割らない。
     # 割ると「これがア」「イギス、エ」のように破綻する。
-    long_seg = [Word(text=t, start=i * 3.0, end=i * 3.0 + 0.4, speaker=0, segment=0)
+    # 語間は実際の発話に近い間隔にする(3秒も空くのは同一セグメント内ではありえない)
+    long_seg = [Word(text=t, start=i * 0.45, end=i * 0.45 + 0.4, speaker=0, segment=0)
                 for i, t in enumerate(["これ", "が", "ア", "イ", "ギ", "ス"])]
     long_blocks = group_words(long_seg)
     passed &= check(
