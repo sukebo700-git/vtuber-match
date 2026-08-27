@@ -112,6 +112,32 @@ def main() -> int:
     mixed = [s.text for s in segments if len({w.segment for w in s.words}) > 1]
     passed &= check("セグメント境界を跨いでいない", not mixed, f"混在={mixed}")
 
+    # 回帰防止: 2人が同時に喋っても字幕が粉砕されない。
+    # 時刻順の1本の列にしてから話者の変わり目で切ると、マルチトラック収録で
+    # 「行くよア」「はいみ」「イ」「なさん」のように1〜3文字に割れる。
+    overlap: list[Word] = []
+    for i, t in enumerate(["いや", "まだ", "いける", "って"]):
+        overlap.append(Word(text=t, start=i * 0.5, end=i * 0.5 + 0.45, speaker=0, segment=0))
+    for i, t in enumerate(["それ", "は", "むり", "でしょ"]):
+        overlap.append(Word(text=t, start=i * 0.5 + 0.2, end=i * 0.5 + 0.6, speaker=1, segment=0))
+    overlap.sort(key=lambda w: w.start)
+    ov_blocks = group_words(overlap)
+    passed &= check(
+        "同時発話で字幕が粉砕されない",
+        len(ov_blocks) == 2,
+        f"{len(ov_blocks)}ブロック: {[b.text for b in ov_blocks]}",
+    )
+    passed &= check(
+        "同時発話でも話者ごとにまとまる",
+        {b.speaker: b.text for b in ov_blocks} == {0: "いやまだいけるって", 1: "それはむりでしょ"},
+        str({b.speaker: b.text for b in ov_blocks}),
+    )
+
+    # 回帰防止: 話者が複数いるとMarginVを段積みして重なりを避ける
+    multi_ass = build_ass(ov_blocks, karaoke=False)
+    margins = [line.rsplit(",", 2)[-2] for line in multi_ass.splitlines() if line.startswith("Style: Speaker")]
+    passed &= check("話者ごとにMarginVが段積みされる", len(set(margins)) == len(margins), f"MarginV={margins}")
+
     # 回帰防止: 語間ギャップで単語の途中を割らない。
     # 割ると「これがア」「イギス、エ」のように破綻する。
     long_seg = [Word(text=t, start=i * 3.0, end=i * 3.0 + 0.4, speaker=0, segment=0)

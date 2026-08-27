@@ -86,6 +86,8 @@ FONT_SIZE = 86
 OUTLINE = 7
 SHADOW = 3
 MARGIN_V = 300  # Shorts UI(いいね/コメント/タイトル)との干渉回避
+# 話者が複数いるとき、2人目以降を段積みする間隔。発話が重なっても両方読める
+SPEAKER_MARGIN_STEP = 200
 MARGIN_H = 60
 
 MAX_LINES = 2

@@ -184,14 +184,19 @@ def _compose_filter(
             raise RenderError("テンプレートAには --game-rect と --live2d-rect の指定が必要です")
         gx, gy, gw, gh = game.to_pixels(info.width, info.height)
         lx, ly, lw, lh = live2d.to_pixels(info.width, info.height)
+        # 上段(ゲーム)は y=180 から 1080px。下段(Live2D)に使えるのは残り 1920-1300=620px。
+        # 単に scale={w}:-2 にすると縦長のLive2D領域が画面外まで伸びて切れるため、
+        # 枠に内接させて中央に置く。
+        l2d_h = h - 1300
         return (
             f"[0:v]fps={config.OUT_FPS},split=2[g][l];"
             f"[g]crop={gw}:{gh}:{gx}:{gy},scale={w}:1080:force_original_aspect_ratio=increase,"
             f"crop={w}:1080[gs];"
-            f"[l]crop={lw}:{lh}:{lx}:{ly},scale={w}:-2[ls];"
+            f"[l]crop={lw}:{lh}:{lx}:{ly},"
+            f"scale={w}:{l2d_h}:force_original_aspect_ratio=decrease[ls];"
             f"color=c=0x111111:s={w}x{h}:r={config.OUT_FPS}[canvas];"
             f"[canvas][gs]overlay=0:180:shortest=1[t1];"
-            f"[t1][ls]overlay=0:1300[base]"
+            f"[t1][ls]overlay=(W-w)/2:1300[base]"
         )
 
     if template == "C":

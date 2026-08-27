@@ -117,26 +117,37 @@ def group_words(words: list[Word]) -> list[Segment]:
     if not words:
         return []
 
-    chunks: list[list[Word]] = []
-    current: list[Word] = []
+    # 話者ごとに独立してグルーピングする。
+    # 時刻順の1本の列にしてから話者の変わり目で切ると、2人が同時に喋ったときに
+    # 1語ずつ交互になり「行くよア」「はいみ」「イ」「なさん」のように粉砕される。
+    # マルチトラック収録では発話が常時重なるため、話者ごとに分けてから組む。
+    by_speaker: dict[int, list[Word]] = {}
     for word in words:
-        if current:
-            prev = current[-1]
-            if word.segment != prev.segment or word.speaker != prev.speaker:
-                chunks.append(current)
-                current = []
-        current.append(word)
-    if current:
-        chunks.append(current)
+        by_speaker.setdefault(word.speaker, []).append(word)
 
     segments: list[Segment] = []
-    for chunk in chunks:
-        for piece in _split_to_fit(chunk):
-            if not piece:
-                continue
-            seg = Segment(words=piece, speaker=piece[0].speaker)
-            seg.line_breaks = _decide_line_breaks(piece)
-            segments.append(seg)
+    for speaker in sorted(by_speaker):
+        stream = sorted(by_speaker[speaker], key=lambda w: w.start)
+        chunks: list[list[Word]] = []
+        current: list[Word] = []
+        for word in stream:
+            if current and word.segment != current[-1].segment:
+                chunks.append(current)
+                current = []
+            current.append(word)
+        if current:
+            chunks.append(current)
+
+        for chunk in chunks:
+            for piece in _split_to_fit(chunk):
+                if not piece:
+                    continue
+                seg = Segment(words=piece, speaker=speaker)
+                seg.line_breaks = _decide_line_breaks(piece)
+                segments.append(seg)
+
+    # ASSは重なったDialogueを同時に描画する。話者ごとにMarginVを変えて段積みする
+    segments.sort(key=lambda s: (s.start, s.speaker))
     return segments
 
 
@@ -268,10 +279,12 @@ def _style_block(speaker_count: int) -> str:
     rows = [fmt]
     for i in range(max(1, speaker_count)):
         color = config.SPEAKER_COLORS[i % len(config.SPEAKER_COLORS)]
+        # 話者が複数いる場合、発話が重なると字幕も重なる。段積みして読めるようにする
+        margin_v = config.MARGIN_V + (i * config.SPEAKER_MARGIN_STEP if speaker_count > 1 else 0)
         rows.append(
             f"Style: Speaker{i},{config.FONT_NAME},{config.FONT_SIZE},{color},{config.COLOR_KARAOKE},"
             f"{config.COLOR_OUTLINE},{config.COLOR_BACK},1,0,0,0,100,100,0,0,1,"
-            f"{config.OUTLINE},{config.SHADOW},2,{config.MARGIN_H},{config.MARGIN_H},{config.MARGIN_V},1"
+            f"{config.OUTLINE},{config.SHADOW},2,{config.MARGIN_H},{config.MARGIN_H},{margin_v},1"
         )
     return "\n".join(rows)
 
