@@ -113,6 +113,12 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
       return;
     }
 
+    if (!String(form.get("description") || "").trim()) {
+      setStatus("自己アピールを入力してください。");
+      setBusy(false);
+      return;
+    }
+
     if (totalImageSize > maxTotalImagePayload) {
       setStatus("画像容量が大きすぎます。画像を少し小さくするか、登録枚数を減らしてもう一度お試しください。");
       setBusy(false);
@@ -398,7 +404,7 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
         <textarea
           id="description"
           name="description"
-          required={!isFree}
+          required
           minLength={isFree ? undefined : 150}
           maxLength={isFree ? 100 : 500}
         />
