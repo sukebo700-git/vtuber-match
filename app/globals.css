@@ -4932,13 +4932,21 @@ button {
   font-weight: 700;
 }
 
+.match-list-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 @media (max-width: 520px) {
   .match-list-item {
     grid-template-columns: 48px minmax(0, 1fr);
   }
 
-  .match-list-item .secondary-button {
+  .match-list-item .match-list-actions {
     grid-column: 1 / -1;
+    flex-direction: row;
+    flex-wrap: wrap;
   }
 }
 

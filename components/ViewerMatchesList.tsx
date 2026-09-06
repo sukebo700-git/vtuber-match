@@ -21,6 +21,25 @@ type MatchesResponse = {
 
 type Status = "loading" | "ready" | "error";
 
+// lib/streamers.ts の publicStreamerSlug/publicStreamerPath と同じロジック。
+// あちらは firebase-admin を読み込むサーバー専用モジュールなので、
+// クライアントコンポーネントであるここでは同じ生成規則をそのまま複製する。
+function slugifyStreamerName(value: string) {
+  const slug = value
+    .normalize("NFKC")
+    .trim()
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60);
+  return slug || "vtuber";
+}
+
+function publicStreamerPath(id: string, name: string) {
+  const base = slugifyStreamerName(name || "vtuber");
+  return `/vtuber/${base}--${encodeURIComponent(id)}`;
+}
+
 export function ViewerMatchesList() {
   const [status, setStatus] = useState<Status>("loading");
   const [data, setData] = useState<MatchesResponse | null>(null);
@@ -100,16 +119,24 @@ export function ViewerMatchesList() {
                     </p>
                   )}
                 </div>
-                {match.streamer_youtube_url && (
+                <div className="match-list-actions">
                   <a
-                    className="secondary-button"
-                    href={youtubeSubscribeUrl(match.streamer_youtube_url)}
-                    target="_blank"
-                    rel="noreferrer"
+                    className="primary-button"
+                    href={publicStreamerPath(match.streamer_id, match.streamer_name)}
                   >
-                    チャンネルへ
+                    プロフィールを見る
                   </a>
-                )}
+                  {match.streamer_youtube_url && (
+                    <a
+                      className="secondary-button"
+                      href={youtubeSubscribeUrl(match.streamer_youtube_url)}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      チャンネルへ
+                    </a>
+                  )}
+                </div>
               </li>
             ))}
           </ul>

@@ -84,6 +84,16 @@ export default function HomePage() {
             <span className="landing-promo-banner-cta">無料で宣伝を申し込む</span>
           </SmartPromoLink>
 
+          {/* βテスト中は無料プラン1本の入力フォームに直リンク。正式公開後は
+              プラン比較ページ(4ボタン)に差し替える予定 */}
+          <a className="landing-promo-banner landing-clip-promo-banner" href="https://apply.vtubermatch.com/apply">
+            <div className="landing-promo-banner-copy">
+              <span className="landing-promo-banner-kicker">βテスト中</span>
+              <strong>配信の切り抜きを自動編集してショート動画に。無料1回から依頼できます</strong>
+            </div>
+            <span className="landing-promo-banner-cta">切り抜きショート動画を依頼する</span>
+          </a>
+
           <LandingMoreVtubers />
 
           <AuthVisibility role="viewer" mode="logged-out">

@@ -49,6 +49,10 @@ export function userSessionCookieOptions() {
     sameSite: "lax" as const,
     path: "/",
     maxAge: sessionHours * 60 * 60,
+    // apply.vtubermatch.com(切り抜き依頼フォーム、kirinuki側)にも同じログイン
+    // Cookieを送らせるため、サブドメイン全体で共有する。開発環境(localhost)は
+    // ドメイン付きCookieが機能しないため付けない。
+    ...(process.env.NODE_ENV === "production" ? { domain: ".vtubermatch.com" } : {}),
   };
 }
 
