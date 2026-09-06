@@ -26,6 +26,9 @@ export async function notifyStreamerLike(tokens: string[] | undefined, sourceNam
         badge: "/icon.svg",
       },
       fcmOptions: { link: "/creator" },
+      // 未指定(通常扱い)だと、Androidの省電力機能でアプリを開くまで配信が
+      // 保留されることがある。明示的にhighにして即時配信させる
+      headers: { Urgency: "high" },
     },
     data: {
       type: "LIKE_CREATED",
@@ -68,6 +71,7 @@ export async function notifyViewerLikedByStreamer(viewerProfileId: string, fcmTo
         badge: "/icon.svg",
       },
       fcmOptions: { link: "/viewer/likes" },
+      headers: { Urgency: "high" },
     },
     data: {
       type: "STREAMER_LIKE_RECEIVED",
@@ -112,6 +116,7 @@ export async function notifyAdminNewApplication(input: {
         badge: "/icon.svg",
       },
       fcmOptions: { link: "/admin" },
+      headers: { Urgency: "high" },
     },
     data: {
       type: "STREAMER_APPLICATION_CREATED",
@@ -157,6 +162,7 @@ export async function notifyAdminPaymentSucceeded(input: {
         badge: "/icon.svg",
       },
       fcmOptions: { link: "/admin" },
+      headers: { Urgency: "high" },
     },
     data: {
       type: "PAYMENT_SUCCEEDED",
@@ -202,6 +208,7 @@ export async function notifyAdminClipRequest(input: {
         badge: "/icon.svg",
       },
       fcmOptions: { link: "/admin" },
+      headers: { Urgency: "high" },
     },
     data: {
       type: "CLIP_REQUEST_CREATED",
