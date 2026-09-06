@@ -1,13 +1,16 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/adminAuth";
 import { notifyAdminClipRequest } from "@/lib/notifications";
 
 // kirinuki(切り抜き依頼フォーム、apply.vtubermatch.com)から、依頼を受け付けた
-// 直後にサーバー間で叩かれる。認証は x-admin-key ヘッダ(ADMIN_ACCESS_KEY)のみで、
+// 直後にサーバー間で叩かれる。認証は x-admin-key ヘッダ専用の鍵
+// (KIRINUKI_ADMIN_NOTIFY_KEY、管理画面ログインのADMIN_ACCESS_KEYとは別物)のみで、
 // ブラウザからは想定していない。
 export async function POST(request: Request) {
-  const unauthorized = requireAdmin(request);
-  if (unauthorized) return unauthorized;
+  const expected = process.env.KIRINUKI_ADMIN_NOTIFY_KEY || "";
+  const provided = request.headers.get("x-admin-key") || "";
+  if (!expected || provided !== expected) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
 
   const body = await request.json().catch(() => ({}));
   const plan = String(body.plan || "");
