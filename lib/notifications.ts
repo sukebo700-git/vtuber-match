@@ -191,7 +191,7 @@ export async function notifyAdminClipRequest(input: {
 
   if (!tokens.length) return;
 
-  await app.messaging().sendEachForMulticast({
+  const result = await app.messaging().sendEachForMulticast({
     tokens,
     notification: { title, body },
     webpush: {
@@ -207,6 +207,15 @@ export async function notifyAdminClipRequest(input: {
       type: "CLIP_REQUEST_CREATED",
       url: "/admin",
     },
+  });
+  // 一時的な調査用ログ。個々のトークンの成否(期限切れ等)が
+  // sendEachForMulticast の戻り値でしか分からないため
+  result.responses.forEach((r, i) => {
+    if (!r.success) {
+      console.error("FCM send failed for token", tokens[i]?.slice(0, 12), r.error?.code, r.error?.message);
+    } else {
+      console.log("FCM send ok for token", tokens[i]?.slice(0, 12));
+    }
   });
 }
 
