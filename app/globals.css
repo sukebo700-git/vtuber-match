@@ -8338,6 +8338,19 @@ body::after {
   white-space: nowrap;
 }
 
+.landing-clip-promo-new {
+  display: inline-block;
+  margin-right: 6px;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: #fff;
+  color: #ef4444;
+  font-weight: 800;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  vertical-align: middle;
+}
+
 /* トップページ: VTYPE診断/履歴書作成/本日のおすすめをまとめた「もっと見る」ブロック。
    デスクトップは常に展開表示、スマホのみ折りたたみ式にする(スマホの「渋滞」対策)。 */
 .landing-more-vtubers {

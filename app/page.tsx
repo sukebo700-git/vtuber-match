@@ -91,7 +91,10 @@ export default function HomePage() {
               <span className="landing-promo-banner-kicker">βテスト中</span>
               <strong>配信の切り抜きを自動編集してショート動画に。無料1回から依頼できます</strong>
             </div>
-            <span className="landing-promo-banner-cta">切り抜きショート動画を依頼する</span>
+            <span className="landing-promo-banner-cta">
+              <span className="landing-clip-promo-new">NEW</span>
+              切り抜きショート動画を依頼する
+            </span>
           </a>
 
           <LandingMoreVtubers />
