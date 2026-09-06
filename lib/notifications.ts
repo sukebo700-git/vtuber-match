@@ -165,6 +165,51 @@ export async function notifyAdminPaymentSucceeded(input: {
   });
 }
 
+export async function notifyAdminClipRequest(input: {
+  plan: string;
+  streamer: string;
+  clipTitle: string;
+}) {
+  const db = getAdminDb();
+  const app = getAdminApp();
+  if (!db || !app) return;
+
+  const planLabel = { free: "無料", individual: "個別購入", premium: "premium", pro: "PRO" }[input.plan] || input.plan;
+  const title = "切り抜き依頼が届きました";
+  const body = `${input.streamer}さん(${planLabel})「${input.clipTitle}」`;
+
+  const tokens = await readAdminTokens();
+  await db.collection("notifications").doc().set({
+    target_type: "admin",
+    type: "CLIP_REQUEST_CREATED",
+    plan: input.plan,
+    streamer: input.streamer,
+    clip_title: input.clipTitle,
+    created_at: FieldValue.serverTimestamp(),
+    delivered: tokens.length > 0,
+  });
+
+  if (!tokens.length) return;
+
+  await app.messaging().sendEachForMulticast({
+    tokens,
+    notification: { title, body },
+    webpush: {
+      notification: {
+        title,
+        body,
+        icon: "/icon.svg",
+        badge: "/icon.svg",
+      },
+      fcmOptions: { link: "/admin" },
+    },
+    data: {
+      type: "CLIP_REQUEST_CREATED",
+      url: "/admin",
+    },
+  });
+}
+
 async function readAdminTokens() {
   const db = getAdminDb();
   if (!db) return [];
