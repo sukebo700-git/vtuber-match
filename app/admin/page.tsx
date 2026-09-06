@@ -7,6 +7,7 @@ import { PasswordResetAdminPanel } from "@/components/PasswordResetAdminPanel";
 import { VisitStatsPanel } from "@/components/VisitStatsPanel";
 import { AdminAnalyticsPanel } from "@/components/AdminAnalyticsPanel";
 import { AdminImportantNotifications, type AdminImportantNotification } from "@/components/AdminImportantNotifications";
+import { PushNotificationButton } from "@/components/PushNotificationButton";
 import { AdminSwipeAdsPanel } from "@/components/AdminSwipeAdsPanel";
 import { emptyAdminAnalyticsSummary, type AdminAnalyticsSummary } from "@/lib/analytics";
 import { adminCookieName, verifyAdminSession } from "@/lib/adminSession";
@@ -97,6 +98,7 @@ export default async function AdminPage({ searchParams }: { searchParams?: Admin
         <HeaderAuthStatus />
       </header>
       <main className="main admin-main grid-page">
+        <PushNotificationButton targetType="admin" />
         <AdminImportantNotifications notifications={importantNotifications} />
         <nav className="admin-filter-row" aria-label="管理画面タブ">
           {adminTabs.map((tab) => (
