@@ -89,7 +89,7 @@ export default function HomePage() {
           <a className="landing-promo-banner landing-clip-promo-banner" href="https://apply.vtubermatch.com/apply">
             <div className="landing-promo-banner-copy">
               <span className="landing-promo-banner-kicker">βテスト中</span>
-              <strong>配信の切り抜きを自動編集してショート動画に。無料1回から依頼できます</strong>
+              <strong>「登録者限定」切り抜きショート動画1本無料</strong>
             </div>
             <span className="landing-promo-banner-cta">
               <span className="landing-clip-promo-new">NEW</span>
