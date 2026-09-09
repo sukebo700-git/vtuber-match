@@ -111,7 +111,7 @@ export default function HomePage() {
           <AuthVisibility role="viewer" mode="logged-out">
             <a className="landing-promo-banner" href="/viewer/register">
               <div className="landing-promo-banner-copy">
-                <strong>スワイプ回数、マッチング無制限</strong>
+                <strong>スワイプ回数無制限、マッチ履歴を保存</strong>
               </div>
               <span className="landing-promo-banner-cta">リスナー登録無料</span>
             </a>
