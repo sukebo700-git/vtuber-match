@@ -17,7 +17,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     url: absoluteUrl(publicStreamerPath(streamer)),
     lastModified: streamer.updated_at ? new Date(streamer.updated_at) : now,
     changeFrequency: "weekly" as const,
-    priority: streamer.plan_type === "boost" ? 0.82 : streamer.plan_type === "paid" ? 0.76 : 0.68,
+    priority: streamer.plan_type === "pro" ? 0.85 : streamer.plan_type === "boost" ? 0.82 : streamer.plan_type === "paid" ? 0.76 : 0.68,
   }));
 
   return [...staticRoutes, ...detailRoutes];
@@ -27,6 +27,8 @@ function priorityFor(route: string) {
   if (route === "") return 1;
   if (route === "/swipe") return 0.95;
   if (route === "/signup" || route === "/creator/apply") return 0.9;
+  if (route === "/clip") return 0.85;
   if (route === "/viewer" || route === "/creator") return 0.82;
+  if (route === "/diagnosis") return 0.7;
   return 0.65;
 }
