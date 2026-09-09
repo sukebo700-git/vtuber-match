@@ -73,7 +73,7 @@ export default async function DetailPage({ params }: { params: { id: string } })
   return (
     <div className="app-shell">
       <header className="topbar">
-        <a className="brand" href="/">Vtuberマッチ</a>
+        <a className="brand" href="/">VtuberMatch</a>
         <nav className="nav" aria-label="メイン">
           <a href="/viewer">視聴者用</a>
           <a href="/creator">配信者用</a>
@@ -124,8 +124,8 @@ export default async function DetailPage({ params }: { params: { id: string } })
               他のVTuberも探す
             </a>
             <ProfileShareButton
-              title={`${streamer.name} | Vtuberマッチ`}
-              text={`${streamer.name}をVtuberマッチで見つけました`}
+              title={`${streamer.name} | VtuberMatch`}
+              text={`${streamer.name}をVtuberMatchで見つけました`}
             />
             {canViewXAccount && streamer.x_account && (
               <a className="secondary-button" href={xProfileUrl(streamer.x_account)} target="_blank" rel="noreferrer">

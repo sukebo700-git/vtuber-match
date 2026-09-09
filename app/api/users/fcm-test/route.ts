@@ -29,12 +29,12 @@ export async function POST(request: Request) {
   const result = await app.messaging().sendEachForMulticast({
     tokens,
     notification: {
-      title: "Vtuberマッチ テスト通知",
+      title: "VtuberMatch テスト通知",
       body: "通知設定は有効です。",
     },
     webpush: {
       notification: {
-        title: "Vtuberマッチ テスト通知",
+        title: "VtuberMatch テスト通知",
         body: "通知設定は有効です。",
         icon: "/icon.svg",
         badge: "/icon.svg",

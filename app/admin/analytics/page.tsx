@@ -21,7 +21,7 @@ export default async function AdminAnalyticsPage() {
   return (
     <div className="app-shell">
       <header className="topbar">
-        <a className="brand" href="/">Vtuberマッチ</a>
+        <a className="brand" href="/">VtuberMatch</a>
         <nav className="nav" aria-label="メイン">
           <a href="/admin">管理画面</a>
           <a href="/viewer">視聴者用</a>

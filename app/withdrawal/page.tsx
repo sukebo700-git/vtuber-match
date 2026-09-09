@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "退会申請",
-  description: "Vtuberマッチの退会申請と有料プラン解約の案内です。",
+  description: "VtuberMatchの退会申請と有料プラン解約の案内です。",
   alternates: {
     canonical: "/withdrawal",
   },
@@ -17,7 +17,7 @@ export default function WithdrawalPage() {
   return (
     <div className="app-shell">
       <header className="topbar">
-        <a className="brand" href="/">Vtuberマッチ</a>
+        <a className="brand" href="/">VtuberMatch</a>
         <HeaderAuthStatus />
       </header>
       <main className="main grid-page">

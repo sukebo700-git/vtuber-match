@@ -68,7 +68,7 @@ export function PushNotificationButton({ targetType, intent = "default" }: PushN
 
       const messaging = getMessaging(firebase.app);
       unsubscribe = onMessage(messaging, (payload) => {
-        const title = payload.notification?.title || "Vtuberマッチ";
+        const title = payload.notification?.title || "VtuberMatch";
         const body = payload.notification?.body || "新しい通知があります。";
         setStatus(`${title}: ${body}`);
         if ("Notification" in window && Notification.permission === "granted") {
