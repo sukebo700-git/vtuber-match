@@ -91,6 +91,12 @@ export function virtualRegionLabel(region?: string): string {
   return region ? `バーチャル${region}` : "";
 }
 
+// TOPに出す切り抜き作例(YouTube Shorts)の動画ID。
+// 空の間は作例セクションを出さない(components/ClipDemoVideo.tsx)。
+// 環境変数で上書きできるが、まずは既定値としてこの動画を使う。
+export const CLIP_DEMO_YOUTUBE_ID =
+  process.env.NEXT_PUBLIC_CLIP_DEMO_YOUTUBE_ID || "Rosqs4rp6OE";
+
 export const PLAN_LABELS: Record<string, string> = {
   free: "無料プラン",
   // ベーシックは新規受付終了。既存会員の表示のためにラベルは残す
