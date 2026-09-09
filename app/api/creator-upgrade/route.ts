@@ -69,7 +69,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "メールアドレスを入力してください。" }, { status: 400 });
   }
   if (!password) return NextResponse.json({ error: "パスワードを入力してください。" }, { status: 400 });
-  if (planType !== "paid" && planType !== "boost") {
+  // ベーシック(paid)は新規受付終了。変更先はプレミアム(boost)とPRO(pro)だけ
+  if (planType !== "boost" && planType !== "pro") {
     return NextResponse.json({ error: "プランを選択してください。" }, { status: 400 });
   }
 

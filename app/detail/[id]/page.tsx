@@ -55,7 +55,7 @@ export default async function DetailPage({ params }: { params: { id: string } })
   const streamer = await getStreamerById(params.id);
   if (!streamer) notFound();
 
-  const isPaidOrPremium = streamer.plan_type === "paid" || streamer.plan_type === "boost";
+  const isPaidOrPremium = streamer.plan_type === "paid" || streamer.plan_type === "boost" || streamer.plan_type === "pro";
   const isPremium = streamer.plan_type === "boost";
   const viewerSession = readUserSession<{ id?: string }>(
     new Request("https://vtuber-match.local", { headers: { cookie: cookies().toString() } }),

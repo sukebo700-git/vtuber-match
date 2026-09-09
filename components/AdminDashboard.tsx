@@ -102,7 +102,7 @@ export function AdminDashboard({ initialApplications, initialStreamers, initialP
       return a.name.localeCompare(b.name, "ja");
     });
     // 有料/上位フィルタは全ページ横断で絞り込む(マージ済みの全有料配信者が対象)。
-    if (streamerView === "paid") return sorted.filter((streamer) => streamer.plan_type === "paid" || streamer.plan_type === "boost");
+    if (streamerView === "paid") return sorted.filter((streamer) => streamer.plan_type === "paid" || streamer.plan_type === "boost" || streamer.plan_type === "pro");
     if (streamerView === "boost") return sorted.filter((streamer) => streamer.plan_type === "boost");
     // 退会申請フィルタも全ページ横断で絞り込む(マージ済みの全退会申請中配信者が対象)。
     if (streamerView === "withdrawal") return sorted.filter((streamer) => streamer.withdrawal_status === "requested");

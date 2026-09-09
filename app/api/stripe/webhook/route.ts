@@ -186,7 +186,12 @@ export async function POST(request: Request) {
 
   if (viewerId) return NextResponse.json({ error: "invalid viewer subscription metadata" }, { status: 400 });
 
-  if (planType === "boost" && currentPlan === "paid") {
+  // 上位プランへの乗り換え(paid→boost / paid→pro / boost→pro)は新しい購読を
+  // 作るので、前の購読をここで解約しないと二重に課金される
+  const isUpgradeFromPaidPlan =
+    (planType === "boost" && currentPlan === "paid")
+    || (planType === "pro" && (currentPlan === "boost" || currentPlan === "paid"));
+  if (isUpgradeFromPaidPlan) {
     const cancelResult = await cancelPreviousSubscriptionForUpgrade(db, { applicationId, streamerId, newSubscriptionId: subscriptionId });
     if (!cancelResult.ok) {
       return NextResponse.json({ error: "previous subscription cancellation failed" }, { status: 502 });

@@ -219,7 +219,7 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
     }));
     window.dispatchEvent(new Event("vtuber-match-auth-changed"));
 
-    if (desiredPlan === "paid" || desiredPlan === "boost") {
+    if (desiredPlan === "paid" || desiredPlan === "boost" || desiredPlan === "pro") {
       window.location.assign(`/checkout?application_id=${applicationId}`);
       return;
     }

@@ -26,7 +26,7 @@ export function WithdrawalForm() {
       .catch(() => undefined);
   }, []);
 
-  const isPaid = useMemo(() => status?.plan_type === "paid" || status?.plan_type === "boost" || status?.subscription_status === "active", [status]);
+  const isPaid = useMemo(() => status?.plan_type === "paid" || status?.plan_type === "boost" || status?.plan_type === "pro" || status?.subscription_status === "active", [status]);
   const alreadyCanceled = status?.subscription_status === "canceled" || !isPaid;
   const alreadyRequested = status?.withdrawal_status === "requested";
 

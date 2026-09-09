@@ -1,6 +1,8 @@
 import type { StreamerResumeFields } from "./resume/schema";
 
-export type PlanType = "free" | "paid" | "boost";
+// paid(ベーシック 月額500円)は新規受付終了。既存会員と過去の決済記録のために
+// 値は残す。新規に選べるのは free / boost / pro。
+export type PlanType = "free" | "paid" | "boost" | "pro";
 export type StreamerPlanType = PlanType;
 export type AdminPlacement = "top" | "normal" | "bottom";
 export type ViewerPlanType = "free";
@@ -133,7 +135,7 @@ export type PaymentRecord = {
   application_id?: string;
   streamer_id?: string;
   viewer_id?: string;
-  plan_type: "paid" | "boost" | "super_boost_1";
+  plan_type: "paid" | "boost" | "pro" | "super_boost_1";
   amount: number;
   status: "paid";
   payer_email: string;

@@ -8338,6 +8338,22 @@ body::after {
   white-space: nowrap;
 }
 
+/* 上の「登録者限定・1本無料」バナーの下に出す、登録不要で注文できる案内。
+   登録するつもりのない初見の人を取り逃さないための逃げ道 */
+.landing-clip-onetime-note {
+  margin: -6px 0 0;
+  text-align: center;
+  color: #64728a;
+  font-size: 13px;
+}
+
+.landing-clip-onetime-note a {
+  margin-left: 8px;
+  color: #d92762;
+  font-weight: 700;
+  text-decoration: underline;
+}
+
 .landing-clip-promo-new {
   display: inline-block;
   margin-right: 6px;

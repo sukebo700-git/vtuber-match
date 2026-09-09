@@ -776,13 +776,14 @@ async function readAllFirestoreStreamers({ cursor, xFilter }: { cursor?: string;
   const hasNext = pageBase.length > 100;
   // 有料/上位プランは全ページ横断で別途返す(クライアントの「有料登録のみ」
   // フィルタが2ページ目以降の有料配信者も絞り込めるようにするため)。
-  const paidItems = sorted.filter((streamer) => streamer.plan_type === "paid" || streamer.plan_type === "boost");
+  const paidItems = sorted.filter((streamer) => streamer.plan_type === "paid" || streamer.plan_type === "boost" || streamer.plan_type === "pro");
   // 退会申請中も同様に全ページ横断で返す(「退会申請のみ」フィルタ用)。
   const withdrawalItems = sorted.filter((streamer) => streamer.withdrawal_status === "requested");
   return { items, nextCursor: hasNext && items.length ? encodeAdminCursor(items[items.length - 1]) : undefined, totalCount: activeCount ?? sorted.length, paidItems, withdrawalItems };
 }
 
 function normalizePlan(plan: string): PlanType {
+  if (plan === "pro" || plan === "pro_monthly" || plan === "pro_yearly") return "pro";
   if (plan === "boost" || plan === "boost_monthly" || plan === "boost_yearly") return "boost";
   if (plan === "paid" || plan === "standard_monthly" || plan === "standard_yearly") return "paid";
   return "free";

@@ -93,8 +93,10 @@ export function virtualRegionLabel(region?: string): string {
 
 export const PLAN_LABELS: Record<string, string> = {
   free: "無料プラン",
+  // ベーシックは新規受付終了。既存会員の表示のためにラベルは残す
   paid: "ベーシックプラン 月額500円",
   boost: "プレミアムプラン 月額980円",
+  pro: "PROプラン 月額3,980円",
 };
 
 export const PLAN_FEATURES = {
@@ -124,5 +126,12 @@ export const PLAN_FEATURES = {
     "Lo-Fi 24時間配信にテキスト付きCMを掲載",
     "YouTube Shortsに音声ナレーション+テキスト付きで掲載",
     "長期的にリスナーに宣伝したい人向け",
+  ],
+  pro: [
+    "プレミアムプランのすべて",
+    "切り抜きショート動画を毎月4本まで無料で作成",
+    "5本目以降は1本2,000円",
+    "透かしロゴなし・オープニング/エンディングの有無を選択可能",
+    "切り抜きを毎月つくる人向け",
   ],
 } as const;

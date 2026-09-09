@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { FieldValue, getAdminDb } from "@/lib/firebaseAdmin";
 import { readLocalApplications, readLocalStreamers, updateLocalApplication, updateLocalStreamer } from "@/lib/localStore";
-import { creatorSessionCookie, readUserSession } from "@/lib/userSession";
+import { clearUserSessionCookie, creatorSessionCookie, readUserSession } from "@/lib/userSession";
 
 type CreatorSession = {
   email?: string;
@@ -91,16 +91,11 @@ async function findApplicationDoc(db: NonNullable<ReturnType<typeof getAdminDb>>
 }
 
 function isPaidActive(planType: string | undefined, subscriptionStatus: string | undefined) {
-  return (planType === "paid" || planType === "boost") && subscriptionStatus !== "canceled";
+  return (planType === "paid" || planType === "boost" || planType === "pro") && subscriptionStatus !== "canceled";
 }
 
 function withLoggedOutCookie(response: NextResponse) {
-  response.cookies.set(creatorSessionCookie, "", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-    maxAge: 0
-  });
+  // domain 付き・ホスト限定の両方を消す(片方だけだと消し残る)
+  clearUserSessionCookie(response, creatorSessionCookie);
   return response;
 }
