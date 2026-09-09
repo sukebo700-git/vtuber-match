@@ -3,19 +3,19 @@
 import { useEffect, useState } from "react";
 
 const landingImages = [
-  "/promo/landing-random/vtubermatch-hero-1.png?v=20260809",
-  "/promo/landing-random/vtubermatch-hero-2.png?v=20260809",
-  "/promo/landing-random/vtubermatch-hero-3.png?v=20260809",
-  "/promo/landing-random/vtubermatch-hero-4.png?v=20260809",
-  "/promo/landing-random/vtubermatch-hero-5.png?v=20260809",
-  "/promo/landing-random/vtubermatch-hero-6.png?v=20260809",
-  "/promo/landing-random/vtubermatch-hero-7.png?v=20260809",
-  "/promo/landing-random/vtubermatch-hero-8.png?v=20260809",
-  "/promo/landing-random/vtubermatch-hero-9.png?v=20260809",
-  "/promo/landing-random/vtubermatch-hero-10.png?v=20260809",
-  "/promo/landing-random/vtubermatch-hero-11.png?v=20260809",
-  "/promo/landing-random/vtubermatch-hero-12.png?v=20260809",
-  "/promo/landing-random/vtubermatch-hero-13.png?v=20260809",
+  "/promo/landing-random/vtubermatch-hero-1.webp?v=20260910",
+  "/promo/landing-random/vtubermatch-hero-2.webp?v=20260910",
+  "/promo/landing-random/vtubermatch-hero-3.webp?v=20260910",
+  "/promo/landing-random/vtubermatch-hero-4.webp?v=20260910",
+  "/promo/landing-random/vtubermatch-hero-5.webp?v=20260910",
+  "/promo/landing-random/vtubermatch-hero-6.webp?v=20260910",
+  "/promo/landing-random/vtubermatch-hero-7.webp?v=20260910",
+  "/promo/landing-random/vtubermatch-hero-8.webp?v=20260910",
+  "/promo/landing-random/vtubermatch-hero-9.webp?v=20260910",
+  "/promo/landing-random/vtubermatch-hero-10.webp?v=20260910",
+  "/promo/landing-random/vtubermatch-hero-11.webp?v=20260910",
+  "/promo/landing-random/vtubermatch-hero-12.webp?v=20260910",
+  "/promo/landing-random/vtubermatch-hero-13.webp?v=20260910",
 ];
 
 const landingNames = [
