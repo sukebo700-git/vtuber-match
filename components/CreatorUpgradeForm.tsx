@@ -8,7 +8,7 @@ export function CreatorUpgradeForm() {
   const [form, setForm] = useState({
     email: "",
     password: "",
-    plan_type: "paid",
+    plan_type: "boost",
   });
   const [status, setStatus] = useState("");
   const [busy, setBusy] = useState(false);
@@ -77,39 +77,53 @@ export function CreatorUpgradeForm() {
             <strong>無料プラン</strong>
             <span className="plan-price">0円</span>
             <p>まずは掲載を始めたい方向け。基本プロフィールを登録できます。</p>
+            <div className="plan-clip-benefit">
+              <span className="plan-clip-badge">切り抜き動画</span>
+              <strong>初回1本が無料</strong>
+              <p>お一人様1回かぎり。2本目以降は1本2,000円、透かしロゴが入ります。</p>
+            </div>
             <ul>
               {PLAN_FEATURES.free.map((feature) => <li key={feature}>{feature}</li>)}
             </ul>
             <LofiPlanBenefits planId="registered" />
           </article>
 
-          <article className={`plan-card ${form.plan_type === "paid" ? "selected" : ""}`} onClick={() => update("plan_type", "paid")}>
-            <strong>ベーシックプラン</strong>
-            <span className="plan-price">月額500円</span>
-            <p>無料プランより上位に表示され、公式チャンネルでの紹介枠も広がります。</p>
-            <ul>
-              {PLAN_FEATURES.paid.map((feature) => <li key={feature}>{feature}</li>)}
-            </ul>
-            <LofiPlanBenefits planId="paid" />
-          </article>
-
           <article className={`plan-card ${form.plan_type === "boost" ? "selected" : ""}`} onClick={() => update("plan_type", "boost")}>
             <strong>プレミアムプラン</strong>
             <span className="plan-price">月額980円</span>
             <p>さらに目立たせたい方向け。常時優先表示を利用できます。</p>
+            <div className="plan-clip-benefit">
+              <span className="plan-clip-badge">切り抜き動画</span>
+              <strong>毎月1本目が1,000円引き(2,000円→1,000円)</strong>
+              <p>特典は毎月1日に戻ります。透かしロゴなし、オープニング・エンディングの有無を選べます。</p>
+            </div>
             <ul>
               {PLAN_FEATURES.boost.map((feature) => <li key={feature}>{feature}</li>)}
             </ul>
             <LofiPlanBenefits planId="boost" />
           </article>
+
+          <article className={`plan-card ${form.plan_type === "pro" ? "selected" : ""}`} onClick={() => update("plan_type", "pro")}>
+            <strong>PROプラン</strong>
+            <span className="plan-price">月額3,980円</span>
+            <p>切り抜き動画を毎月つくる方向け。プレミアムの特典もそのまま含みます。</p>
+            <div className="plan-clip-benefit">
+              <span className="plan-clip-badge">切り抜き動画</span>
+              <strong>毎月4本まで0円</strong>
+              <p>無料枠は毎月1日に戻ります。5本目以降は1本2,000円、透かしロゴなし。</p>
+            </div>
+            <ul>
+              {PLAN_FEATURES.pro.map((feature) => <li key={feature}>{feature}</li>)}
+            </ul>
+            <LofiPlanBenefits planId="pro" />
+          </article>
         </div>
       </section>
 
-      {form.plan_type === "boost" && (
-        <p className="notice-text">
-          すでにベーシックプランをご利用中の場合は、差額480円のプランで決済できます。
-        </p>
-      )}
+      <p className="notice-text">
+        上位プランに変更すると、これまでのプランは自動で解約されます(二重に請求されません)。
+        すでにベーシックプランをご利用中の場合は、差額プランで決済できることがあります。
+      </p>
 
       <div className="field">
         <label htmlFor="upgrade_email">ログイン用メールアドレス</label>
@@ -124,8 +138,8 @@ export function CreatorUpgradeForm() {
       <div className="field">
         <label htmlFor="plan">変更先プラン</label>
         <select id="plan" value={form.plan_type} onChange={(event) => update("plan_type", event.target.value)}>
-          <option value="paid">ベーシックプラン 月額500円</option>
           <option value="boost">プレミアムプラン 月額980円</option>
+          <option value="pro">PROプラン 月額3,980円</option>
         </select>
       </div>
 

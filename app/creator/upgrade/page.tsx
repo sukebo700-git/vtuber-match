@@ -14,7 +14,7 @@ export default function CreatorUpgradePage() {
       <main className="main grid-page">
         <section className="status-band">
           <h2>配信者アップグレード</h2>
-          <p>掲載中のアカウントを、ベーシックプランまたはプレミアムプランに変更できます。</p>
+          <p>掲載中のアカウントを、プレミアムプランまたはPROプランに変更できます。切り抜き動画の特典も付きます。</p>
         </section>
         <CreatorUpgradeForm />
       </main>
