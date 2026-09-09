@@ -3,6 +3,7 @@ import { GoogleOneTap } from "@/components/GoogleOneTap";
 import { HeaderAuthStatus } from "@/components/HeaderAuthStatus";
 import { LandingHeroHeading } from "@/components/LandingHeroHeading";
 import { LandingMoreVtubers } from "@/components/LandingMoreVtubers";
+import { ClipDemoVideo } from "@/components/ClipDemoVideo";
 import { LandingRandomVtuberImage } from "@/components/LandingRandomVtuberImage";
 import { SmartPromoLink } from "@/components/SmartPromoLink";
 import { XCampaignCreatorEntryLink } from "@/components/XCampaignCreatorEntryLink";
@@ -96,6 +97,8 @@ export default function HomePage() {
               切り抜きショート動画を依頼する
             </span>
           </a>
+
+          <ClipDemoVideo />
 
           {/* 上のバナーは「登録者限定・1本無料」なので、押すと依頼フォームで
               ログインを求められる。登録するつもりのない初見の人を取り逃さない
