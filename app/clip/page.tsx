@@ -90,24 +90,42 @@ export default function ClipLandingPage() {
         </section>
 
         <section className="status-band clip-landing-cta">
-          <h2>申し込む</h2>
+          <h2>はじめての方</h2>
           <div className="clip-landing-cta-grid">
             <div className="clip-landing-cta-card">
               <strong>無料登録</strong>
               <p>初回1本無料。まずは配信者登録から。</p>
               <UiButton variant="secondary" href="/creator/apply">無料で登録する</UiButton>
             </div>
-            <div className="clip-landing-cta-card">
-              <strong>プレミアム / PRO</strong>
-              <p>登録済みの方はこちらからログインして申し込めます。</p>
-              <UiButton variant="secondary" href="https://apply.vtubermatch.com/apply">
-                切り抜きを依頼する
-              </UiButton>
-            </div>
             <div className="clip-landing-cta-card featured">
               <strong>登録不要・単発購入</strong>
               <p>1本2,000円。VtuberMatchに登録していなくても申し込めます。</p>
               <UiButton href="https://apply.vtubermatch.com/apply/onetime">単発購入する</UiButton>
+            </div>
+          </div>
+
+          <h2 className="clip-landing-cta-subhead">登録済みの方(ログインして依頼)</h2>
+          <div className="clip-landing-cta-grid">
+            <div className="clip-landing-cta-card">
+              <strong>無料プラン</strong>
+              <p>初回1本無料。2本目以降は1本2,000円。</p>
+              <UiButton variant="secondary" href="https://apply.vtubermatch.com/apply">
+                無料プランで依頼する
+              </UiButton>
+            </div>
+            <div className="clip-landing-cta-card">
+              <strong>プレミアムプラン</strong>
+              <p>毎月1本目が1,000円引き(2,000円→1,000円)。</p>
+              <UiButton variant="secondary" href="https://apply.vtubermatch.com/apply/premium">
+                プレミアムで依頼する
+              </UiButton>
+            </div>
+            <div className="clip-landing-cta-card">
+              <strong>PROプラン</strong>
+              <p>毎月4本まで0円。</p>
+              <UiButton variant="secondary" href="https://apply.vtubermatch.com/apply/pro">
+                PROで依頼する
+              </UiButton>
             </div>
           </div>
         </section>

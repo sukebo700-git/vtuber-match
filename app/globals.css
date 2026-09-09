@@ -8569,6 +8569,10 @@ body::after {
   text-align: center;
 }
 
+.clip-landing-cta-subhead {
+  margin-top: 28px;
+}
+
 .clip-landing-cta-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
