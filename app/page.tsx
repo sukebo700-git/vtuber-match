@@ -31,6 +31,7 @@ export default function HomePage() {
         <nav className="nav" aria-label="メイン">
           <a href="/swipe">探す</a>
           <a href="/diagnosis">VTYPE診断</a>
+          <a href="/clip">切り抜き作成</a>
           <a href="/viewer">視聴者向け</a>
           <a href="/creator">VTuber向け</a>
           <a href="https://www.youtube.com/@VtuberMatch" target="_blank" rel="noreferrer">
