@@ -863,12 +863,15 @@ function compressCanvas(canvas: HTMLCanvasElement, targetLength: number) {
 
 function planImageLimit(plan: string) {
   if (plan === "free") return 1;
-  if (plan === "boost") return 5;
+  // PROはプレミアムの特典をすべて含む(掲載・プロフィール表示も同じ)ので、
+  // 画像枚数もプレミアムと同じにする
+  if (plan === "boost" || plan === "pro") return 5;
   return 3;
 }
 
 function planTagLimit(plan: string) {
   if (plan === "free") return 3;
-  if (plan === "boost") return 8;
+  // PROはプレミアムの特典をすべて含むので、タグ数もプレミアムと同じにする
+  if (plan === "boost" || plan === "pro") return 8;
   return 5;
 }

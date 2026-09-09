@@ -4763,6 +4763,41 @@ button {
   margin-top: 16px;
 }
 
+/* プラン変更画面(CreatorUpgradeForm.tsx)のカード内、切り抜き動画の特典を
+   本文リストより先に目立たせるブロック */
+.plan-clip-benefit {
+  display: grid;
+  gap: 6px;
+  padding: 12px 13px;
+  border-radius: 14px;
+  border: 1px solid rgba(242, 56, 120, 0.22);
+  background: rgba(242, 56, 120, 0.06);
+}
+
+.plan-clip-badge {
+  justify-self: start;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: #f23878;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.plan-clip-benefit strong {
+  color: #24314f;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.plan-clip-benefit p {
+  margin: 0;
+  color: #4b5878;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
 .plan-card {
   display: flex;
   flex-direction: column;
