@@ -75,14 +75,17 @@ export default function ViewerPage({
         </section>
 
         <ViewerProfileGate />
+        {/* 未登録でも料金・特典は見えるべき(/viewer/upgradeは未登録でも表示でき、
+            購入ボタンを押した時点でログインへ誘導する作りになっている)。
+            ウォレット(個人の残高情報)だけログイン時のみ表示する */}
+        <section className="status-band">
+          <h2>エリートファン</h2>
+          <p>マッチ履歴を無制限に見られたり、VTuberからのいいねを確認できる月額プランです。</p>
+          <p className="inline-actions" style={{ marginTop: 12 }}>
+            <a className="primary-button" href="/viewer/upgrade">エリートファンを見る</a>
+          </p>
+        </section>
         <AuthVisibility role="viewer" mode="logged-in">
-          <section className="status-band">
-            <h2>エリートファン</h2>
-            <p>マッチ履歴を無制限に見られたり、VTuberからのいいねを確認できる月額プランです。</p>
-            <p className="inline-actions" style={{ marginTop: 12 }}>
-              <a className="primary-button" href="/viewer/upgrade">エリートファンを見る</a>
-            </p>
-          </section>
           <ViewerSuperBoostWallet />
         </AuthVisibility>
       </main>
