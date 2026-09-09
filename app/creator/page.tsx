@@ -107,12 +107,7 @@ export default function CreatorPage({
               <strong>アップグレード</strong>
               <span>上位表示、公式紹介、Lo-Fi配信での紹介特典を確認できます。</span>
             </a>
-            <a
-              className="creator-action-card featured"
-              href="https://apply.vtubermatch.com/apply"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
+            <a className="creator-action-card featured" href="/clip">
               <strong>切り抜きショート動画作成を依頼(βテスト中)</strong>
               <span>配信の切り抜きを自動編集してショート動画にします。無料プランはお一人様1回まで依頼できます。</span>
             </a>

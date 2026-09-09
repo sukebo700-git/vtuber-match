@@ -85,9 +85,9 @@ export default function HomePage() {
             <span className="landing-promo-banner-cta">無料で宣伝を申し込む</span>
           </SmartPromoLink>
 
-          {/* βテスト中は無料プラン1本の入力フォームに直リンク。正式公開後は
-              プラン比較ページ(4ボタン)に差し替える予定 */}
-          <a className="landing-promo-banner landing-clip-promo-banner" href="https://apply.vtubermatch.com/apply">
+          {/* 依頼フォームへ直接は飛ばさず、まず/clip(説明+プラン比較ページ)を
+              経由させる。TOP→説明ページ→各フォーム、という導線にするため */}
+          <a className="landing-promo-banner landing-clip-promo-banner" href="/clip">
             <div className="landing-promo-banner-copy">
               <span className="landing-promo-banner-kicker">βテスト中</span>
               <strong>「登録者限定」切り抜きショート動画1本無料</strong>
@@ -100,10 +100,10 @@ export default function HomePage() {
 
           {/* 上のバナーは「登録者限定・1本無料」なので、押すと依頼フォームで
               ログインを求められる。登録するつもりのない初見の人を取り逃さない
-              よう、登録不要で注文できる道もここに出す */}
+              よう、登録不要で注文できる道もここに出す(こちらも/clip経由) */}
           <p className="landing-clip-onetime-note">
             登録せずに注文することもできます
-            <a href="https://apply.vtubermatch.com/apply/onetime">単発購入（1本 2,000円）</a>
+            <a href="/clip">単発購入（1本 2,000円）</a>
           </p>
 
           <LandingMoreVtubers />
