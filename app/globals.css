@@ -8341,7 +8341,13 @@ body::after {
 /* 上の「登録者限定・1本無料」バナーの下に出す、登録不要で注文できる案内。
    登録するつもりのない初見の人を取り逃さないための逃げ道 */
 .landing-clip-onetime-note {
-  margin: -6px 0 0;
+  /* .landing-hero は2カラムグリッド。上のバナー(.landing-promo-banner)は
+     grid-column: 1/-1 で全カラムをまたいで860px幅に中央寄せしているが、
+     このpにはそれが無かったため、狭い方のカラム内で中央寄せされて
+     バナーより左にずれて見えていた */
+  grid-column: 1 / -1;
+  width: min(860px, 100%);
+  margin: -6px auto 0;
   text-align: center;
   color: #64728a;
   font-size: 13px;
