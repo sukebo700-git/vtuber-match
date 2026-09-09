@@ -541,12 +541,13 @@ function validate(body: Record<string, unknown>) {
   if (String(body.description || "").length > (plan === "free" ? 100 : 500)) return plan === "free" ? "無料プランの自己アピールは100文字までです。" : "自己アピールは500文字までです。";
   if (!String(body.description || "").trim()) return "自己アピールを入力してください。";
   if (plan !== "free" && String(body.description || "").length < 150) return "自己アピールは150文字以上で入力してください(紹介動画が短くなりすぎるため)。";
-  if (plan !== "free" && !body.one_liner) return "ベーシックプラン以上では今日のひとことを入力してください。";
+  if (plan !== "free" && !body.one_liner) return "有料プランでは今日のひとことを入力してください。";
   if (!body.google_credential && String(body.creator_password || "").length < 8) return "パスワードは8文字以上で入力してください。";
-  if (plan === "free" && thumbnailCount > 1) return "無料プランの画像登録は1枚までです。";
-  if (thumbnailCount > 3) return "画像は最大3枚までです。";
+  const imageLimit = planImageLimit(plan);
+  const tagLimit = planTagLimit(plan);
+  if (thumbnailCount > imageLimit) return `画像は最大${imageLimit}枚までです。`;
   if (categoryCount > 3) return "カテゴリは最大3件までです。";
-  if (tagCount > 3) return "タグは最大3件までです。";
+  if (tagCount > tagLimit) return `タグは最大${tagLimit}件までです。`;
   return null;
 }
 
@@ -555,5 +556,20 @@ function sanitizeArray(value: unknown) {
 }
 
 function normalizeThumbnails(values: string[], plan: PlanType) {
-  return values.slice(0, plan === "free" ? 1 : plan === "boost" ? 5 : 3);
+  return values.slice(0, planImageLimit(plan));
+}
+
+// ApplicationForm.tsx / CreatorProfileEditForm.tsx の planImageLimit / planTagLimit
+// と同じ数値にすること。ずれると、フォームでは入力できるのにサーバー側で
+// 切り詰められる(または弾かれる)食い違いが起きる
+function planImageLimit(plan: PlanType): number {
+  if (plan === "free") return 1;
+  if (plan === "boost" || plan === "pro") return 5;
+  return 3;
+}
+
+function planTagLimit(plan: PlanType): number {
+  if (plan === "free") return 3;
+  if (plan === "boost" || plan === "pro") return 8;
+  return 5;
 }

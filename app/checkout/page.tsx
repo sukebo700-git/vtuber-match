@@ -22,10 +22,10 @@ export default async function CheckoutPage({ searchParams }: { searchParams: { a
 
   const application = applicationId ? await getApplication(applicationId) : null;
   if (applicationId && (!application || application.desired_plan === "free")) notFound();
-  if (!applicationId && !viewerId && (!streamerId || (upgradePlan !== "paid" && upgradePlan !== "boost"))) notFound();
+  if (!applicationId && !viewerId && (!streamerId || (upgradePlan !== "paid" && upgradePlan !== "boost" && upgradePlan !== "pro"))) notFound();
   if (viewerId) notFound();
 
-  const planType = application ? application.desired_plan as Exclude<PlanType, "free"> : upgradePlan as "paid" | "boost";
+  const planType = application ? application.desired_plan as Exclude<PlanType, "free"> : upgradePlan as "paid" | "boost" | "pro";
 
   return (
     <div className="app-shell">

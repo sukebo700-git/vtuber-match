@@ -103,7 +103,7 @@ export function AdminDashboard({ initialApplications, initialStreamers, initialP
     });
     // 有料/上位フィルタは全ページ横断で絞り込む(マージ済みの全有料配信者が対象)。
     if (streamerView === "paid") return sorted.filter((streamer) => streamer.plan_type === "paid" || streamer.plan_type === "boost" || streamer.plan_type === "pro");
-    if (streamerView === "boost") return sorted.filter((streamer) => streamer.plan_type === "boost");
+    if (streamerView === "boost") return sorted.filter((streamer) => streamer.plan_type === "boost" || streamer.plan_type === "pro");
     // 退会申請フィルタも全ページ横断で絞り込む(マージ済みの全退会申請中配信者が対象)。
     if (streamerView === "withdrawal") return sorted.filter((streamer) => streamer.withdrawal_status === "requested");
     // デフォルト(申込順)は現在ページ分だけに絞る(マージした2ページ目以降の有料は出さない)。
@@ -115,8 +115,10 @@ export function AdminDashboard({ initialApplications, initialStreamers, initialP
     [streamers],
   );
 
-  const editCategoryLimit = editing?.plan_type === "free" ? 1 : 3;
-  const editTagLimit = editing?.plan_type === "free" ? 1 : 5;
+  // カテゴリは全プラン共通で3件まで(ApplicationForm.tsxのcategoryLimitと同じ)。
+  // タグはplanTagLimit(CreatorProfileEditForm.tsx)と同じ数値にすること
+  const editCategoryLimit = 3;
+  const editTagLimit = editing?.plan_type === "free" ? 3 : editing?.plan_type === "boost" || editing?.plan_type === "pro" ? 8 : 5;
 
   async function updateStreamer(id: string, patch: Partial<Streamer> & { want_short_video?: boolean }) {
     setBusyId(id);
@@ -328,7 +330,7 @@ export function AdminDashboard({ initialApplications, initialStreamers, initialP
 
   async function saveEdit() {
     if (!editing) return;
-    const imageLimit = editing.plan_type === "free" ? 1 : editing.plan_type === "boost" ? 5 : 3;
+    const imageLimit = editing.plan_type === "free" ? 1 : editing.plan_type === "boost" || editing.plan_type === "pro" ? 5 : 3;
     await updateStreamer(editing.id, {
       ...editing,
       thumbnails: editing.thumbnails.slice(0, imageLimit),
@@ -550,7 +552,7 @@ export function AdminDashboard({ initialApplications, initialStreamers, initialP
       return;
     }
     const planType = hasReadingColumn ? "free" : parsePublicPlan(columns[8]);
-    const imageLimit = planType === "free" ? 1 : planType === "boost" ? 5 : 3;
+    const imageLimit = planType === "free" ? 1 : planType === "boost" || planType === "pro" ? 5 : 3;
     const thumbnails = String(columns[fieldIndexes.images] || "")
       .split(",")
       .map(normalizePublicImageUrl)
@@ -767,6 +769,7 @@ export function AdminDashboard({ initialApplications, initialStreamers, initialP
                 <option value="free">無料</option>
                 <option value="paid">ベーシック</option>
                 <option value="boost">プレミアム</option>
+                <option value="pro">PRO</option>
               </select>
             </label>
             <ImagePreview images={publicDraft.thumbnails} label={`${publicDraft.name || "配信者"} 画像`} />
@@ -912,6 +915,7 @@ export function AdminDashboard({ initialApplications, initialStreamers, initialP
                       <option value="free">無料</option>
                       <option value="paid">ベーシック</option>
                       <option value="boost">プレミアム</option>
+                      <option value="pro">PRO</option>
                     </select>
                   </label>
                   <label>表示優先
@@ -950,6 +954,7 @@ export function AdminDashboard({ initialApplications, initialStreamers, initialP
               <option value="free">無料</option>
               <option value="paid">ベーシック</option>
               <option value="boost">プレミアム</option>
+              <option value="pro">PRO</option>
             </select>
           </label>
           <label>今日のひとこと<input maxLength={20} value={editing.one_liner || ""} onChange={(event) => setEditing({ ...editing, one_liner: event.target.value.slice(0, 20) })} /></label>
@@ -1054,7 +1059,7 @@ function ImagePreview({ images, label }: { images: string[]; label: string }) {
 
 function streamerCardClassName(streamer: Streamer, registeredAt?: string) {
   const backgroundClass = isFuture(streamer.super_boost_until) ? "card-super-active" : isWithinHours(registeredAt, 48) ? "card-recent" : "";
-  const borderClass = streamer.plan_type === "boost" ? "card-premium-plan" : streamer.plan_type === "paid" ? "card-paid-plan" : "";
+  const borderClass = streamer.plan_type === "boost" || streamer.plan_type === "pro" ? "card-premium-plan" : streamer.plan_type === "paid" ? "card-paid-plan" : "";
   const introducedClass = streamer.x_introduced_at ? "" : "card-x-unintroduced";
   const dummyClass = streamer.is_dummy ? "card-dummy" : "";
   return ["admin-card", backgroundClass, borderClass, introducedClass, dummyClass].filter(Boolean).join(" ");
@@ -1218,6 +1223,7 @@ function isPublicProfileUrl(value: string | undefined) {
 
 function parsePublicPlan(value: string | undefined): PlanType {
   const input = String(value || "");
+  if (input.includes("PRO")) return "pro";
   if (input.includes("プレミアム")) return "boost";
   if (input.includes("ベーシック")) return "paid";
   return "free";

@@ -22,7 +22,7 @@ export async function GET(request: Request) {
   const [snapshot, requestSnapshot] = await Promise.all([
     db
       .collection("streamers")
-      .where("plan_type", "in", ["free", "paid", "boost"])
+      .where("plan_type", "in", ["free", "paid", "boost", "pro"])
       .select(
         "name",
         "creator_email",
