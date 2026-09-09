@@ -12,7 +12,7 @@ export default function LoginPage() {
       <header className="topbar">
         <a href="/" className="brand">
           <span className="brand-mark" />
-          Vtuberマッチ
+          VtuberMatch
         </a>
         <HeaderAuthStatus />
       </header>

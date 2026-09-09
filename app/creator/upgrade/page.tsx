@@ -13,7 +13,7 @@ export default function CreatorUpgradePage() {
   return (
     <div className="app-shell">
       <header className="topbar">
-        <a className="brand" href="/">Vtuberマッチ</a>
+        <a className="brand" href="/">VtuberMatch</a>
         <HeaderAuthStatus />
       </header>
 

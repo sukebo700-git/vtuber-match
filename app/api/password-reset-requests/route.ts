@@ -120,10 +120,10 @@ async function sendResetEmail(input: { email: string; name: string; token: strin
   const link = `${baseUrl}/password-reset/confirm?id=${input.requestId}&token=${input.token}`;
   await sendEmail({
     to: input.email,
-    subject: "【Vtuberマッチ】パスワード再設定のご案内",
+    subject: "【VtuberMatch】パスワード再設定のご案内",
     html: `
       <p>${escapeHtml(input.name)} 様</p>
-      <p>Vtuberマッチのパスワード再設定申請を受け付けました。以下のリンクから新しいパスワードを設定してください(このリンクの有効期限は1時間です)。</p>
+      <p>VtuberMatchのパスワード再設定申請を受け付けました。以下のリンクから新しいパスワードを設定してください(このリンクの有効期限は1時間です)。</p>
       <p><a href="${link}">${link}</a></p>
       <p>心当たりがない場合は、このメールを無視してください。パスワードは変更されません。</p>
     `.trim(),

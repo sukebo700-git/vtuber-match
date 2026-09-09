@@ -14,7 +14,7 @@ export default function CreatorLoginPage() {
   return (
     <div className="app-shell">
       <header className="topbar">
-        <a className="brand" href="/">Vtuberマッチ</a>
+        <a className="brand" href="/">VtuberMatch</a>
         <nav className="nav" aria-label="メイン">
           <a href="/creator">配信者用</a>
           <a href="https://www.youtube.com/@VtuberMatch" target="_blank" rel="noreferrer">公式YouTube</a>

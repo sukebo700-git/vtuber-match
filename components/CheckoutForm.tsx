@@ -114,7 +114,7 @@ export function CheckoutForm({ applicationId, streamerId, viewerId, planType, am
         </form>
       ) : (
         <div className="checkout-fields">
-          <p className="help-text">安全なStripe決済ページで支払いを行います。カード情報はVtuberマッチでは保存しません。</p>
+          <p className="help-text">安全なStripe決済ページで支払いを行います。カード情報はVtuberMatchでは保存しません。</p>
           <button className="primary-button" type="button" onClick={startCheckout}>
             <ExternalLink size={18} />
             決済ページへ進む

@@ -13,7 +13,7 @@ export default function PasswordResetPage({ searchParams }: { searchParams?: { t
   return (
     <div className="app-shell">
       <header className="topbar">
-        <a className="brand" href="/">Vtuberマッチ</a>
+        <a className="brand" href="/">VtuberMatch</a>
         <nav className="nav" aria-label="メイン">
           <a href="/creator">配信者用</a>
           <a href="/viewer">視聴者用</a>

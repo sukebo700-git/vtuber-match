@@ -30,7 +30,7 @@ export default async function CheckoutPage({ searchParams }: { searchParams: { a
   return (
     <div className="app-shell">
       <header className="topbar">
-        <a className="brand" href="/">Vtuberマッチ</a>
+        <a className="brand" href="/">VtuberMatch</a>
         <nav className="nav" aria-label="メイン">
           <a href="/creator">配信者用</a>
           <a href="/diagnosis">タイプ診断</a>
@@ -42,7 +42,7 @@ export default async function CheckoutPage({ searchParams }: { searchParams: { a
       <main className="main grid-page">
         <section className="status-band">
           <h2>掲載プランの決済</h2>
-          <p>決済完了後、運営確認へ進みます。カード情報はVtuberマッチでは保存されません。</p>
+          <p>決済完了後、運営確認へ進みます。カード情報はVtuberMatchでは保存されません。</p>
         </section>
         <CheckoutForm
           applicationId={application?.id}

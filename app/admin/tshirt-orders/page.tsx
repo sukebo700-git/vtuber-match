@@ -78,7 +78,7 @@ export default async function AdminTShirtOrdersPage() {
   return (
     <div className="app-shell">
       <header className="topbar">
-        <a className="brand" href="/">Vtuberマッチ</a>
+        <a className="brand" href="/">VtuberMatch</a>
         <nav className="nav" aria-label="メイン">
           <a href="/admin">管理トップ</a>
         </nav>

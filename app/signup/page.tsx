@@ -15,7 +15,7 @@ export default function SignupPage() {
       <header className="topbar">
         <a href="/" className="brand">
           <span className="brand-mark" />
-          Vtuberマッチ
+          VtuberMatch
         </a>
         <HeaderAuthStatus />
       </header>
