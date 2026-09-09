@@ -1117,11 +1117,6 @@ function adminPlacementSortValue(value?: AdminPlacement) {
   return 1;
 }
 
-function planSortValue(value: PlanType) {
-  if (value === "boost") return 3;
-  if (value === "paid") return 2;
-  return 1;
-}
 
 function safeTime(value?: string) {
   if (!value) return 0;
