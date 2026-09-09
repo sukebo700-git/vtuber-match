@@ -1,3 +1,4 @@
+import { ClipDemoVideo } from "@/components/ClipDemoVideo";
 import { HeaderAuthStatus } from "@/components/HeaderAuthStatus";
 import { UiButton } from "@/components/ui/UiButton";
 import type { Metadata } from "next";
@@ -18,8 +19,8 @@ export const metadata: Metadata = {
  * 「何ができるか」「プランごとの違い」を1枚で見せてから申し込み先へ誘導する。
  * ログイン不要で見られる(依頼フォーム側の会員確認はプラン別の各リンク先で行う)。
  *
- * 今はまだ作例動画を載せていない(先に本体だけ作る方針)。動画を用意したら
- * TOPページのClipDemoVideoと同じ要領でこのページにも埋め込む予定。
+ * 作例動画(ClipDemoVideo)はTOPページではなくこのページに置く。
+ * TOP→この説明ページ→各依頼フォーム、という導線にするため。
  */
 export default function ClipLandingPage() {
   return (
@@ -55,6 +56,7 @@ export default function ClipLandingPage() {
               登録せずに単発購入(1本2,000円)
             </UiButton>
           </div>
+          <ClipDemoVideo />
         </section>
 
         <section className="status-band clip-landing-features">
@@ -78,9 +80,9 @@ export default function ClipLandingPage() {
             プラン比較
           </h2>
           <picture>
-            <source srcSet="/promo/plan-comparison/plan-comparison.webp" type="image/webp" />
+            <source srcSet="/promo/plan-comparison/plan-comparison.webp?v=20260910" type="image/webp" />
             <img
-              src="/promo/plan-comparison/plan-comparison.jpg"
+              src="/promo/plan-comparison/plan-comparison.jpg?v=20260910"
               alt="VtuberMatchプラン比較。無料登録でも掲載・宣伝・マッチングに加えて切り抜き動画1本まで使えます。無料登録0円: 切り抜き動画は初回1本無料(お一人様1回、2本目以降は1本2,000円、透かしロゴあり)。プレミアムプラン月額980円(1,000円お得): 切り抜き動画は毎月1本目が1,000円引き(2,000円→1,000円、透かしロゴなし)。PROプラン月額3,980円(4,000円お得): 切り抜き動画は毎月4本まで0円(5本目以降は1本2,000円、透かしロゴなし)。利用にはVtuberMatchへの配信者登録・ログインが必要。単発購入(1本2,000円)は登録不要。"
               loading="lazy"
             />

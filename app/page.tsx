@@ -1,7 +1,6 @@
 import { AuthVisibility } from "@/components/AuthVisibility";
 import { GoogleOneTap } from "@/components/GoogleOneTap";
 import { HeaderAuthStatus } from "@/components/HeaderAuthStatus";
-import { ClipDemoVideo } from "@/components/ClipDemoVideo";
 import { LandingHeroHeading } from "@/components/LandingHeroHeading";
 import { LandingMoreVtubers } from "@/components/LandingMoreVtubers";
 import { LandingRandomVtuberImage } from "@/components/LandingRandomVtuberImage";
@@ -106,8 +105,6 @@ export default function HomePage() {
             登録せずに注文することもできます
             <a href="https://apply.vtubermatch.com/apply/onetime">単発購入（1本 2,000円）</a>
           </p>
-
-          <ClipDemoVideo />
 
           <LandingMoreVtubers />
 
