@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { PLAN_FEATURES } from "@/lib/constants";
-import { LofiPlanBenefits } from "@/components/LofiPlanBenefits";
 
 export function CreatorUpgradeForm() {
   const [form, setForm] = useState({
@@ -85,7 +84,6 @@ export function CreatorUpgradeForm() {
             <ul>
               {PLAN_FEATURES.free.map((feature) => <li key={feature}>{feature}</li>)}
             </ul>
-            <LofiPlanBenefits planId="registered" />
           </article>
 
           <article className={`plan-card ${form.plan_type === "boost" ? "selected" : ""}`} onClick={() => update("plan_type", "boost")}>
@@ -100,7 +98,6 @@ export function CreatorUpgradeForm() {
             <ul>
               {PLAN_FEATURES.boost.map((feature) => <li key={feature}>{feature}</li>)}
             </ul>
-            <LofiPlanBenefits planId="boost" />
           </article>
 
           <article className={`plan-card ${form.plan_type === "pro" ? "selected" : ""}`} onClick={() => update("plan_type", "pro")}>
@@ -115,7 +112,6 @@ export function CreatorUpgradeForm() {
             <ul>
               {PLAN_FEATURES.pro.map((feature) => <li key={feature}>{feature}</li>)}
             </ul>
-            <LofiPlanBenefits planId="pro" />
           </article>
         </div>
       </section>
