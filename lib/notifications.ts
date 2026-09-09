@@ -226,6 +226,41 @@ export async function notifyAdminClipRequest(input: {
   });
 }
 
+export async function notifyAdminRevisionReady(input: {
+  streamer: string;
+  clipTitle: string;
+}) {
+  const db = getAdminDb();
+  const app = getAdminApp();
+  if (!db || !app) return;
+
+  const title = "切り抜きの修正版ができました";
+  const body = `${input.streamer}さん「${input.clipTitle}」。演出を変えて作り直しました。内容を確認して配信者へ送ってください。`;
+
+  const tokens = await readAdminTokens();
+  await db.collection("notifications").doc().set({
+    target_type: "admin",
+    type: "CLIP_REVISION_READY",
+    streamer: input.streamer,
+    clip_title: input.clipTitle,
+    created_at: FieldValue.serverTimestamp(),
+    delivered: tokens.length > 0,
+  });
+
+  if (!tokens.length) return;
+
+  await app.messaging().sendEachForMulticast({
+    tokens,
+    notification: { title, body },
+    webpush: {
+      notification: { title, body, icon: "/icon.svg", badge: "/icon.svg" },
+      fcmOptions: { link: "/admin" },
+      headers: { Urgency: "high" },
+    },
+    data: { type: "CLIP_REVISION_READY", url: "/admin" },
+  });
+}
+
 async function readAdminTokens() {
   const db = getAdminDb();
   if (!db) return [];
