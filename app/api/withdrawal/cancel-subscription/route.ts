@@ -43,7 +43,7 @@ export async function POST(request: Request) {
   const streamer = streamerDoc?.data() || {};
   const subscriptionId = String(application.stripe_subscription_id || streamer.stripe_subscription_id || "").trim();
   const planType = String(streamer.plan_type || application.desired_plan || "free");
-  const isPaidPlan = planType === "paid" || planType === "boost" || application.subscription_status === "active" || streamer.subscription_status === "active";
+  const isPaidPlan = planType === "paid" || planType === "boost" || planType === "pro" || application.subscription_status === "active" || streamer.subscription_status === "active";
 
   if (!isPaidPlan) {
     await markCanceled(db, applicationDoc.ref, streamerId);

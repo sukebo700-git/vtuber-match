@@ -359,7 +359,7 @@ export async function addLocalPayment(input: Omit<PaymentRecord, "id" | "status"
   };
   await fs.writeFile(paymentsPath, JSON.stringify([payment, ...payments], null, 2));
   if (input.application_id) await markLocalApplicationPaid(input.application_id);
-  if (input.streamer_id && (input.plan_type === "paid" || input.plan_type === "boost")) {
+  if (input.streamer_id && (input.plan_type === "paid" || input.plan_type === "boost" || input.plan_type === "pro")) {
     await updateLocalStreamer(input.streamer_id, { plan_type: input.plan_type });
   }
   return payment;
@@ -521,6 +521,7 @@ export async function readAllLocalStreamers() {
 }
 
 function normalizePlan(plan: string): PlanType {
+  if (plan === "pro" || plan === "pro_monthly" || plan === "pro_yearly") return "pro";
   if (plan === "boost" || plan === "boost_monthly" || plan === "boost_yearly") return "boost";
   if (plan === "paid" || plan === "standard_monthly" || plan === "standard_yearly") return "paid";
   return "free";

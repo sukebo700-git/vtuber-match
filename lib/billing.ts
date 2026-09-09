@@ -10,6 +10,7 @@ export type CheckoutPlanType = BillingPlanType | OneTimeBillingType | ViewerBill
 export const PLAN_AMOUNTS: Record<CheckoutPlanType, number> = {
   paid: 500,
   boost: 980,
+  pro: 3980,
   super_boost_1: 220,
   elite_fan: 500,
 };
@@ -17,6 +18,7 @@ export const PLAN_AMOUNTS: Record<CheckoutPlanType, number> = {
 export const PLAN_LABELS: Record<CheckoutPlanType, string> = {
   paid: "ベーシックプラン",
   boost: "プレミアムプラン",
+  pro: "PROプラン",
   super_boost_1: "スーパーいいね",
   elite_fan: "エリートファン",
 };
@@ -27,11 +29,19 @@ export function getStripePriceId(planType: CheckoutPlanType, currentPlan?: PlanT
   if (planType === "boost" && currentPlan === "paid") {
     return process.env.STRIPE_PRICE_BOOST_FROM_PAID || process.env.STRIPE_PRICE_BOOST;
   }
+  // プレミアムからPROへ上がる時の差額プラン。未作成なら通常価格にフォールバック
+  if (planType === "pro" && currentPlan === "boost") {
+    return process.env.STRIPE_PRICE_PRO_FROM_BOOST || process.env.STRIPE_PRICE_PRO;
+  }
+  if (planType === "pro") return process.env.STRIPE_PRICE_PRO;
   return planType === "paid" ? process.env.STRIPE_PRICE_PAID : process.env.STRIPE_PRICE_BOOST;
 }
 
 export function getPlanAmount(planType: CheckoutPlanType, currentPlan?: PlanType) {
-  if (planType === "boost" && currentPlan === "paid") return 480;
+  // 差額プランを Stripe に用意している時だけ差額を返す。用意していない時は
+  // 通常価格で決済されるので、記録する金額も通常価格に合わせる
+  if (planType === "boost" && currentPlan === "paid" && process.env.STRIPE_PRICE_BOOST_FROM_PAID) return 480;
+  if (planType === "pro" && currentPlan === "boost" && process.env.STRIPE_PRICE_PRO_FROM_BOOST) return 3000;
   return PLAN_AMOUNTS[planType];
 }
 
@@ -40,7 +50,7 @@ export function getAppUrl() {
 }
 
 export function isPaidPlan(value: string): value is BillingPlanType {
-  return value === "paid" || value === "boost";
+  return value === "paid" || value === "boost" || value === "pro";
 }
 
 export function isOneTimePlan(value: string): value is OneTimeBillingType {
@@ -48,7 +58,7 @@ export function isOneTimePlan(value: string): value is OneTimeBillingType {
 }
 
 export function isStreamerPaidPlan(value: string): value is Exclude<PlanType, "free"> {
-  return value === "paid" || value === "boost";
+  return isPaidPlan(value);
 }
 
 export function isViewerSubscriptionPlan(value: string): value is ViewerBillingType {

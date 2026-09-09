@@ -85,7 +85,7 @@ async function getApplication(id: string): Promise<StreamerApplication | null> {
 }
 
 function normalizePlan(plan: string): PlanType {
-  if (plan === "paid" || plan === "boost") return plan;
+  if (plan === "paid" || plan === "boost" || plan === "pro") return plan;
   return "free";
 }
 

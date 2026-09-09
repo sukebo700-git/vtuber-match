@@ -1,8 +1,9 @@
 import type { PlanType, Streamer } from "./types";
 
 const planScore: Record<PlanType, number> = {
+  pro: 4_000_000,
   boost: 3_000_000,
-  paid: 2_000_000,
+  paid: 2_000_000,      // 新規受付終了。既存会員の順位を保つために残す
   free: 1_000_000
 };
 

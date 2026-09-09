@@ -97,6 +97,14 @@ export default function HomePage() {
             </span>
           </a>
 
+          {/* 上のバナーは「登録者限定・1本無料」なので、押すと依頼フォームで
+              ログインを求められる。登録するつもりのない初見の人を取り逃さない
+              よう、登録不要で注文できる道もここに出す */}
+          <p className="landing-clip-onetime-note">
+            登録せずに注文することもできます
+            <a href="https://apply.vtubermatch.com/apply/onetime">単発購入（1本 2,000円）</a>
+          </p>
+
           <LandingMoreVtubers />
 
           <AuthVisibility role="viewer" mode="logged-out">
