@@ -1,5 +1,11 @@
 import { HeaderAuthStatus } from "@/components/HeaderAuthStatus";
 import { PasswordResetConfirmForm } from "@/components/PasswordResetConfirmForm";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "パスワード再設定",
+  robots: { index: false, follow: false },
+};
 
 export default function PasswordResetConfirmPage({ searchParams }: { searchParams?: { id?: string; token?: string } }) {
   const requestId = searchParams?.id || "";

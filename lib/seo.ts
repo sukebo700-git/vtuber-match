@@ -23,6 +23,8 @@ export const publicRoutes = [
   "/signup",
   "/creator",
   "/creator/apply",
+  "/clip",
+  "/diagnosis",
   "/viewer",
   "/viewer/login",
   "/help",

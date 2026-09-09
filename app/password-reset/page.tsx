@@ -1,5 +1,11 @@
 import { HeaderAuthStatus } from "@/components/HeaderAuthStatus";
 import { PasswordResetRequestForm } from "@/components/PasswordResetRequestForm";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "パスワード再設定",
+  robots: { index: false, follow: false },
+};
 
 export default function PasswordResetPage({ searchParams }: { searchParams?: { type?: string } }) {
   const defaultType = searchParams?.type === "viewer" ? "viewer" : "creator";

@@ -7,7 +7,7 @@ import type { Metadata } from "next";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "コラボのお誘い設定 | VtuberMatch",
+  title: "コラボのお誘い設定",
   robots: { index: false, follow: false },
 };
 

@@ -5,7 +5,7 @@ import type { Metadata } from "next";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "紹介ショート動画の依頼 | VtuberMatch",
+  title: "紹介ショート動画の依頼",
   description: "VtuberMatch公式YouTubeチャンネルで公開する紹介ショート動画を、掲載中のVTuberが無料で依頼できます。",
   alternates: {
     canonical: "/creator/short-video",

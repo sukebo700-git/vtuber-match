@@ -2,6 +2,16 @@ import { HeaderAuthStatus } from "@/components/HeaderAuthStatus";
 import { AuthVisibility } from "@/components/AuthVisibility";
 import { ApplicationForm } from "@/components/ApplicationForm";
 import { CATEGORIES, TAGS } from "@/lib/constants";
+import type { Metadata } from "next";
+
+// /creator/apply と同一内容(このファイルをそのままre-export)。
+// 重複コンテンツと見なされないよう、canonicalは正規URLの方に向ける
+export const metadata: Metadata = {
+  title: "VTuberとして無料掲載",
+  alternates: {
+    canonical: "/creator/apply",
+  },
+};
 
 export default function ApplyPage() {
   return (

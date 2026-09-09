@@ -1,8 +1,14 @@
 import { HeaderAuthStatus } from "@/components/HeaderAuthStatus";
 import { AuthVisibility } from "@/components/AuthVisibility";
 import { CreatorProfileEditForm } from "@/components/CreatorProfileEditForm";
+import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "プロフィール編集",
+  robots: { index: false, follow: false },
+};
 
 export default function CreatorEditPage() {
   return (

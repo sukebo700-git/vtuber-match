@@ -12,7 +12,7 @@ import type { Metadata } from "next";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "VTuber向け無料掲載 | VtuberMatch",
+  title: "VTuber向け無料掲載",
   description:
     "VtuberMatchにVTuberとして掲載できます。プロフィール編集、プラン変更、Lo-Fi配信での紹介特典を確認できます。",
   alternates: {
