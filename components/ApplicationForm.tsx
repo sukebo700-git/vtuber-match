@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { BadgeCheck, Crown, ImagePlus, Send } from "lucide-react";
+import { Crown, ImagePlus, Send } from "lucide-react";
 import { PLAN_FEATURES } from "@/lib/constants";
 import { LofiPlanBenefits } from "@/components/LofiPlanBenefits";
 import { GoogleCredentialField } from "@/components/GoogleCredentialField";
@@ -44,16 +44,16 @@ const planRows = [
     summary: "Lo-Fi配信への掲載、ショート動画での宣伝、無料掲載ページの作成をまとめて申し込めます。",
   },
   {
-    id: "paid",
-    name: "ベーシックプラン",
-    price: "月額500円",
-    summary: "画像3枚、X表示、カテゴリ・タグ、無料プランより上位表示に加えて、紹介動画の特典を利用できます。",
-  },
-  {
     id: "boost",
     name: "プレミアムプラン",
     price: "月額980円",
     summary: "画像5枚、常時優先表示、プレミアムフレーム、Lo-Fi配信CMとShorts掲載で宣伝効果を最大化できます。",
+  },
+  {
+    id: "pro",
+    name: "PROプラン",
+    price: "月額3,980円",
+    summary: "プレミアムの特典をすべて含み、切り抜きショート動画を毎月4本まで追加料金なしで作成できます。",
   },
 ];
 
@@ -310,7 +310,7 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
                   <li key={feature}>{feature}</li>
                 ))}
               </ul>
-              <LofiPlanBenefits planId={plan.id === "free" ? "registered" : plan.id === "paid" ? "paid" : "boost"} />
+              <LofiPlanBenefits planId={plan.id === "free" ? "registered" : (plan.id as "boost" | "pro")} />
             </label>
           ))}
         </div>
@@ -372,7 +372,7 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
       </div>
       <div className="field">
         <span className="field-label">
-          <ImagePlus size={16} /> 掲載画像 {isFree ? "1枚" : selectedPlan === "paid" ? "最大3枚" : "最大5枚"}
+          <ImagePlus size={16} /> 掲載画像 {isFree ? "1枚" : "最大5枚"}
         </span>
         <div className="image-slot-grid">
           {visibleImages.map((image, index) => (
@@ -464,11 +464,11 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
               ))}
             </div>
           </div>
-          {selectedPlan === "paid" && (
-            <p className="notice-text"><BadgeCheck size={16} /> ベーシックプランでは公式バッジ、上位表示を利用できます。紹介動画は下のチェックで希望した場合に作成されます。</p>
-          )}
           {selectedPlan === "boost" && (
             <p className="notice-text"><Crown size={16} /> プレミアムプランでは常時優先表示、プレミアムフレームを利用できます。Lo-Fi配信CMとShorts掲載は下のチェックで希望した場合に作成されます。</p>
+          )}
+          {selectedPlan === "pro" && (
+            <p className="notice-text"><Crown size={16} /> PROプランではプレミアムの特典に加えて、切り抜きショート動画を毎月4本まで追加料金なしで作成できます。</p>
           )}
         </>
       )}

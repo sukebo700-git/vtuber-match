@@ -48,7 +48,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   if ("admin_placement" in body && ["top", "normal", "bottom"].includes(String(body.admin_placement))) {
     patch.admin_placement = body.admin_placement as AdminPlacement;
   }
-  if ("plan_type" in body && ["free", "paid", "boost"].includes(String(body.plan_type))) {
+  if ("plan_type" in body && ["free", "paid", "boost", "pro"].includes(String(body.plan_type))) {
     patch.plan_type = body.plan_type as PlanType;
   }
   if ("name" in body) patch.name = clean(body.name, 80);
