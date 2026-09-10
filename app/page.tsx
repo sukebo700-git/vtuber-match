@@ -1,3 +1,5 @@
+import { AudienceChoice } from "@/components/AudienceChoice";
+import { AudienceVisibility } from "@/components/AudienceVisibility";
 import { AuthVisibility } from "@/components/AuthVisibility";
 import { GoogleOneTap } from "@/components/GoogleOneTap";
 import { HeaderAuthStatus } from "@/components/HeaderAuthStatus";
@@ -77,49 +79,55 @@ export default function HomePage() {
             </div>
           </div>
 
-          <SmartPromoLink kind="creator-promo" className="landing-promo-banner landing-creator-promo-banner">
-            <div className="landing-promo-banner-copy">
-              <span className="landing-promo-banner-kicker">ショート動画&amp;24時間宣伝企画</span>
-              <strong>Lo-Fi配信への掲載・紹介ショート動画・無料掲載ページ、すべて0円</strong>
-            </div>
-            <span className="landing-promo-banner-cta">無料で宣伝を申し込む</span>
-          </SmartPromoLink>
+          <AudienceChoice />
 
-          {/* 依頼フォームへ直接は飛ばさず、まず/clip(説明+プラン比較ページ)を
-              経由させる。TOP→説明ページ→各フォーム、という導線にするため */}
-          <a className="landing-promo-banner landing-clip-promo-banner" href="/clip">
-            <div className="landing-promo-banner-copy">
-              <span className="landing-promo-banner-kicker">βテスト中</span>
-              <strong>「登録者限定」切り抜きショート動画1本無料</strong>
-            </div>
-            <span className="landing-promo-banner-cta">
-              <span className="landing-clip-promo-new">NEW</span>
-              切り抜きショート動画を依頼する
-            </span>
-          </a>
+          <AudienceVisibility audience="creator">
+            <SmartPromoLink kind="creator-promo" className="landing-promo-banner landing-creator-promo-banner">
+              <div className="landing-promo-banner-copy">
+                <span className="landing-promo-banner-kicker">ショート動画&amp;24時間宣伝企画</span>
+                <strong>Lo-Fi配信への掲載・紹介ショート動画・無料掲載ページ、すべて0円</strong>
+              </div>
+              <span className="landing-promo-banner-cta">無料で宣伝を申し込む</span>
+            </SmartPromoLink>
 
-          {/* 上のバナーは「登録者限定・1本無料」なので、押すと依頼フォームで
-              ログインを求められる。登録するつもりのない初見の人を取り逃さない
-              よう、登録不要で注文できる道もここに出す(こちらも/clip経由) */}
-          <p className="landing-clip-onetime-note">
-            登録せずに注文することもできます
-            <a href="/clip">単発購入（1本 2,000円）</a>
-          </p>
+            {/* 依頼フォームへ直接は飛ばさず、まず/clip(説明+プラン比較ページ)を
+                経由させる。TOP→説明ページ→各フォーム、という導線にするため */}
+            <a className="landing-promo-banner landing-clip-promo-banner" href="/clip">
+              <div className="landing-promo-banner-copy">
+                <span className="landing-promo-banner-kicker">βテスト中</span>
+                <strong>「登録者限定」切り抜きショート動画1本無料</strong>
+              </div>
+              <span className="landing-promo-banner-cta">
+                <span className="landing-clip-promo-new">NEW</span>
+                切り抜きショート動画を依頼する
+              </span>
+            </a>
+
+            {/* 上のバナーは「登録者限定・1本無料」なので、押すと依頼フォームで
+                ログインを求められる。登録するつもりのない初見の人を取り逃さない
+                よう、登録不要で注文できる道もここに出す(こちらも/clip経由) */}
+            <p className="landing-clip-onetime-note">
+              登録せずに注文することもできます
+              <a href="/clip">単発購入（1本 2,000円）</a>
+            </p>
+          </AudienceVisibility>
 
           <LandingMoreVtubers />
 
-          <AuthVisibility role="viewer" mode="logged-out">
-            <a className="landing-promo-banner" href="/viewer/register">
-              <div className="landing-promo-banner-copy">
-                <strong>スワイプ回数無制限、マッチ履歴を保存</strong>
-              </div>
-              <span className="landing-promo-banner-cta">リスナー登録無料</span>
-            </a>
-          </AuthVisibility>
+          <AudienceVisibility audience="viewer">
+            <AuthVisibility role="viewer" mode="logged-out">
+              <a className="landing-promo-banner" href="/viewer/register">
+                <div className="landing-promo-banner-copy">
+                  <strong>スワイプ回数無制限、マッチ履歴を保存</strong>
+                </div>
+                <span className="landing-promo-banner-cta">リスナー登録無料</span>
+              </a>
+            </AuthVisibility>
 
-          <AuthVisibility role="viewer" mode="logged-out">
-            <GoogleOneTap />
-          </AuthVisibility>
+            <AuthVisibility role="viewer" mode="logged-out">
+              <GoogleOneTap />
+            </AuthVisibility>
+          </AudienceVisibility>
 
           <SmartPromoLink kind="x-campaign" className="landing-promo-banner landing-x-campaign-banner">
             <div className="landing-promo-banner-copy">
@@ -128,7 +136,9 @@ export default function HomePage() {
             </div>
             <span className="landing-promo-banner-cta">Xのキャンペーンに応募する</span>
           </SmartPromoLink>
-          <XCampaignCreatorEntryLink />
+          <AudienceVisibility audience="creator">
+            <XCampaignCreatorEntryLink />
+          </AudienceVisibility>
 
           <a className="landing-scroll-cue landing-refresh-scroll" href="#lofi-benefits">
             <span>Lo-Fi配信特典を見る</span>
