@@ -6779,14 +6779,16 @@ button {
     font-size: clamp(2rem, 10vw, 2.8rem) !important;
   }
 
+  /* キャラは画面の大半を占める大きさにして、下の「視聴者の方/VTuberの方」
+     ボタンが少しだけ覗く程度に見せる */
   .landing-refresh-visual {
-    min-height: clamp(300px, 64vw, 440px) !important;
+    min-height: clamp(460px, 115vw, 620px) !important;
   }
 
   .landing-hero-character,
   .landing-hero-character .landing-oshi-frame {
-    min-height: clamp(300px, 64vw, 440px) !important;
-    height: clamp(300px, 64vw, 440px) !important;
+    min-height: clamp(460px, 115vw, 620px) !important;
+    height: clamp(460px, 115vw, 620px) !important;
   }
 
   .landing-hero-mini-actions {
