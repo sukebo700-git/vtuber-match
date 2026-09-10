@@ -6780,12 +6780,13 @@ button {
   }
 
   .landing-refresh-visual {
-    min-height: clamp(360px, 78vw, 520px) !important;
+    min-height: clamp(300px, 64vw, 440px) !important;
   }
 
   .landing-hero-character,
   .landing-hero-character .landing-oshi-frame {
-    min-height: clamp(360px, 78vw, 520px) !important;
+    min-height: clamp(300px, 64vw, 440px) !important;
+    height: clamp(300px, 64vw, 440px) !important;
   }
 
   .landing-hero-mini-actions {
@@ -7413,6 +7414,17 @@ body::after {
   color: #e45286;
 }
 
+/* ヘッダーの「切り抜き作成」だけ、目立つブランドカラーで表示する */
+.nav a.nav-clip-highlight {
+  color: #e45286;
+  background: rgba(228, 82, 134, 0.1);
+}
+
+.nav a.nav-clip-highlight:hover {
+  background: rgba(228, 82, 134, 0.18);
+  color: #d13f74;
+}
+
 .landing-main {
   width: min(1160px, 100%);
   align-content: start;
@@ -7823,6 +7835,18 @@ body::after {
 
   .landing-visual {
     order: -1 !important;
+    margin-top: -6px !important;
+  }
+
+  /* スマホでは切り抜きの依頼バナーは「もっと見る」の中(VTYPE診断の上)に置く。
+     ヒーロー内の同バナーと登録不要の注記はスマホでは隠す。 */
+  .landing-more-clip-banner {
+    display: flex !important;
+  }
+
+  .landing-clip-promo-banner,
+  .landing-clip-onetime-note {
+    display: none !important;
   }
 
   .landing-copy h1 {
@@ -8457,6 +8481,11 @@ body::after {
 .landing-more-content {
   display: grid;
   gap: 14px;
+}
+
+/* もっと見る内の切り抜きバナーはPCでは出さない(ヒーロー内のバナーを使う) */
+.landing-more-clip-banner {
+  display: none;
 }
 
 @media (max-width: 640px) {

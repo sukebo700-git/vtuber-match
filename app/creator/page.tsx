@@ -34,7 +34,7 @@ export default function CreatorPage({
         <a className="brand" href="/">VtuberMatch</a>
         <nav className="nav" aria-label="メイン">
           <a href="/swipe">探す</a>
-          <a href="/clip">切り抜き作成</a>
+          <a href="/clip" className="nav-clip-highlight">切り抜き作成</a>
           <a href="/viewer">視聴者向け</a>
           <a href="/login">ログイン</a>
           <a href="/diagnosis">VTYPE診断</a>
