@@ -15,10 +15,8 @@ export function AudienceChoice() {
       setChecked(true);
     }
     refresh();
-    window.addEventListener("storage", refresh);
     window.addEventListener(AUDIENCE_EVENT, refresh);
     return () => {
-      window.removeEventListener("storage", refresh);
       window.removeEventListener(AUDIENCE_EVENT, refresh);
     };
   }, []);

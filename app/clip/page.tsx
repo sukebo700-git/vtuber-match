@@ -32,7 +32,7 @@ export default function ClipLandingPage() {
         </a>
         <nav className="nav" aria-label="メイン">
           <a href="/swipe">探す</a>
-          <a href="/clip" aria-current="page">切り抜き作成</a>
+          <a href="/clip" aria-current="page" className="nav-clip-highlight">切り抜き作成</a>
           <a href="/viewer">視聴者向け</a>
           <a href="/creator">VTuber向け</a>
           <a href="https://www.youtube.com/@VtuberMatch" target="_blank" rel="noreferrer">

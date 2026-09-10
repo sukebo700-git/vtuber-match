@@ -22,6 +22,18 @@ export function LandingMoreVtubers() {
         <ChevronDown size={16} aria-hidden />
       </button>
       <div className={`landing-more-content ${expanded ? "is-open" : ""}`}>
+        {/* スマホでは切り抜き作成の依頼バナーもここ(VTYPE診断/履歴書の上)に置く。
+            PCではヒーロー内のバナーを使うので、これはCSSでスマホ時のみ表示。 */}
+        <a className="landing-promo-banner landing-more-clip-banner" href="/clip">
+          <div className="landing-promo-banner-copy">
+            <span className="landing-promo-banner-kicker">βテスト中</span>
+            <strong>「登録者限定」切り抜きショート動画1本無料</strong>
+          </div>
+          <span className="landing-promo-banner-cta">
+            <span className="landing-clip-promo-new">NEW</span>
+            切り抜きショート動画を依頼する
+          </span>
+        </a>
         <div className="landing-actions-row2">
           <UiButton variant="secondary" className="landing-secondary-cta" href="/diagnosis">
             VTYPE診断をする
