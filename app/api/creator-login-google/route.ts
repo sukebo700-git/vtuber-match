@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { FieldValue, getAdminDb } from "@/lib/firebaseAdmin";
 import { readLocalApplications, readLocalStreamers, recordLocalCreatorLogin } from "@/lib/localStore";
-import { verifyGoogleIdToken } from "@/lib/googleAuth";
+import { logGoogleAuthFailure, verifyGoogleIdToken } from "@/lib/googleAuth";
 import { createUserSession, creatorSessionCookie, userSessionCookieOptions } from "@/lib/userSession";
 
 export async function POST(request: Request) {
@@ -10,6 +10,7 @@ export async function POST(request: Request) {
 
   const googleUser = await verifyGoogleIdToken(credential);
   if (!googleUser) {
+    logGoogleAuthFailure(request, "creator-login-google", "verify_failed");
     return NextResponse.json({ error: "Google認証に失敗しました。時間をおいて再度お試しください。" }, { status: 401 });
   }
   const email = googleUser.email;
@@ -25,7 +26,10 @@ export async function POST(request: Request) {
       const streamer = streamers.find((candidate) => candidate.id === item.streamer_id);
       return isActiveStreamer(streamer);
     }) || matches[0];
-    if (!application) return NextResponse.json({ error: "このGoogleアカウントに対応する登録が見つかりません。先に新規登録してください。" }, { status: 404 });
+    if (!application) {
+      logGoogleAuthFailure(request, "creator-login-google", "no_matching_application");
+      return NextResponse.json({ error: "このGoogleアカウントに対応する登録が見つかりません。先に新規登録してください。" }, { status: 404 });
+    }
     const streamer = streamers.find((item) => item.id === application.streamer_id);
     if (streamer && !isActiveStreamer(streamer)) {
       return NextResponse.json({ error: "退会済みのデータです。新規登録してください。" }, { status: 401 });
@@ -79,6 +83,7 @@ export async function POST(request: Request) {
   }
   const data = doc?.data();
   if (!doc || !data) {
+    logGoogleAuthFailure(request, "creator-login-google", "no_matching_application");
     return NextResponse.json({ error: "このGoogleアカウントに対応する登録が見つかりません。先に新規登録してください。" }, { status: 404 });
   }
 

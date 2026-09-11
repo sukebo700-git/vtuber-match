@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { loadGoogleIdentityScript } from "@/lib/googleIdentityClient";
+import { InAppBrowserNotice } from "@/components/InAppBrowserNotice";
 
 const CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
@@ -47,5 +48,10 @@ export function GoogleCredentialField({ onCredential }: GoogleCredentialFieldPro
   }, [onCredential]);
 
   if (!CLIENT_ID) return null;
-  return <div ref={buttonRef} className="google-signin-button" />;
+  return (
+    <>
+      <InAppBrowserNotice />
+      <div ref={buttonRef} className="google-signin-button" />
+    </>
+  );
 }
