@@ -1220,7 +1220,7 @@ button {
 
 .card {
   position: absolute;
-  inset: 12px;
+  inset: 6px;
   border: 6px solid #0c111d;
   border-radius: 36px;
   overflow: hidden;
@@ -1274,7 +1274,7 @@ button {
   inset: 0;
   z-index: 3;
   border-radius: 36px;
-  padding: 7px;
+  padding: 8px;
   background:
     linear-gradient(135deg,
       #6e4f1a 0%, #e9c15c 9%, #fff6d0 17%, #cf9c34 27%,
@@ -1297,10 +1297,10 @@ button {
 .card.plan-boost::before {
   content: "";
   position: absolute;
-  inset: 7px;
+  inset: 8px;
   z-index: 3;
   border-radius: 30px;
-  padding: 8px;
+  padding: 9px;
   background:
     radial-gradient(circle at 18% 22%, #ff3b6b 0%, transparent 58%),
     radial-gradient(circle at 78% 12%, #ffd93d 0%, transparent 58%),
@@ -1329,10 +1329,10 @@ button {
 .card.plan-boost::after {
   content: "";
   position: absolute;
-  inset: 15px;
+  inset: 17px;
   z-index: 3;
   border-radius: 24px;
-  padding: 8px;
+  padding: 9px;
   background:
     linear-gradient(115deg,
       #6e4f1a 0%, #e9c15c 9%, #fff6d0 17%, #cf9c34 27%,
@@ -1357,7 +1357,7 @@ button {
 /* ホログラム風の虹色シート(写真の上を斜めに流れる) */
 .card.plan-boost .card-holo {
   position: absolute;
-  inset: 23px;
+  inset: 26px;
   z-index: 2;
   overflow: hidden;
   border-radius: 30px;
@@ -1399,7 +1399,7 @@ button {
    のような輝きに。 */
 .card.plan-boost .card-corners {
   position: absolute;
-  inset: 21px;
+  inset: 24px;
   z-index: 4;
   pointer-events: none;
   background-image:
@@ -1839,7 +1839,7 @@ button {
   }
 
   .card {
-    inset: 9px;
+    inset: 5px;
     border-radius: 34px;
   }
 
@@ -4728,7 +4728,7 @@ button {
   }
 
   .card {
-    inset: 7px;
+    inset: 4px;
     border-width: 5px;
     border-radius: 32px;
   }
@@ -6469,7 +6469,7 @@ button {
   }
 
   .card {
-    inset: 5px !important;
+    inset: 3px !important;
     border-radius: 36px !important;
     border-width: 5px !important;
     background:
