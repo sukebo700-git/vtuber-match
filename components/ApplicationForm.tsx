@@ -341,6 +341,9 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
             <>
               <GoogleCredentialField onCredential={handleGoogleCredential} />
               <p className="help-text">上のボタンからGoogleアカウントを選ぶと、パスワード不要でログインできるようになります。</p>
+              <p className="help-text">
+                ボタンを押しても反応がない・進まない場合は、ブラウザのCookie設定(サードパーティCookieのブロックなど)が原因のことがあります。お手数ですが上の「メール+パスワード」に切り替えてお試しください。
+              </p>
             </>
           )}
         </div>
