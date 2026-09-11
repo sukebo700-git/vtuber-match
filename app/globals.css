@@ -1427,6 +1427,20 @@ button {
   pointer-events: none;
 }
 
+/* 配信者が登録する写真は解像度・圧縮率がまちまちで、低画質なものは
+   ブロックノイズ(JPEGの「ガビガビ」)が目立つ。新規の追加ストレージや
+   外部APIを使わず、CSSだけで見た目を底上げする:
+   ごく僅かなblurでブロックの境界を滲ませつつ、contrast/saturateで
+   メリハリを補い、体感の鮮明さを保つ。良質な写真への影響はごく僅か。 */
+.card img,
+.detail-profile-image,
+.detail-image-strip img,
+.detail-lightbox img,
+.vtuber-seo-image-frame img,
+.match-list-thumb {
+  filter: blur(0.35px) contrast(1.05) saturate(1.08);
+}
+
 /* 配信者本人が編集画面で620×620の正方形にトリミング済みの画像を、
    正方形ではない縦長カード枠に表示する。cover にすると本人が意図して
    フレーミングした写真の左右が切れてしまうため、写真自体は contain で

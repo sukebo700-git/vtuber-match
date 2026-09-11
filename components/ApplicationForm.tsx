@@ -615,8 +615,12 @@ function compressImage(image: HTMLImageElement) {
   let best = "";
   for (const max of [640, 560, 480, 420, 360, 320, 280]) {
     const scale = Math.min(1, max / Math.max(image.width, image.height));
+    // canvas.width/heightへの代入は描画コンテキストの状態(imageSmoothing等)を
+    // リセットしてしまうため、サイズ確定のたびに毎回設定し直す必要がある。
     canvas.width = Math.max(1, Math.round(image.width * scale));
     canvas.height = Math.max(1, Math.round(image.height * scale));
+    context.imageSmoothingEnabled = true;
+    context.imageSmoothingQuality = "high";
     context.clearRect(0, 0, canvas.width, canvas.height);
     context.drawImage(image, 0, 0, canvas.width, canvas.height);
 
