@@ -6859,6 +6859,54 @@ button {
   padding-block: clamp(18px, 3vw, 36px) clamp(34px, 5vw, 64px);
 }
 
+/* .creator-hero.compact-hero(/login, /signup)は専用CSSが無く、
+   ブラウザ標準のh1/pがそのまま並ぶだけの簡素な見た目だったため、
+   /creatorの.creator-hero-panelと近いカード調に揃える。 */
+.creator-hero.compact-hero {
+  border: 1px solid rgba(255, 255, 255, 0.78);
+  border-radius: 28px;
+  padding: clamp(24px, 4vw, 40px);
+  margin: clamp(16px, 3vw, 28px) clamp(16px, 4vw, 32px) 0;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(244, 253, 255, 0.82)),
+    linear-gradient(135deg, rgba(255, 96, 164, 0.1), rgba(88, 210, 255, 0.11));
+  box-shadow: 0 22px 54px rgba(66, 91, 133, 0.1);
+}
+
+.creator-hero.compact-hero h1 {
+  margin: 10px 0 8px;
+  color: #172036;
+  font-size: clamp(1.7rem, 3.4vw, 2.4rem);
+  font-weight: 850;
+  letter-spacing: -0.015em;
+  line-height: 1.2;
+}
+
+.creator-hero.compact-hero p {
+  max-width: 560px;
+  color: #536178;
+  line-height: 1.7;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #d94d82;
+  font-size: 0.76rem;
+  font-weight: 950;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.eyebrow::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
 .creator-hero-panel,
 .creator-plan-panel {
   position: relative;
@@ -6892,13 +6940,24 @@ button {
   width: fit-content;
   display: inline-flex;
   align-items: center;
+  gap: 6px;
   border: 1px solid rgba(228, 82, 134, 0.16);
   border-radius: 999px;
-  padding: 6px 11px;
+  padding: 6px 13px 6px 11px;
   background: rgba(255, 255, 255, 0.78);
   color: #d94d82;
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   font-weight: 950;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.creator-page-kicker::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
 }
 
 .creator-hero-panel h1 {
@@ -6951,6 +7010,11 @@ button {
   transform: translateY(-2px);
   border-color: rgba(228, 82, 134, 0.24);
   box-shadow: 0 24px 54px rgba(66, 91, 133, 0.14);
+}
+
+.creator-action-card:active {
+  transform: translateY(0) scale(0.99);
+  box-shadow: 0 10px 24px rgba(66, 91, 133, 0.12);
 }
 
 .creator-action-card.featured {
