@@ -1,3 +1,4 @@
+import { BetaBanner, SupportContactNote } from "@/components/BetaFeedbackNotice";
 import { ClipDemoVideo } from "@/components/ClipDemoVideo";
 import { HeaderAuthStatus } from "@/components/HeaderAuthStatus";
 import { UiButton } from "@/components/ui/UiButton";
@@ -44,6 +45,8 @@ export default function ClipLandingPage() {
       </header>
 
       <main className="main grid-page clip-landing">
+        <BetaBanner />
+
         <section className="status-band clip-landing-hero">
           <h1>配信を、ショート動画に。</h1>
           <p>
@@ -128,6 +131,8 @@ export default function ClipLandingPage() {
               </UiButton>
             </div>
           </div>
+
+          <SupportContactNote />
         </section>
       </main>
     </div>
