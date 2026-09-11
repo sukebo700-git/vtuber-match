@@ -1171,6 +1171,7 @@ function SwipeCard({
       {superEffect && <div className="super-boost-ribbon">SUPER</div>}
       {visualPlan === "boost" && (
         <>
+          <div className="card-outer-frame" aria-hidden />
           <div className="card-holo" aria-hidden />
           <div className="card-corners" aria-hidden />
         </>
