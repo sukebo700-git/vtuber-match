@@ -1225,7 +1225,10 @@ button {
   border-radius: 36px;
   overflow: hidden;
   background: #f7faff;
-  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.24);
+  box-shadow:
+    0 22px 46px rgba(15, 18, 30, 0.3),
+    0 4px 12px rgba(15, 18, 30, 0.16),
+    0 0 0 1px rgba(255, 255, 255, 0.08);
   touch-action: none;
   contain: layout paint;
   user-select: none;
@@ -1262,32 +1265,34 @@ button {
   }
 }
 
-/* メタリックなゴールド箔フレーム(グラデ枠 + シマーが流れる) */
+/* メタリックなゴールド箔フレーム(グラデ枠 + シマーが流れる)
+   2026-09-11: より豪華な質感にするため、枠を太くしハイライトの
+   段数を増やして金属箔らしいコントラストを強める。 */
 .card.plan-boost::before {
   content: "";
   position: absolute;
   inset: 0;
   z-index: 3;
   border-radius: 36px;
-  padding: 7px;
+  padding: 9px;
   background:
     linear-gradient(115deg,
-      #6e4f1a 0%, #e9c15c 9%, #fff6d0 17%, #cf9c34 27%,
-      #8a6524 37%, #ffe89a 51%, #fffbe6 59%, #d3a23a 71%,
-      #7a591d 83%, #ffe08a 100%);
-  background-size: 260% 260%;
+      #5c4013 0%, #caa03e 7%, #fff8d8 14%, #e9c15c 21%, #fffdf0 28%,
+      #cf9c34 36%, #7a591d 44%, #ffe89a 55%, #fffbe6 62%, #d3a23a 74%,
+      #6e4f1a 86%, #ffe9a0 94%, #fff6d0 100%);
+  background-size: 300% 300%;
   -webkit-mask:
     linear-gradient(#000 0 0) content-box,
     linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
           mask-composite: exclude;
-  animation: boost-foil 4.8s linear infinite;
+  animation: boost-foil 4.2s linear infinite;
   pointer-events: none;
 }
 
 @keyframes boost-foil {
   0%   { background-position: 0% 50%; }
-  100% { background-position: 260% 50%; }
+  100% { background-position: 300% 50%; }
 }
 
 /* 内側の細いゴールドライン(二重枠でトレカ感) */
@@ -1309,6 +1314,7 @@ button {
   position: absolute;
   inset: 8px;
   z-index: 2;
+  overflow: hidden;
   border-radius: 30px;
   pointer-events: none;
   background: linear-gradient(115deg,
@@ -1326,21 +1332,40 @@ button {
   100% { background-position: 320% 50%; }
 }
 
-/* 四隅のゴールドの飾り(トレカのコーナー装飾) */
+/* 2026-09-11: トレカのスリーブ越しの反射のような、斜めに走る
+   光の帯を追加してより高級感のある輝きにする。 */
+.card.plan-boost .card-holo::before {
+  content: "";
+  position: absolute;
+  inset: -60% -20%;
+  background: linear-gradient(100deg,
+    transparent 42%, rgba(255, 255, 255, 0.65) 50%, transparent 58%);
+  mix-blend-mode: screen;
+  animation: card-shine-sweep 3.6s ease-in-out infinite;
+}
+
+@keyframes card-shine-sweep {
+  0%, 15% { transform: translateX(-70%); }
+  85%, 100% { transform: translateX(70%); }
+}
+
+/* 四隅のゴールドの飾り(トレカのコーナー装飾)
+   2026-09-11: 一回り大きく、中心のハイライトも強めてジュエリー
+   のような輝きに。 */
 .card.plan-boost .card-corners {
   position: absolute;
   inset: 12px;
   z-index: 4;
   pointer-events: none;
   background-image:
-    radial-gradient(circle, #fff7d4 0 2px, #f2c552 2.5px 5px, rgba(140, 100, 30, 0.85) 5.5px 7px, transparent 8px),
-    radial-gradient(circle, #fff7d4 0 2px, #f2c552 2.5px 5px, rgba(140, 100, 30, 0.85) 5.5px 7px, transparent 8px),
-    radial-gradient(circle, #fff7d4 0 2px, #f2c552 2.5px 5px, rgba(140, 100, 30, 0.85) 5.5px 7px, transparent 8px),
-    radial-gradient(circle, #fff7d4 0 2px, #f2c552 2.5px 5px, rgba(140, 100, 30, 0.85) 5.5px 7px, transparent 8px);
+    radial-gradient(circle, #fffdf4 0 3px, #fff7d4 3px 6px, #f2c552 6.5px 9px, rgba(140, 100, 30, 0.85) 9.5px 11px, transparent 12px),
+    radial-gradient(circle, #fffdf4 0 3px, #fff7d4 3px 6px, #f2c552 6.5px 9px, rgba(140, 100, 30, 0.85) 9.5px 11px, transparent 12px),
+    radial-gradient(circle, #fffdf4 0 3px, #fff7d4 3px 6px, #f2c552 6.5px 9px, rgba(140, 100, 30, 0.85) 9.5px 11px, transparent 12px),
+    radial-gradient(circle, #fffdf4 0 3px, #fff7d4 3px 6px, #f2c552 6.5px 9px, rgba(140, 100, 30, 0.85) 9.5px 11px, transparent 12px);
   background-repeat: no-repeat;
-  background-size: 20px 20px;
+  background-size: 28px 28px;
   background-position: top left, top right, bottom left, bottom right;
-  filter: drop-shadow(0 0 4px rgba(255, 216, 130, 0.6));
+  filter: drop-shadow(0 0 6px rgba(255, 216, 130, 0.75));
 }
 
 /* 四隅を結ぶ内側のL字コーナーライン */
@@ -1367,6 +1392,7 @@ button {
   .card.plan-boost { animation: none; }
   .card.plan-boost::before { animation: none; }
   .card.plan-boost .card-holo { animation: none; }
+  .card.plan-boost .card-holo::before { animation: none; }
   .super-effect { animation: none; }
   .super-effect::after { animation: none; }
   .super-shine::before { animation: none; }
@@ -1386,7 +1412,10 @@ button {
   background: linear-gradient(135deg, #ffe36f, #ff62a6 52%, #d92762);
   color: #fff;
   text-shadow: 0 2px 8px rgba(72, 20, 46, 0.45);
-  box-shadow: 0 14px 30px rgba(255, 74, 151, 0.34), 0 0 0 3px rgba(255, 232, 144, 0.4);
+  box-shadow:
+    0 14px 30px rgba(255, 74, 151, 0.34),
+    0 0 0 3px rgba(255, 232, 144, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55);
 }
 
 .card.plan-boost .official-badge {
