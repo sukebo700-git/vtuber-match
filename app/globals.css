@@ -1240,8 +1240,18 @@ button {
   background:
     radial-gradient(circle at 50% 15%, rgba(255, 224, 150, 0.14), transparent 52%),
     linear-gradient(158deg, #2c1730 0%, #1b0f22 46%, #0c0812 100%);
+  /* 2026-09-11: ::before/::afterの内側ゴールド箔フレームはそのまま残し、
+     .card自体のbox-shadow(枠の外側)に虹色のリングを追加する。
+     box-shadowは要素自身のoverflow:hiddenでクリップされないため、
+     角丸(36px)に沿った虹の輪を外側に描ける。 */
   box-shadow:
     0 0 0 2px rgba(120, 92, 34, 0.55),
+    0 0 0 4px #ff3b6b,
+    0 0 0 6px #ff9a3d,
+    0 0 0 8px #ffd93d,
+    0 0 0 10px #4ade80,
+    0 0 0 12px #4fc3ff,
+    0 0 0 14px #b788ff,
     0 0 28px rgba(255, 208, 120, 0.42),
     0 0 66px rgba(255, 120, 70, 0.20),
     0 24px 54px rgba(48, 24, 14, 0.5);
@@ -1252,6 +1262,12 @@ button {
   0%, 100% {
     box-shadow:
       0 0 0 2px rgba(120, 92, 34, 0.55),
+      0 0 0 4px #ff3b6b,
+      0 0 0 6px #ff9a3d,
+      0 0 0 8px #ffd93d,
+      0 0 0 10px #4ade80,
+      0 0 0 12px #4fc3ff,
+      0 0 0 14px #b788ff,
       0 0 24px rgba(255, 208, 120, 0.36),
       0 0 54px rgba(255, 120, 70, 0.16),
       0 24px 54px rgba(48, 24, 14, 0.5);
@@ -1259,6 +1275,12 @@ button {
   50% {
     box-shadow:
       0 0 0 2px rgba(170, 130, 54, 0.74),
+      0 0 0 4px #ff3b6b,
+      0 0 0 6px #ff9a3d,
+      0 0 0 8px #ffd93d,
+      0 0 0 10px #4ade80,
+      0 0 0 12px #4fc3ff,
+      0 0 0 14px #b788ff,
       0 0 42px rgba(255, 226, 146, 0.56),
       0 0 86px rgba(255, 146, 86, 0.30),
       0 24px 54px rgba(48, 24, 14, 0.5);
