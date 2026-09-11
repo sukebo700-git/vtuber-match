@@ -1188,9 +1188,9 @@ button {
 }
 
 .deck {
-  width: clamp(320px, 32vw, 470px);
+  width: clamp(350px, 34vw, 500px);
   max-width: 100%;
-  min-width: min(100%, 320px);
+  min-width: min(100%, 350px);
   aspect-ratio: 0.68;
   position: relative;
   justify-self: center;
@@ -1776,7 +1776,7 @@ button {
   }
 
   .deck {
-    width: clamp(300px, 29vw, 420px);
+    width: clamp(330px, 31vw, 450px);
   }
 
   .deck::before {
@@ -1830,7 +1830,7 @@ button {
   }
 
   .deck {
-    width: clamp(280px, 27vw, 380px);
+    width: clamp(300px, 29vw, 410px);
   }
 
   .card h1 {
@@ -4664,7 +4664,7 @@ button {
   }
 
   .deck {
-    width: min(100%, 360px);
+    width: min(100%, 410px);
     min-width: 0;
   }
 
@@ -6399,7 +6399,7 @@ button {
   }
 
   .deck {
-    width: min(100%, 360px) !important;
+    width: min(100%, 410px) !important;
     min-width: 0 !important;
     justify-self: center !important;
   }
