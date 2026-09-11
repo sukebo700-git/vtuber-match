@@ -9,6 +9,19 @@ type GoogleUser = {
   sub: string;
 };
 
+// Googleログイン失敗の原因調査用ログ。X/Instagramアプリ内蔵ブラウザ等、
+// クライアント側では再現できない環境要因の切り分けにUser-Agentが要るため、
+// 失敗発生時にサーバー側(Vercelのファンクションログ)へ残す。
+export function logGoogleAuthFailure(request: Request, endpoint: string, reason: string) {
+  console.error("[google-auth-failure]", JSON.stringify({
+    endpoint,
+    reason,
+    userAgent: request.headers.get("user-agent") || "",
+    referer: request.headers.get("referer") || "",
+    time: new Date().toISOString(),
+  }));
+}
+
 export async function verifyGoogleIdToken(credential: string): Promise<GoogleUser | null> {
   const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "";
   if (!clientId || !credential) return null;

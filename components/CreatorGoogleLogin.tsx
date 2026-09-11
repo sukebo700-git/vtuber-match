@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { loadGoogleIdentityScript } from "@/lib/googleIdentityClient";
+import { InAppBrowserNotice } from "@/components/InAppBrowserNotice";
 
 const CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
@@ -11,6 +12,7 @@ type CreatorGoogleLoginProps = {
 
 export function CreatorGoogleLogin({ redirectTo = "/creator?notify=1" }: CreatorGoogleLoginProps) {
   const buttonRef = useRef<HTMLDivElement>(null);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (!CLIENT_ID) return;
@@ -19,13 +21,17 @@ export function CreatorGoogleLogin({ redirectTo = "/creator?notify=1" }: Creator
     let cancelled = false;
 
     async function handleCredentialResponse(response: { credential: string }) {
+      setError("");
       const result = await fetch("/api/creator-login-google", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ credential: response.credential }),
       });
       const data = await result.json().catch(() => ({}));
-      if (!result.ok) return;
+      if (!result.ok) {
+        setError(data.error || "ログインに失敗しました。時間をおいて再度お試しください。");
+        return;
+      }
 
       localStorage.setItem("vtuber-match-creator-login-id", data.creator_login_id || "");
       localStorage.setItem("vtuber-match-creator-email", data.email || "");
@@ -72,5 +78,11 @@ export function CreatorGoogleLogin({ redirectTo = "/creator?notify=1" }: Creator
   }, [redirectTo]);
 
   if (!CLIENT_ID) return null;
-  return <div ref={buttonRef} className="google-signin-button" />;
+  return (
+    <>
+      <InAppBrowserNotice />
+      <div ref={buttonRef} className="google-signin-button" />
+      {error ? <p className="notice-text">{error}</p> : null}
+    </>
+  );
 }
