@@ -1220,8 +1220,8 @@ button {
 
 .card {
   position: absolute;
-  inset: 6px;
-  border: 6px solid #0c111d;
+  inset: 2px;
+  border: 3px solid #0c111d;
   border-radius: 36px;
   overflow: hidden;
   background: #f7faff;
@@ -1276,7 +1276,7 @@ button {
   inset: 0;
   z-index: 3;
   border-radius: 36px;
-  padding: 9px;
+  padding: 14px;
   background:
     radial-gradient(circle at 18% 20%, rgba(255, 59, 107, 0.55) 0%, transparent 55%),
     radial-gradient(circle at 80% 14%, rgba(255, 217, 61, 0.5) 0%, transparent 55%),
@@ -1284,8 +1284,9 @@ button {
     radial-gradient(circle at 16% 82%, rgba(74, 222, 128, 0.5) 0%, transparent 55%),
     radial-gradient(circle at 55% 48%, rgba(183, 136, 255, 0.45) 0%, transparent 60%),
     linear-gradient(135deg,
-      #6e4f1a 0%, #e9c15c 15%, #fff6d0 28%, #cf9c34 42%,
-      #8a6524 55%, #ffe89a 70%, #d3a23a 85%, #7a591d 100%);
+      #4a3410 0%, #8a6524 9%, #e9c15c 18%, #fff8d8 26%, #fffef2 30%,
+      #e9c15c 36%, #a67c2e 45%, #6e4f1a 52%, #ffe89a 61%, #fffbe6 68%,
+      #d3a23a 78%, #5c4013 88%, #caa03e 94%, #ffe08a 100%);
   background-size: 240% 240%;
   -webkit-mask:
     linear-gradient(#000 0 0) content-box,
@@ -1293,7 +1294,7 @@ button {
   -webkit-mask-composite: xor;
           mask-composite: exclude;
   animation: card-rainbow-diagonal 6s ease-in-out infinite alternate;
-  filter: drop-shadow(0 0 10px rgba(255, 214, 130, 0.4));
+  filter: drop-shadow(0 0 10px rgba(255, 214, 130, 0.45)) drop-shadow(0 0 2px rgba(90, 60, 10, 0.4));
   pointer-events: none;
 }
 
@@ -1305,7 +1306,7 @@ button {
 /* ホログラム風の虹色シート(写真の上を斜めに流れる) */
 .card.plan-boost .card-holo {
   position: absolute;
-  inset: 12px;
+  inset: 17px;
   z-index: 2;
   overflow: hidden;
   border-radius: 30px;
@@ -1347,7 +1348,7 @@ button {
    のような輝きに。 */
 .card.plan-boost .card-corners {
   position: absolute;
-  inset: 13px;
+  inset: 17px;
   z-index: 4;
   pointer-events: none;
   background-image:
@@ -1785,7 +1786,7 @@ button {
   }
 
   .card {
-    inset: 5px;
+    inset: 3px;
     border-radius: 34px;
   }
 
@@ -4674,8 +4675,8 @@ button {
   }
 
   .card {
-    inset: 4px;
-    border-width: 5px;
+    inset: 2px;
+    border-width: 3px;
     border-radius: 32px;
   }
 
@@ -6415,9 +6416,9 @@ button {
   }
 
   .card {
-    inset: 3px !important;
+    inset: 1px !important;
     border-radius: 36px !important;
-    border-width: 5px !important;
+    border-width: 3px !important;
     background:
       radial-gradient(circle at 50% 18%, rgba(255, 255, 255, 0.9), transparent 34%),
       linear-gradient(180deg, #f7faff 0%, #eef5ff 58%, #f7faff 100%) !important;
