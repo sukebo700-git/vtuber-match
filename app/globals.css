@@ -960,15 +960,15 @@ button {
   gap: 18px;
   margin-top: clamp(22px, 4vw, 48px);
   border: 1px solid rgba(47, 125, 225, 0.14);
-  border-radius: 24px;
+  border-radius: 28px;
   padding: clamp(22px, 4vw, 38px);
   background: rgba(255, 255, 255, 0.9);
-  box-shadow: 0 18px 44px rgba(47, 125, 225, 0.1);
+  box-shadow: 0 22px 50px rgba(47, 125, 225, 0.12);
 }
 
 .landing-section-copy {
   display: grid;
-  gap: 8px;
+  gap: 10px;
 }
 
 .landing-section-copy h2,
@@ -976,14 +976,39 @@ button {
   margin: 0;
 }
 
+.landing-section-copy h2 {
+  font-size: clamp(1.5rem, 1.1rem + 1.6vw, 2rem);
+  font-weight: 850;
+  letter-spacing: -0.015em;
+  line-height: 1.25;
+}
+
+.landing-section-copy p {
+  color: #4a5773;
+  line-height: 1.75;
+}
+
 .landing-section-kicker {
   width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   border-radius: 999px;
-  padding: 5px 10px;
+  padding: 5px 12px 5px 10px;
   background: rgba(242, 56, 120, 0.1);
   color: #e64f86;
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   font-weight: 950;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.landing-section-kicker::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
 }
 
 .landing-diagnosis-actions,
@@ -1200,7 +1225,10 @@ button {
   border-radius: 36px;
   overflow: hidden;
   background: #f7faff;
-  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.24);
+  box-shadow:
+    0 22px 46px rgba(15, 18, 30, 0.3),
+    0 4px 12px rgba(15, 18, 30, 0.16),
+    0 0 0 1px rgba(255, 255, 255, 0.08);
   touch-action: none;
   contain: layout paint;
   user-select: none;
@@ -1208,7 +1236,7 @@ button {
 }
 
 .card.plan-boost {
-  border-color: #6b4e17;
+  border-color: #14121a;
   background:
     radial-gradient(circle at 50% 15%, rgba(255, 224, 150, 0.14), transparent 52%),
     linear-gradient(158deg, #2c1730 0%, #1b0f22 46%, #0c0812 100%);
@@ -1237,14 +1265,74 @@ button {
   }
 }
 
-/* メタリックなゴールド箔フレーム(グラデ枠 + シマーが流れる) */
-.card.plan-boost::before {
-  content: "";
+/* スマホゲーのSSRカードのように、外からゴールド箔(card-outer-frame)
+   →レインボー(::before)→ゴールド箔(::after)の三重フレームにする。
+   層状の輪(box-shadowの同心円)ではなく、それぞれ1本の帯を斜め方向に
+   ゆっくり行き来させるグラデーションにする。 */
+.card.plan-boost .card-outer-frame {
   position: absolute;
   inset: 0;
   z-index: 3;
   border-radius: 36px;
   padding: 7px;
+  background:
+    linear-gradient(135deg,
+      #6e4f1a 0%, #e9c15c 9%, #fff6d0 17%, #cf9c34 27%,
+      #8a6524 37%, #ffe89a 51%, #fffbe6 59%, #d3a23a 71%,
+      #7a591d 83%, #ffe08a 100%);
+  background-size: 260% 260%;
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  animation: boost-foil 5.4s linear infinite reverse;
+  filter: blur(2px) drop-shadow(0 0 10px rgba(255, 214, 130, 0.4));
+  pointer-events: none;
+}
+
+/* 2026-09-11: レインボー帯だけは単一方向のグラデーションではなく、
+   複数の色の光点を重ねた「メッシュグラデーション」にする。背景全体
+   を大きめにしてbackground-positionで斜めにゆっくり動かす。 */
+.card.plan-boost::before {
+  content: "";
+  position: absolute;
+  inset: 7px;
+  z-index: 3;
+  border-radius: 30px;
+  padding: 8px;
+  background:
+    radial-gradient(circle at 18% 22%, #ff3b6b 0%, transparent 58%),
+    radial-gradient(circle at 78% 12%, #ffd93d 0%, transparent 58%),
+    radial-gradient(circle at 92% 68%, #4f7dff 0%, transparent 58%),
+    radial-gradient(circle at 28% 88%, #4ade80 0%, transparent 58%),
+    radial-gradient(circle at 62% 48%, #b788ff 0%, transparent 62%),
+    radial-gradient(circle at 8% 58%, #22d3ee 0%, transparent 58%);
+  background-size: 220% 220%;
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  animation: card-rainbow-diagonal 6s ease-in-out infinite alternate;
+  filter: blur(2px);
+  pointer-events: none;
+}
+
+@keyframes card-rainbow-diagonal {
+  0%   { background-position: 0% 0%; }
+  100% { background-position: 100% 100%; }
+}
+
+/* 内側のゴールド箔の帯(元々のフレーム)。レインボー帯のすぐ内側に
+   同じマスク手法で配置し、シマーで流す。 */
+.card.plan-boost::after {
+  content: "";
+  position: absolute;
+  inset: 15px;
+  z-index: 3;
+  border-radius: 24px;
+  padding: 8px;
   background:
     linear-gradient(115deg,
       #6e4f1a 0%, #e9c15c 9%, #fff6d0 17%, #cf9c34 27%,
@@ -1257,6 +1345,7 @@ button {
   -webkit-mask-composite: xor;
           mask-composite: exclude;
   animation: boost-foil 4.8s linear infinite;
+  filter: blur(2px) drop-shadow(0 0 10px rgba(255, 214, 130, 0.4));
   pointer-events: none;
 }
 
@@ -1265,25 +1354,12 @@ button {
   100% { background-position: 260% 50%; }
 }
 
-/* 内側の細いゴールドライン(二重枠でトレカ感) */
-.card.plan-boost::after {
-  content: "";
-  position: absolute;
-  inset: 11px;
-  z-index: 3;
-  border: 1.5px solid rgba(255, 246, 200, 0.82);
-  border-radius: 27px;
-  box-shadow:
-    inset 0 0 22px rgba(255, 224, 132, 0.28),
-    0 0 12px rgba(255, 210, 120, 0.28);
-  pointer-events: none;
-}
-
 /* ホログラム風の虹色シート(写真の上を斜めに流れる) */
 .card.plan-boost .card-holo {
   position: absolute;
-  inset: 8px;
+  inset: 23px;
   z-index: 2;
+  overflow: hidden;
   border-radius: 30px;
   pointer-events: none;
   background: linear-gradient(115deg,
@@ -1301,21 +1377,40 @@ button {
   100% { background-position: 320% 50%; }
 }
 
-/* 四隅のゴールドの飾り(トレカのコーナー装飾) */
+/* 2026-09-11: トレカのスリーブ越しの反射のような、斜めに走る
+   光の帯を追加してより高級感のある輝きにする。 */
+.card.plan-boost .card-holo::before {
+  content: "";
+  position: absolute;
+  inset: -60% -20%;
+  background: linear-gradient(100deg,
+    transparent 42%, rgba(255, 255, 255, 0.65) 50%, transparent 58%);
+  mix-blend-mode: screen;
+  animation: card-shine-sweep 3.6s ease-in-out infinite;
+}
+
+@keyframes card-shine-sweep {
+  0%, 15% { transform: translateX(-70%); }
+  85%, 100% { transform: translateX(70%); }
+}
+
+/* 四隅のゴールドの飾り(トレカのコーナー装飾)
+   2026-09-11: 一回り大きく、中心のハイライトも強めてジュエリー
+   のような輝きに。 */
 .card.plan-boost .card-corners {
   position: absolute;
-  inset: 12px;
+  inset: 21px;
   z-index: 4;
   pointer-events: none;
   background-image:
-    radial-gradient(circle, #fff7d4 0 2px, #f2c552 2.5px 5px, rgba(140, 100, 30, 0.85) 5.5px 7px, transparent 8px),
-    radial-gradient(circle, #fff7d4 0 2px, #f2c552 2.5px 5px, rgba(140, 100, 30, 0.85) 5.5px 7px, transparent 8px),
-    radial-gradient(circle, #fff7d4 0 2px, #f2c552 2.5px 5px, rgba(140, 100, 30, 0.85) 5.5px 7px, transparent 8px),
-    radial-gradient(circle, #fff7d4 0 2px, #f2c552 2.5px 5px, rgba(140, 100, 30, 0.85) 5.5px 7px, transparent 8px);
+    radial-gradient(circle, #fffdf4 0 3px, #fff7d4 3px 6px, #f2c552 6.5px 9px, rgba(140, 100, 30, 0.85) 9.5px 11px, transparent 12px),
+    radial-gradient(circle, #fffdf4 0 3px, #fff7d4 3px 6px, #f2c552 6.5px 9px, rgba(140, 100, 30, 0.85) 9.5px 11px, transparent 12px),
+    radial-gradient(circle, #fffdf4 0 3px, #fff7d4 3px 6px, #f2c552 6.5px 9px, rgba(140, 100, 30, 0.85) 9.5px 11px, transparent 12px),
+    radial-gradient(circle, #fffdf4 0 3px, #fff7d4 3px 6px, #f2c552 6.5px 9px, rgba(140, 100, 30, 0.85) 9.5px 11px, transparent 12px);
   background-repeat: no-repeat;
-  background-size: 20px 20px;
+  background-size: 28px 28px;
   background-position: top left, top right, bottom left, bottom right;
-  filter: drop-shadow(0 0 4px rgba(255, 216, 130, 0.6));
+  filter: drop-shadow(0 0 6px rgba(255, 216, 130, 0.75));
 }
 
 /* 四隅を結ぶ内側のL字コーナーライン */
@@ -1340,8 +1435,11 @@ button {
 
 @media (prefers-reduced-motion: reduce) {
   .card.plan-boost { animation: none; }
+  .card.plan-boost .card-outer-frame { animation: none; }
   .card.plan-boost::before { animation: none; }
+  .card.plan-boost::after { animation: none; }
   .card.plan-boost .card-holo { animation: none; }
+  .card.plan-boost .card-holo::before { animation: none; }
   .super-effect { animation: none; }
   .super-effect::after { animation: none; }
   .super-shine::before { animation: none; }
@@ -1361,7 +1459,10 @@ button {
   background: linear-gradient(135deg, #ffe36f, #ff62a6 52%, #d92762);
   color: #fff;
   text-shadow: 0 2px 8px rgba(72, 20, 46, 0.45);
-  box-shadow: 0 14px 30px rgba(255, 74, 151, 0.34), 0 0 0 3px rgba(255, 232, 144, 0.4);
+  box-shadow:
+    0 14px 30px rgba(255, 74, 151, 0.34),
+    0 0 0 3px rgba(255, 232, 144, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55);
 }
 
 .card.plan-boost .official-badge {
@@ -2003,6 +2104,13 @@ button {
     0 0 0 1px rgba(255, 255, 255, 0.5) inset;
 }
 
+.primary-button:active {
+  transform: translateY(0) scale(0.98);
+  box-shadow:
+    0 8px 18px rgba(233, 79, 139, 0.24),
+    0 0 0 1px rgba(255, 255, 255, 0.42) inset;
+}
+
 .secondary-button {
   border: 1px solid rgba(34, 199, 232, 0.36);
   background:
@@ -2016,6 +2124,11 @@ button {
   border-color: rgba(47, 125, 225, 0.42);
   transform: translateY(-1px);
   box-shadow: 0 14px 30px rgba(34, 199, 232, 0.18);
+}
+
+.secondary-button:active {
+  transform: translateY(0) scale(0.98);
+  box-shadow: 0 6px 16px rgba(34, 199, 232, 0.14);
 }
 
 .primary-button:focus-visible,
@@ -6591,7 +6704,14 @@ button {
      大きな空白ができていた。!importantで明示的にautoへ上書きして無効化する。 */
   min-height: auto !important;
   grid-template-columns: minmax(280px, 0.95fr) minmax(280px, 0.85fr) !important;
-  align-items: center !important;
+  /* 2026-09-11: align-items:centerだと、1行目(見出し+CTA列とキャラ画像列)の
+     行の高さがキャラ画像の実測サイズ(82svh基準、PC幅では700〜900px超)で
+     決まってしまい、見出し・CTA列(実測300〜330px程度)がその中で上下中央に
+     配置される。結果、初期表示でヘッダーと見出しの間、およびCTAボタンと
+     次のセクションとの間に数百px規模の説明のつかない空白ができ、スクロール
+     しても何も現れない「壊れて見える」空白バグとして報告された。開始位置
+     (start)に揃えることで、見出し・CTAはヘッダー直下に詰めて表示される。 */
+  align-items: start !important;
   gap: clamp(20px, 3vw, 40px) !important;
   padding: clamp(20px, 2.4vw, 32px) 0 clamp(14px, 1.6vw, 20px) !important;
 }
@@ -6615,7 +6735,10 @@ button {
      初期表示でちょうど少し見切れる程度」を狙って、画面の高さ(svh)基準で
      スケールさせる(vw基準だと横に広いだけの画面で縦は詰まったままになる)。 */
   font-size: clamp(2rem, 6.2svh, 3.6rem) !important;
-  line-height: 1.15 !important;
+  line-height: 1.08 !important;
+  font-weight: 850 !important;
+  letter-spacing: -0.02em !important;
+  text-wrap: balance !important;
 }
 
 .landing-refresh-visual {
@@ -6812,6 +6935,54 @@ button {
   padding-block: clamp(18px, 3vw, 36px) clamp(34px, 5vw, 64px);
 }
 
+/* .creator-hero.compact-hero(/login, /signup)は専用CSSが無く、
+   ブラウザ標準のh1/pがそのまま並ぶだけの簡素な見た目だったため、
+   /creatorの.creator-hero-panelと近いカード調に揃える。 */
+.creator-hero.compact-hero {
+  border: 1px solid rgba(255, 255, 255, 0.78);
+  border-radius: 28px;
+  padding: clamp(24px, 4vw, 40px);
+  margin: clamp(16px, 3vw, 28px) clamp(16px, 4vw, 32px) 0;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(244, 253, 255, 0.82)),
+    linear-gradient(135deg, rgba(255, 96, 164, 0.1), rgba(88, 210, 255, 0.11));
+  box-shadow: 0 22px 54px rgba(66, 91, 133, 0.1);
+}
+
+.creator-hero.compact-hero h1 {
+  margin: 10px 0 8px;
+  color: #172036;
+  font-size: clamp(1.7rem, 3.4vw, 2.4rem);
+  font-weight: 850;
+  letter-spacing: -0.015em;
+  line-height: 1.2;
+}
+
+.creator-hero.compact-hero p {
+  max-width: 560px;
+  color: #536178;
+  line-height: 1.7;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #d94d82;
+  font-size: 0.76rem;
+  font-weight: 950;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.eyebrow::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
 .creator-hero-panel,
 .creator-plan-panel {
   position: relative;
@@ -6845,13 +7016,24 @@ button {
   width: fit-content;
   display: inline-flex;
   align-items: center;
+  gap: 6px;
   border: 1px solid rgba(228, 82, 134, 0.16);
   border-radius: 999px;
-  padding: 6px 11px;
+  padding: 6px 13px 6px 11px;
   background: rgba(255, 255, 255, 0.78);
   color: #d94d82;
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   font-weight: 950;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.creator-page-kicker::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
 }
 
 .creator-hero-panel h1 {
@@ -6904,6 +7086,11 @@ button {
   transform: translateY(-2px);
   border-color: rgba(228, 82, 134, 0.24);
   box-shadow: 0 24px 54px rgba(66, 91, 133, 0.14);
+}
+
+.creator-action-card:active {
+  transform: translateY(0) scale(0.99);
+  box-shadow: 0 10px 24px rgba(66, 91, 133, 0.12);
 }
 
 .creator-action-card.featured {
@@ -8662,29 +8849,40 @@ body::after {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  padding: 18px 12px;
-  border-radius: 18px;
+  gap: 5px;
+  padding: 20px 14px;
+  border-radius: 22px;
   border: 1.5px solid rgba(124, 91, 216, 0.28);
   background: rgba(255, 255, 255, 0.92);
-  box-shadow: 0 10px 30px rgba(88, 60, 160, 0.08);
+  box-shadow:
+    0 10px 30px rgba(88, 60, 160, 0.08),
+    0 1px 0 rgba(255, 255, 255, 0.9) inset;
   cursor: pointer;
   font: inherit;
   color: inherit;
   text-align: center;
+  transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
 }
 
 .landing-audience-card:hover {
   border-color: #7c5bd8;
   transform: translateY(-2px);
+  box-shadow: 0 16px 34px rgba(88, 60, 160, 0.16);
+}
+
+.landing-audience-card:active {
+  transform: translateY(0) scale(0.98);
+  box-shadow: 0 6px 16px rgba(88, 60, 160, 0.12);
 }
 
 .landing-audience-card strong {
-  font-size: 15px;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
   color: #24314f;
 }
 
 .landing-audience-card span {
-  font-size: 12px;
+  font-size: 12.5px;
   color: #6a6480;
 }
