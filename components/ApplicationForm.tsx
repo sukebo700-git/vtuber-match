@@ -326,21 +326,21 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
         <p className="help-text">紹介動画のナレーションでお名前を正しく読み上げるために使います。</p>
       </div>
       <div className="field">
-        <span className="field-label">ログイン方法</span>
-        <div className="segmented-control" role="tablist" aria-label="配信者ログイン方法">
-          <button type="button" className={authMethod === "password" ? "selected" : ""} onClick={() => setAuthMethod("password")}>メール+パスワード</button>
-          <button type="button" className={authMethod === "google" ? "selected" : ""} onClick={() => setAuthMethod("google")}>Googleアカウント</button>
+        <span className="field-label">アカウント作成方法(今後のログインにも使います)</span>
+        <div className="segmented-control" role="tablist" aria-label="配信者アカウント作成方法">
+          <button type="button" className={authMethod === "password" ? "selected" : ""} onClick={() => setAuthMethod("password")}>メールアドレスで登録</button>
+          <button type="button" className={authMethod === "google" ? "selected" : ""} onClick={() => setAuthMethod("google")}>Googleで登録</button>
         </div>
       </div>
       {authMethod === "google" ? (
         <div className="field">
           <span className="field-label">Googleアカウント</span>
           {googleEmail ? (
-            <p className="help-text">認証済み: {googleEmail}(このアカウントでログインできるようになります)</p>
+            <p className="help-text">✓ 認証済み: {googleEmail}(このアカウントで今後もログインできます。下の「申し込む」ボタンから送信してください)</p>
           ) : (
             <>
               <GoogleCredentialField onCredential={handleGoogleCredential} />
-              <p className="help-text">上のボタンからGoogleアカウントを選ぶと、パスワード不要でログインできるようになります。</p>
+              <p className="help-text">上のボタンでGoogleアカウントを選んで認証してください。認証が終わるまで「申し込む」ボタンは押せません。</p>
             </>
           )}
         </div>
@@ -483,9 +483,9 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
         </p>
       </div>
 
-      <button className="primary-button" type="submit" disabled={busy}>
+      <button className="primary-button" type="submit" disabled={busy || (authMethod === "google" && !googleCredential)}>
         <Send size={18} />
-        {busy ? "送信中..." : "申し込む"}
+        {busy ? "送信中..." : authMethod === "google" && !googleCredential ? "先にGoogleで認証してください" : "申し込む"}
       </button>
       {status && <p className="notice-text">{status}</p>}
       {status && !completion && !busy && (
