@@ -1560,10 +1560,10 @@ button {
 
 .new-ribbon {
   position: absolute;
-  top: 22px;
-  left: -35px;
-  z-index: 4;
-  width: 138px;
+  top: 26px;
+  left: -38px;
+  z-index: 5;
+  width: 150px;
   height: 34px;
   display: grid;
   place-items: center;
