@@ -6591,7 +6591,14 @@ button {
      大きな空白ができていた。!importantで明示的にautoへ上書きして無効化する。 */
   min-height: auto !important;
   grid-template-columns: minmax(280px, 0.95fr) minmax(280px, 0.85fr) !important;
-  align-items: center !important;
+  /* 2026-09-11: align-items:centerだと、1行目(見出し+CTA列とキャラ画像列)の
+     行の高さがキャラ画像の実測サイズ(82svh基準、PC幅では700〜900px超)で
+     決まってしまい、見出し・CTA列(実測300〜330px程度)がその中で上下中央に
+     配置される。結果、初期表示でヘッダーと見出しの間、およびCTAボタンと
+     次のセクションとの間に数百px規模の説明のつかない空白ができ、スクロール
+     しても何も現れない「壊れて見える」空白バグとして報告された。開始位置
+     (start)に揃えることで、見出し・CTAはヘッダー直下に詰めて表示される。 */
+  align-items: start !important;
   gap: clamp(20px, 3vw, 40px) !important;
   padding: clamp(20px, 2.4vw, 32px) 0 clamp(14px, 1.6vw, 20px) !important;
 }
