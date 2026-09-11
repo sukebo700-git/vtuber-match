@@ -1265,57 +1265,35 @@ button {
   }
 }
 
-/* スマホゲーのSSRカードのように、外からゴールド箔(card-outer-frame)
-   →レインボー(::before)→ゴールド箔(::after)の三重フレームにする。
-   層状の輪(box-shadowの同心円)ではなく、それぞれ1本の帯を斜め方向に
-   ゆっくり行き来させるグラデーションにする。 */
-.card.plan-boost .card-outer-frame {
+/* 2026-09-11: 外側ゴールド+レインボー+内側ゴールドの三重フレームは
+   帯が厚くなりすぎ、名前やバッジ、写真自体を圧迫していたため1本に
+   統合。ゴールドの箔グラデーションの上に、レインボーの光点(多点の
+   radial-gradient)を半透明で重ねた「ゴールド×レインボーが同時に
+   斜めへ動くメッシュグラデーション」1枚だけの帯にする。 */
+.card.plan-boost::before {
+  content: "";
   position: absolute;
   inset: 0;
   z-index: 3;
   border-radius: 36px;
-  padding: 8px;
-  background:
-    linear-gradient(135deg,
-      #6e4f1a 0%, #e9c15c 9%, #fff6d0 17%, #cf9c34 27%,
-      #8a6524 37%, #ffe89a 51%, #fffbe6 59%, #d3a23a 71%,
-      #7a591d 83%, #ffe08a 100%);
-  background-size: 260% 260%;
-  -webkit-mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-          mask-composite: exclude;
-  animation: boost-foil 5.4s linear infinite reverse;
-  filter: blur(2px) drop-shadow(0 0 10px rgba(255, 214, 130, 0.4));
-  pointer-events: none;
-}
-
-/* 2026-09-11: レインボー帯だけは単一方向のグラデーションではなく、
-   複数の色の光点を重ねた「メッシュグラデーション」にする。背景全体
-   を大きめにしてbackground-positionで斜めにゆっくり動かす。 */
-.card.plan-boost::before {
-  content: "";
-  position: absolute;
-  inset: 8px;
-  z-index: 3;
-  border-radius: 30px;
   padding: 9px;
   background:
-    radial-gradient(circle at 18% 22%, #ff3b6b 0%, transparent 58%),
-    radial-gradient(circle at 78% 12%, #ffd93d 0%, transparent 58%),
-    radial-gradient(circle at 92% 68%, #4f7dff 0%, transparent 58%),
-    radial-gradient(circle at 28% 88%, #4ade80 0%, transparent 58%),
-    radial-gradient(circle at 62% 48%, #b788ff 0%, transparent 62%),
-    radial-gradient(circle at 8% 58%, #22d3ee 0%, transparent 58%);
-  background-size: 220% 220%;
+    radial-gradient(circle at 18% 20%, rgba(255, 59, 107, 0.55) 0%, transparent 55%),
+    radial-gradient(circle at 80% 14%, rgba(255, 217, 61, 0.5) 0%, transparent 55%),
+    radial-gradient(circle at 88% 76%, rgba(79, 125, 255, 0.5) 0%, transparent 55%),
+    radial-gradient(circle at 16% 82%, rgba(74, 222, 128, 0.5) 0%, transparent 55%),
+    radial-gradient(circle at 55% 48%, rgba(183, 136, 255, 0.45) 0%, transparent 60%),
+    linear-gradient(135deg,
+      #6e4f1a 0%, #e9c15c 15%, #fff6d0 28%, #cf9c34 42%,
+      #8a6524 55%, #ffe89a 70%, #d3a23a 85%, #7a591d 100%);
+  background-size: 240% 240%;
   -webkit-mask:
     linear-gradient(#000 0 0) content-box,
     linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
           mask-composite: exclude;
   animation: card-rainbow-diagonal 6s ease-in-out infinite alternate;
-  filter: blur(2px);
+  filter: drop-shadow(0 0 10px rgba(255, 214, 130, 0.4));
   pointer-events: none;
 }
 
@@ -1324,40 +1302,10 @@ button {
   100% { background-position: 100% 100%; }
 }
 
-/* 内側のゴールド箔の帯(元々のフレーム)。レインボー帯のすぐ内側に
-   同じマスク手法で配置し、シマーで流す。 */
-.card.plan-boost::after {
-  content: "";
-  position: absolute;
-  inset: 17px;
-  z-index: 3;
-  border-radius: 24px;
-  padding: 9px;
-  background:
-    linear-gradient(115deg,
-      #6e4f1a 0%, #e9c15c 9%, #fff6d0 17%, #cf9c34 27%,
-      #8a6524 37%, #ffe89a 51%, #fffbe6 59%, #d3a23a 71%,
-      #7a591d 83%, #ffe08a 100%);
-  background-size: 260% 260%;
-  -webkit-mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-          mask-composite: exclude;
-  animation: boost-foil 4.8s linear infinite;
-  filter: blur(2px) drop-shadow(0 0 10px rgba(255, 214, 130, 0.4));
-  pointer-events: none;
-}
-
-@keyframes boost-foil {
-  0%   { background-position: 0% 50%; }
-  100% { background-position: 260% 50%; }
-}
-
 /* ホログラム風の虹色シート(写真の上を斜めに流れる) */
 .card.plan-boost .card-holo {
   position: absolute;
-  inset: 26px;
+  inset: 12px;
   z-index: 2;
   overflow: hidden;
   border-radius: 30px;
@@ -1399,7 +1347,7 @@ button {
    のような輝きに。 */
 .card.plan-boost .card-corners {
   position: absolute;
-  inset: 24px;
+  inset: 13px;
   z-index: 4;
   pointer-events: none;
   background-image:
@@ -1435,9 +1383,7 @@ button {
 
 @media (prefers-reduced-motion: reduce) {
   .card.plan-boost { animation: none; }
-  .card.plan-boost .card-outer-frame { animation: none; }
   .card.plan-boost::before { animation: none; }
-  .card.plan-boost::after { animation: none; }
   .card.plan-boost .card-holo { animation: none; }
   .card.plan-boost .card-holo::before { animation: none; }
   .super-effect { animation: none; }
