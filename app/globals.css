@@ -8577,6 +8577,7 @@ body::after {
   margin: 0 0 14px;
   color: #24314f;
   font-size: 18px;
+  text-shadow: none;
 }
 
 .clip-landing-feature-grid {
@@ -8598,6 +8599,7 @@ body::after {
   color: #24314f;
   font-size: 18px;
   text-align: center;
+  text-shadow: none;
 }
 
 .clip-landing-cta-subhead {
