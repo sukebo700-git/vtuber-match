@@ -804,6 +804,8 @@ async function renderEditedImage(src: string, edit: ImageEdit) {
   canvas.height = outHeight;
   const context = canvas.getContext("2d");
   if (!context) return src;
+  context.imageSmoothingEnabled = true;
+  context.imageSmoothingQuality = "high";
 
   context.fillStyle = "#ffffff";
   context.fillRect(0, 0, outWidth, outHeight);
@@ -845,6 +847,8 @@ async function compressImageDataUrl(src: string, maxSide: number, targetLength: 
   const scale = Math.min(1, maxSide / Math.max(image.naturalWidth, image.naturalHeight));
   canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
   canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+  context.imageSmoothingEnabled = true;
+  context.imageSmoothingQuality = "high";
   context.fillStyle = "#ffffff";
   context.fillRect(0, 0, canvas.width, canvas.height);
   context.drawImage(image, 0, 0, canvas.width, canvas.height);
