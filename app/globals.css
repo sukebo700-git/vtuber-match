@@ -1287,7 +1287,7 @@ button {
   -webkit-mask-composite: xor;
           mask-composite: exclude;
   animation: boost-foil 5.4s linear infinite reverse;
-  filter: drop-shadow(0 0 10px rgba(255, 214, 130, 0.4));
+  filter: blur(2px) drop-shadow(0 0 10px rgba(255, 214, 130, 0.4));
   pointer-events: none;
 }
 
@@ -1315,6 +1315,7 @@ button {
   -webkit-mask-composite: xor;
           mask-composite: exclude;
   animation: card-rainbow-diagonal 6s ease-in-out infinite alternate;
+  filter: blur(2px);
   pointer-events: none;
 }
 
@@ -1344,7 +1345,7 @@ button {
   -webkit-mask-composite: xor;
           mask-composite: exclude;
   animation: boost-foil 4.8s linear infinite;
-  filter: drop-shadow(0 0 10px rgba(255, 214, 130, 0.4));
+  filter: blur(2px) drop-shadow(0 0 10px rgba(255, 214, 130, 0.4));
   pointer-events: none;
 }
 
