@@ -294,7 +294,11 @@ export function CreatorProfileEditForm() {
   async function onFile(index: number, event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) return;
-    const nextImage = await fileToDataUrl(file);
+    const { dataUrl: nextImage, error } = await fileToDataUrl(file);
+    if (error) {
+      setStatus(error);
+      return;
+    }
     if (!nextImage) {
       setStatus("画像が大きすぎます。別の画像を選んでください。");
       return;
@@ -779,14 +783,25 @@ function vtypePayload(profile: VtypeProfileFields | null) {
   };
 }
 
-async function fileToDataUrl(file: File) {
+// 小さすぎる画像はカード表示時に拡大されてブロックノイズ(「ガビガビ」)が
+// 目立つ原因になるため、この解像度未満はアップロード時点で弾く。
+const minImageSide = 500;
+
+async function fileToDataUrl(file: File): Promise<{ dataUrl: string; error?: string }> {
   const dataUrl = await new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(String(reader.result));
     reader.onerror = () => reject(reader.error);
     reader.readAsDataURL(file);
   });
-  return compressImageDataUrl(dataUrl, 760, 170_000);
+  const image = await loadImage(dataUrl);
+  if (image.naturalWidth < minImageSide || image.naturalHeight < minImageSide) {
+    return {
+      dataUrl: "",
+      error: `画像が小さすぎます(${image.naturalWidth}×${image.naturalHeight}px)。縦横とも${minImageSide}px以上の画像を選んでください。`,
+    };
+  }
+  return { dataUrl: await compressImageDataUrl(dataUrl, 760, 170_000) };
 }
 
 // スワイプ画面のカード枠(.deck の aspect-ratio: 0.68)と同じ縦横比で書き出す。
