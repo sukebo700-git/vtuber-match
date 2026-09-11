@@ -2003,6 +2003,13 @@ button {
     0 0 0 1px rgba(255, 255, 255, 0.5) inset;
 }
 
+.primary-button:active {
+  transform: translateY(0) scale(0.98);
+  box-shadow:
+    0 8px 18px rgba(233, 79, 139, 0.24),
+    0 0 0 1px rgba(255, 255, 255, 0.42) inset;
+}
+
 .secondary-button {
   border: 1px solid rgba(34, 199, 232, 0.36);
   background:
@@ -2016,6 +2023,11 @@ button {
   border-color: rgba(47, 125, 225, 0.42);
   transform: translateY(-1px);
   box-shadow: 0 14px 30px rgba(34, 199, 232, 0.18);
+}
+
+.secondary-button:active {
+  transform: translateY(0) scale(0.98);
+  box-shadow: 0 6px 16px rgba(34, 199, 232, 0.14);
 }
 
 .primary-button:focus-visible,
@@ -6623,6 +6635,8 @@ button {
      スケールさせる(vw基準だと横に広いだけの画面で縦は詰まったままになる)。 */
   font-size: clamp(2rem, 6.2svh, 3.6rem) !important;
   line-height: 1.15 !important;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
 }
 
 .landing-refresh-visual {
@@ -8679,11 +8693,18 @@ body::after {
   font: inherit;
   color: inherit;
   text-align: center;
+  transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
 }
 
 .landing-audience-card:hover {
   border-color: #7c5bd8;
   transform: translateY(-2px);
+  box-shadow: 0 16px 34px rgba(88, 60, 160, 0.16);
+}
+
+.landing-audience-card:active {
+  transform: translateY(0) scale(0.98);
+  box-shadow: 0 6px 16px rgba(88, 60, 160, 0.12);
 }
 
 .landing-audience-card strong {
