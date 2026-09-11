@@ -1,3 +1,4 @@
+import { BetaBanner, SupportContactNote } from "@/components/BetaFeedbackNotice";
 import { HeaderAuthStatus } from "@/components/HeaderAuthStatus";
 import { ShortVideoRequestForm } from "@/components/ShortVideoRequestForm";
 import type { Metadata } from "next";
@@ -27,6 +28,8 @@ export default function CreatorShortVideoPage() {
       </header>
 
       <main className="main grid-page creator-page-main">
+        <BetaBanner />
+
         <section className="status-band creator-hero-panel">
           <span className="creator-page-kicker">For VTubers</span>
           <h1>紹介ショート動画を無料で作成します</h1>
@@ -37,6 +40,8 @@ export default function CreatorShortVideoPage() {
         </section>
 
         <ShortVideoRequestForm />
+
+        <SupportContactNote />
       </main>
     </div>
   );
