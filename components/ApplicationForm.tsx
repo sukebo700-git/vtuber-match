@@ -76,6 +76,16 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
     setGoogleEmail(decodeGoogleCredentialEmail(credential));
   }, []);
 
+  // Googleログインが読み込めない(広告ブロッカー等でブロックされている、設定不備など)場合に
+  // メールアドレス登録へ自動で切り替える。切り替えたことが分かるよう通知も出す。
+  const handleGoogleUnavailable = useCallback(() => {
+    setAuthMethod((current) => {
+      if (current !== "google") return current;
+      setStatus("Googleログインを利用できなかったため、メールアドレスでの登録に切り替えました。");
+      return "password";
+    });
+  }, []);
+
   const isFree = selectedPlan === "free";
   const categoryLimit = 3;
   const tagLimit = 3;
@@ -339,7 +349,7 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
             <p className="help-text">✓ 認証済み: {googleEmail}(このアカウントで今後もログインできます。下の「申し込む」ボタンから送信してください)</p>
           ) : (
             <>
-              <GoogleCredentialField onCredential={handleGoogleCredential} />
+              <GoogleCredentialField onCredential={handleGoogleCredential} onUnavailable={handleGoogleUnavailable} />
               <p className="help-text">上のボタンでGoogleアカウントを選んで認証してください。認証が終わるまで「申し込む」ボタンは押せません。</p>
             </>
           )}
