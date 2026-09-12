@@ -1188,9 +1188,9 @@ button {
 }
 
 .deck {
-  width: clamp(320px, 32vw, 470px);
+  width: clamp(350px, 34vw, 500px);
   max-width: 100%;
-  min-width: min(100%, 320px);
+  min-width: min(100%, 350px);
   aspect-ratio: 0.68;
   position: relative;
   justify-self: center;
@@ -1220,8 +1220,8 @@ button {
 
 .card {
   position: absolute;
-  inset: 12px;
-  border: 6px solid #0c111d;
+  inset: 2px;
+  border: 3px solid #0c111d;
   border-radius: 36px;
   overflow: hidden;
   background: #f7faff;
@@ -1265,57 +1265,36 @@ button {
   }
 }
 
-/* スマホゲーのSSRカードのように、外からゴールド箔(card-outer-frame)
-   →レインボー(::before)→ゴールド箔(::after)の三重フレームにする。
-   層状の輪(box-shadowの同心円)ではなく、それぞれ1本の帯を斜め方向に
-   ゆっくり行き来させるグラデーションにする。 */
-.card.plan-boost .card-outer-frame {
+/* 2026-09-11: 外側ゴールド+レインボー+内側ゴールドの三重フレームは
+   帯が厚くなりすぎ、名前やバッジ、写真自体を圧迫していたため1本に
+   統合。ゴールドの箔グラデーションの上に、レインボーの光点(多点の
+   radial-gradient)を半透明で重ねた「ゴールド×レインボーが同時に
+   斜めへ動くメッシュグラデーション」1枚だけの帯にする。 */
+.card.plan-boost::before {
+  content: "";
   position: absolute;
   inset: 0;
   z-index: 3;
   border-radius: 36px;
-  padding: 7px;
+  padding: 14px;
   background:
+    radial-gradient(circle at 18% 20%, rgba(255, 59, 107, 0.55) 0%, transparent 55%),
+    radial-gradient(circle at 80% 14%, rgba(255, 217, 61, 0.5) 0%, transparent 55%),
+    radial-gradient(circle at 88% 76%, rgba(79, 125, 255, 0.5) 0%, transparent 55%),
+    radial-gradient(circle at 16% 82%, rgba(74, 222, 128, 0.5) 0%, transparent 55%),
+    radial-gradient(circle at 55% 48%, rgba(183, 136, 255, 0.45) 0%, transparent 60%),
     linear-gradient(135deg,
-      #6e4f1a 0%, #e9c15c 9%, #fff6d0 17%, #cf9c34 27%,
-      #8a6524 37%, #ffe89a 51%, #fffbe6 59%, #d3a23a 71%,
-      #7a591d 83%, #ffe08a 100%);
-  background-size: 260% 260%;
-  -webkit-mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-          mask-composite: exclude;
-  animation: boost-foil 5.4s linear infinite reverse;
-  filter: blur(2px) drop-shadow(0 0 10px rgba(255, 214, 130, 0.4));
-  pointer-events: none;
-}
-
-/* 2026-09-11: レインボー帯だけは単一方向のグラデーションではなく、
-   複数の色の光点を重ねた「メッシュグラデーション」にする。背景全体
-   を大きめにしてbackground-positionで斜めにゆっくり動かす。 */
-.card.plan-boost::before {
-  content: "";
-  position: absolute;
-  inset: 7px;
-  z-index: 3;
-  border-radius: 30px;
-  padding: 8px;
-  background:
-    radial-gradient(circle at 18% 22%, #ff3b6b 0%, transparent 58%),
-    radial-gradient(circle at 78% 12%, #ffd93d 0%, transparent 58%),
-    radial-gradient(circle at 92% 68%, #4f7dff 0%, transparent 58%),
-    radial-gradient(circle at 28% 88%, #4ade80 0%, transparent 58%),
-    radial-gradient(circle at 62% 48%, #b788ff 0%, transparent 62%),
-    radial-gradient(circle at 8% 58%, #22d3ee 0%, transparent 58%);
-  background-size: 220% 220%;
+      #4a3410 0%, #8a6524 9%, #e9c15c 18%, #fff8d8 26%, #fffef2 30%,
+      #e9c15c 36%, #a67c2e 45%, #6e4f1a 52%, #ffe89a 61%, #fffbe6 68%,
+      #d3a23a 78%, #5c4013 88%, #caa03e 94%, #ffe08a 100%);
+  background-size: 240% 240%;
   -webkit-mask:
     linear-gradient(#000 0 0) content-box,
     linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
           mask-composite: exclude;
   animation: card-rainbow-diagonal 6s ease-in-out infinite alternate;
-  filter: blur(2px);
+  filter: drop-shadow(0 0 10px rgba(255, 214, 130, 0.45)) drop-shadow(0 0 2px rgba(90, 60, 10, 0.4));
   pointer-events: none;
 }
 
@@ -1324,40 +1303,10 @@ button {
   100% { background-position: 100% 100%; }
 }
 
-/* 内側のゴールド箔の帯(元々のフレーム)。レインボー帯のすぐ内側に
-   同じマスク手法で配置し、シマーで流す。 */
-.card.plan-boost::after {
-  content: "";
-  position: absolute;
-  inset: 15px;
-  z-index: 3;
-  border-radius: 24px;
-  padding: 8px;
-  background:
-    linear-gradient(115deg,
-      #6e4f1a 0%, #e9c15c 9%, #fff6d0 17%, #cf9c34 27%,
-      #8a6524 37%, #ffe89a 51%, #fffbe6 59%, #d3a23a 71%,
-      #7a591d 83%, #ffe08a 100%);
-  background-size: 260% 260%;
-  -webkit-mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-          mask-composite: exclude;
-  animation: boost-foil 4.8s linear infinite;
-  filter: blur(2px) drop-shadow(0 0 10px rgba(255, 214, 130, 0.4));
-  pointer-events: none;
-}
-
-@keyframes boost-foil {
-  0%   { background-position: 0% 50%; }
-  100% { background-position: 260% 50%; }
-}
-
 /* ホログラム風の虹色シート(写真の上を斜めに流れる) */
 .card.plan-boost .card-holo {
   position: absolute;
-  inset: 23px;
+  inset: 17px;
   z-index: 2;
   overflow: hidden;
   border-radius: 30px;
@@ -1399,7 +1348,7 @@ button {
    のような輝きに。 */
 .card.plan-boost .card-corners {
   position: absolute;
-  inset: 21px;
+  inset: 17px;
   z-index: 4;
   pointer-events: none;
   background-image:
@@ -1435,9 +1384,7 @@ button {
 
 @media (prefers-reduced-motion: reduce) {
   .card.plan-boost { animation: none; }
-  .card.plan-boost .card-outer-frame { animation: none; }
   .card.plan-boost::before { animation: none; }
-  .card.plan-boost::after { animation: none; }
   .card.plan-boost .card-holo { animation: none; }
   .card.plan-boost .card-holo::before { animation: none; }
   .super-effect { animation: none; }
@@ -1478,6 +1425,20 @@ button {
   border-radius: inherit;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
   pointer-events: none;
+}
+
+/* 配信者が登録する写真は解像度・圧縮率がまちまちで、低画質なものは
+   ブロックノイズ(JPEGの「ガビガビ」)が目立つ。新規の追加ストレージや
+   外部APIを使わず、CSSだけで見た目を底上げする:
+   ごく僅かなblurでブロックの境界を滲ませつつ、contrast/saturateで
+   メリハリを補い、体感の鮮明さを保つ。良質な写真への影響はごく僅か。 */
+.card img,
+.detail-profile-image,
+.detail-image-strip img,
+.detail-lightbox img,
+.vtuber-seo-image-frame img,
+.match-list-thumb {
+  filter: blur(0.35px) contrast(1.05) saturate(1.08);
 }
 
 /* 配信者本人が編集画面で620×620の正方形にトリミング済みの画像を、
@@ -1613,10 +1574,10 @@ button {
 
 .new-ribbon {
   position: absolute;
-  top: 22px;
-  left: -35px;
-  z-index: 4;
-  width: 138px;
+  top: 26px;
+  left: -38px;
+  z-index: 5;
+  width: 150px;
   height: 34px;
   display: grid;
   place-items: center;
@@ -1830,7 +1791,7 @@ button {
   }
 
   .deck {
-    width: clamp(300px, 29vw, 420px);
+    width: clamp(330px, 31vw, 450px);
   }
 
   .deck::before {
@@ -1839,7 +1800,7 @@ button {
   }
 
   .card {
-    inset: 9px;
+    inset: 3px;
     border-radius: 34px;
   }
 
@@ -1884,7 +1845,7 @@ button {
   }
 
   .deck {
-    width: clamp(280px, 27vw, 380px);
+    width: clamp(300px, 29vw, 410px);
   }
 
   .card h1 {
@@ -4742,7 +4703,7 @@ button {
   }
 
   .deck {
-    width: min(100%, 360px);
+    width: min(100%, 410px);
     min-width: 0;
   }
 
@@ -4752,8 +4713,8 @@ button {
   }
 
   .card {
-    inset: 7px;
-    border-width: 5px;
+    inset: 2px;
+    border-width: 3px;
     border-radius: 32px;
   }
 
@@ -6477,7 +6438,7 @@ button {
   }
 
   .deck {
-    width: min(100%, 360px) !important;
+    width: min(100%, 410px) !important;
     min-width: 0 !important;
     justify-self: center !important;
   }
@@ -6493,9 +6454,9 @@ button {
   }
 
   .card {
-    inset: 5px !important;
+    inset: 1px !important;
     border-radius: 36px !important;
-    border-width: 5px !important;
+    border-width: 3px !important;
     background:
       radial-gradient(circle at 50% 18%, rgba(255, 255, 255, 0.9), transparent 34%),
       linear-gradient(180deg, #f7faff 0%, #eef5ff 58%, #f7faff 100%) !important;
@@ -7058,6 +7019,65 @@ button {
   height: 5px;
   border-radius: 50%;
   background: currentColor;
+}
+
+/* 切り抜き動画/紹介ショート動画などβ提供中の機能ページで使う共通の
+   注意書き。目立つ色にして「今は不具合が起きうる機能」と分かるように
+   しつつ、通報先(X DM・メール)を明記する。 */
+.beta-notice-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  width: 100%;
+  border: 1px solid rgba(217, 119, 6, 0.28);
+  border-radius: 18px;
+  padding: 14px 18px;
+  background: linear-gradient(135deg, rgba(255, 237, 199, 0.9), rgba(255, 247, 230, 0.9));
+  box-shadow: 0 10px 26px rgba(180, 120, 20, 0.1);
+}
+
+.beta-notice-badge {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 6px 14px;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 950;
+  letter-spacing: 0.04em;
+  box-shadow: 0 8px 18px rgba(217, 119, 6, 0.32);
+}
+
+.beta-notice-banner p {
+  margin: 0;
+  flex: 1 1 260px;
+  min-width: 0;
+  color: #7c4a03;
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
+.support-contact-note {
+  width: 100%;
+  margin: 8px 0 0;
+  padding: 14px 18px;
+  border-radius: 14px;
+  background: rgba(23, 32, 54, 0.04);
+  color: #4a5773;
+  font-size: 0.88rem;
+  line-height: 1.8;
+  text-align: center;
+}
+
+.support-contact-note a {
+  margin: 0 2px;
+  color: #d94d82;
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 .creator-hero-panel h1 {

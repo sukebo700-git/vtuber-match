@@ -253,7 +253,11 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
     const file = event.target.files?.[0];
     if (!file) return;
     setStatus("画像を調整しています...");
-    const encoded = await fileToDataUrl(file);
+    const { dataUrl: encoded, error } = await fileToDataUrl(file);
+    if (error) {
+      setStatus(error);
+      return;
+    }
     if (!encoded) {
       setStatus("画像を読み込めませんでした。JPEG、PNG、WebP画像を選んでください。");
       return;
@@ -351,6 +355,9 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
             <>
               <GoogleCredentialField onCredential={handleGoogleCredential} onUnavailable={handleGoogleUnavailable} />
               <p className="help-text">上のボタンでGoogleアカウントを選んで認証してください。認証が終わるまで「申し込む」ボタンは押せません。</p>
+              <p className="help-text">
+                ボタンを押しても反応がない・進まない場合は、ブラウザのCookie設定(サードパーティCookieのブロックなど)が原因のことがあります。お手数ですが上の「メールアドレスで登録」に切り替えてお試しください。
+              </p>
             </>
           )}
         </div>
@@ -599,17 +606,31 @@ function vtypePayload(profile: VtypeProfileFields | null) {
   };
 }
 
-function fileToDataUrl(file: File) {
-  return new Promise<string>((resolve, reject) => {
+// 小さすぎる画像(例: 数十〜数百px程度の縮小済み画像やスクリーンショット)は、
+// カード表示時に拡大されてブロックノイズ(「ガビガビ」)が目立つ原因になる
+// ため、この解像度未満はアップロード時点で弾く。
+const minImageSide = 500;
+
+function fileToDataUrl(file: File): Promise<{ dataUrl: string; error?: string }> {
+  return new Promise((resolve, reject) => {
     if (!file.type.startsWith("image/")) {
-      resolve("");
+      resolve({ dataUrl: "" });
       return;
     }
     const reader = new FileReader();
     reader.onload = () => {
       const image = new Image();
-      image.onload = () => resolve(compressImage(image));
-      image.onerror = () => resolve("");
+      image.onload = () => {
+        if (image.width < minImageSide || image.height < minImageSide) {
+          resolve({
+            dataUrl: "",
+            error: `画像が小さすぎます(${image.width}×${image.height}px)。縦横とも${minImageSide}px以上の画像を選んでください。`,
+          });
+          return;
+        }
+        resolve({ dataUrl: compressImage(image) });
+      };
+      image.onerror = () => resolve({ dataUrl: "" });
       image.src = String(reader.result);
     };
     reader.onerror = () => reject(reader.error);
@@ -625,8 +646,12 @@ function compressImage(image: HTMLImageElement) {
   let best = "";
   for (const max of [640, 560, 480, 420, 360, 320, 280]) {
     const scale = Math.min(1, max / Math.max(image.width, image.height));
+    // canvas.width/heightへの代入は描画コンテキストの状態(imageSmoothing等)を
+    // リセットしてしまうため、サイズ確定のたびに毎回設定し直す必要がある。
     canvas.width = Math.max(1, Math.round(image.width * scale));
     canvas.height = Math.max(1, Math.round(image.height * scale));
+    context.imageSmoothingEnabled = true;
+    context.imageSmoothingQuality = "high";
     context.clearRect(0, 0, canvas.width, canvas.height);
     context.drawImage(image, 0, 0, canvas.width, canvas.height);
 
