@@ -6,6 +6,7 @@ import { autoApproveLocalApplication, readLocalApplications, readLocalStreamers,
 import { hashPassword } from "@/lib/password";
 import { invalidateStreamerCaches, publicStreamerPath } from "@/lib/streamers";
 import { REGIONS } from "@/lib/constants";
+import { findShortVideoRequest } from "@/lib/shortVideoRequests";
 import { creatorSessionCookie, readUserSession } from "@/lib/userSession";
 import { normalizeResumeFields, RESUME_LIMITS, type ResumeHistoryEntry } from "@/lib/resume/schema";
 import type { PlanType, Streamer, StreamerApplication } from "@/lib/types";
@@ -69,13 +70,20 @@ export async function GET(request: Request) {
     }
   }
 
-  let wantShortVideo = false;
-  if (streamer?.id) {
-    const requestDoc = await db.collection("short_video_requests").doc(streamer.id).get();
-    wantShortVideo = requestDoc.exists && String(requestDoc.data()?.status || "open") !== "rejected";
-  }
+  // 2026-09-20: 紹介動画の依頼は1配信者につき1回まで。以前は status=rejected の
+  // ときだけ want_short_video が false に戻り、チェックボックスが復活して何度でも
+  // 再送信できてしまっていた(しかもPOST側はstatusを書き換えないため無反応だった)。
+  // 依頼が存在する時点で「希望済み」として扱い、再依頼は運営経由のみとする。
+  // 旧IDで作られた依頼も拾うため、streamer_id 以外の候補IDも見る。
+  const requestDoc = await findShortVideoRequest(db, {
+    streamerId: streamer?.id,
+    applicationId: application?.id,
+    email: session?.email,
+  });
+  const wantShortVideo = Boolean(requestDoc);
+  const shortVideoStatus = requestDoc ? String(requestDoc.data()?.status || "open") : "";
 
-  return NextResponse.json({ profile: buildProfileResponse(streamer, application, wantShortVideo), source: "firestore" });
+  return NextResponse.json({ profile: buildProfileResponse(streamer, application, wantShortVideo, shortVideoStatus), source: "firestore" });
 }
 
 export async function POST(request: Request) {
@@ -149,27 +157,37 @@ export async function POST(request: Request) {
     updated_at: FieldValue.serverTimestamp(),
   }), { merge: true });
 
-  // 「ショート動画希望」チェックを後から入れた場合、short_video_requests を作成/更新する。
+  // 「ショート動画希望」チェックを後から入れた場合、short_video_requests を作成する。
   // (7/15の同意欄追加より前に申し込んだ無料プランの人は、ここでしか希望を出せない)
+  // 2026-09-20: 依頼は1配信者につき1回まで。まだ制作に入っていない status=open の
+  // 間だけプロフィールの最新内容を素材に反映し、published/rejected になった依頼には
+  // 一切書き込まない(以前はプロフィールを更新するたびに公開済み依頼の
+  // appeal_points/name/updated_at が上書きされ、再依頼と見分けが付かなかった)。
   if (body.want_short_video === true) {
-    const requestRef = db.collection("short_video_requests").doc(resolvedStreamerId);
-    const existingRequest = await requestRef.get();
-    // 既にopen/published等で進行中のリクエストがあれば status は上書きしない(巻き戻り防止)
-    const statusPatch = existingRequest.exists ? {} : { status: "open", requested_at: FieldValue.serverTimestamp() };
-    await requestRef.set(stripUndefined({
-      streamer_id: resolvedStreamerId,
-      application_id: match.id,
-      creator_login_id: match.data.creator_login_id,
-      name: clean(body.name, 80) || match.data.name,
+    const existingRequest = await findShortVideoRequest(db, {
+      streamerId: resolvedStreamerId,
+      applicationId: match.id,
       email,
-      youtube_url: clean(body.youtube_url, 240) || match.data.youtube_url || undefined,
-      x_account: normalizeXAccount(body.x_account) || match.data.x_account || undefined,
-      one_liner: clean(body.one_liner, 20) || undefined,
-      plan_type: plan,
-      appeal_points: clean(body.description, plan === "free" ? 100 : 500) || undefined,
-      ...statusPatch,
-      updated_at: FieldValue.serverTimestamp(),
-    }), { merge: true });
+    });
+    const requestRef = existingRequest?.ref || db.collection("short_video_requests").doc(resolvedStreamerId);
+    const existingStatus = existingRequest ? String(existingRequest.data()?.status || "open") : "";
+    if (!existingRequest || existingStatus === "open") {
+      const statusPatch = existingRequest ? {} : { status: "open", requested_at: FieldValue.serverTimestamp() };
+      await requestRef.set(stripUndefined({
+        streamer_id: resolvedStreamerId,
+        application_id: match.id,
+        creator_login_id: match.data.creator_login_id,
+        name: clean(body.name, 80) || match.data.name,
+        email,
+        youtube_url: clean(body.youtube_url, 240) || match.data.youtube_url || undefined,
+        x_account: normalizeXAccount(body.x_account) || match.data.x_account || undefined,
+        one_liner: clean(body.one_liner, 20) || undefined,
+        plan_type: plan,
+        appeal_points: clean(body.description, plan === "free" ? 100 : 500) || undefined,
+        ...statusPatch,
+        updated_at: FieldValue.serverTimestamp(),
+      }), { merge: true });
+    }
   }
 
   invalidateStreamerCaches();
@@ -535,11 +553,12 @@ function normalizeScoreMap(value: unknown) {
   return entries.length ? Object.fromEntries(entries) : undefined;
 }
 
-function buildProfileResponse(streamer?: Partial<Streamer>, application?: Partial<StreamerApplication>, wantShortVideo = false) {
+function buildProfileResponse(streamer?: Partial<Streamer>, application?: Partial<StreamerApplication>, wantShortVideo = false, shortVideoStatus = "") {
   const streamerId = streamer?.id || application?.streamer_id || "";
   const name = streamer?.name || application?.name || "";
   return {
     want_short_video: wantShortVideo,
+    short_video_status: shortVideoStatus,
     streamer_id: streamerId,
     public_path: streamerId ? publicStreamerPath({ id: streamerId, name }) : "",
     name,
