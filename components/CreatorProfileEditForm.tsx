@@ -24,6 +24,7 @@ type CreatorDraft = VtypeProfileFields & {
   tags?: string[];
   plan_type?: string;
   want_short_video?: boolean;
+  short_video_status?: string;
   x_campaign_entry?: boolean;
   debutDate?: string;
   birthday?: string;
@@ -88,6 +89,7 @@ export function CreatorProfileEditForm() {
   const [imageEdits, setImageEdits] = useState<ImageEdit[]>(makeImageEdits());
   const [planType, setPlanType] = useState("free");
   const [wantShortVideo, setWantShortVideo] = useState(false);
+  const [shortVideoStatus, setShortVideoStatus] = useState("");
   const [xCampaignEntry, setXCampaignEntry] = useState(false);
   const [showXCampaignOptIn, setShowXCampaignOptIn] = useState(true);
   const [vtypeProfile, setVtypeProfile] = useState<VtypeProfileFields | null>(null);
@@ -177,6 +179,7 @@ export function CreatorProfileEditForm() {
         const nextPlan = profile.plan_type || localStorage.getItem("vtuber-match-creator-plan") || storedPlan;
         setPlanType(nextPlan);
         setWantShortVideo(Boolean(profile.want_short_video));
+        setShortVideoStatus(profile.short_video_status || "");
         setXCampaignEntry(Boolean(profile.x_campaign_entry));
         setDebutDate(profile.debutDate || "");
         setBirthday(profile.birthday || "");
@@ -703,9 +706,14 @@ export function CreatorProfileEditForm() {
           紹介動画(Lo-Fi配信への掲載・紹介ショート動画)の作成・公開に同意し、作成を希望します
         </label>
         <p className="help-text">
+          {/* 依頼は1配信者につき1回まで。公開後・見送り後の再依頼は運営が管理画面から受付に戻す。 */}
           {wantShortVideo
-            ? "作成依頼は運営に届いています。順次対応します。"
-            : "チェックして更新すると、紹介動画の作成依頼が運営に届きます(プラン問わず任意)。チェックがない場合、動画は作成されません。"}
+            ? shortVideoStatus === "published"
+              ? "紹介動画は公開済みです。作り直しをご希望の場合は運営までお問い合わせください。"
+              : shortVideoStatus === "rejected"
+                ? "このご依頼は見送りとなりました。再依頼をご希望の場合は運営までお問い合わせください。"
+                : "作成依頼は運営に届いています。順次対応します。"
+            : "チェックして更新すると、紹介動画の作成依頼が運営に届きます(プラン問わず任意・お一人様1回まで)。チェックがない場合、動画は作成されません。"}
         </p>
       </div>
 

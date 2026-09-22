@@ -7,8 +7,6 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-const lofiChannelFormUrl = "https://forms.gle/BFn6Wti8aCBUHV41A";
-
 export default function CheckoutSuccessPage({
   searchParams,
 }: {
@@ -58,9 +56,12 @@ export default function CheckoutSuccessPage({
             <>
               {targetType === "creator" && (
                 <>
-                  <p style={{ marginTop: 10 }}><strong>Lo-Fiチャンネル掲載希望の方はこちらの登録もお願いします。</strong></p>
+                  {/* 2026-09-20: 以前はここでLo-Fi掲載の外部Googleフォームを案内していたが、
+                      決済のたびに表示されるため同じ配信者が何度も申し込めてしまっていた。
+                      紹介動画(Lo-Fi掲載+紹介ショート動画)の依頼はアプリ内で1回だけ受け付ける。 */}
+                  <p style={{ marginTop: 10 }}><strong>Lo-Fi配信への掲載・紹介ショート動画をご希望の方は、依頼ページからお申し込みください(お一人様1回)。</strong></p>
                   <p className="inline-actions" style={{ marginTop: 12 }}>
-                    <a className="primary-button" href={lofiChannelFormUrl} target="_blank" rel="noreferrer">Lo-Fi掲載フォームを開く</a>
+                    <a className="primary-button" href="/creator/short-video">紹介動画の依頼ページへ</a>
                   </p>
                 </>
               )}

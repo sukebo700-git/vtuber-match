@@ -158,14 +158,15 @@ export function ShortVideoAdminPanel({ adminKey }: ShortVideoAdminPanelProps) {
                 見送りにする
               </button>
             ) : null}
-            {request.status === "rejected" ? (
+            {request.status !== "open" ? (
               <button
                 className="secondary-button"
                 type="button"
                 disabled={busyId === request.id}
                 onClick={() => update(request.id, { status: "open" })}
               >
-                受付に戻す
+                {/* 依頼は配信者1人につき1回まで。トラブル等で作り直す場合はここで受付に戻す。 */}
+                {request.status === "published" ? "再依頼を受け付ける(作り直し)" : "受付に戻す"}
               </button>
             ) : null}
           </div>
