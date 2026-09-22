@@ -195,6 +195,8 @@ export async function recordLocalAnalyticsEvent(eventType: AnalyticsEventType, v
 export async function readLocalAnalyticsSummary(): Promise<AdminAnalyticsSummary> {
   await ensureFiles();
   const today = new Date().toISOString().slice(0, 10);
+  // 2026-09-22: Firestore版と揃えて直近7日間の合計も返す(分析タブのファネル用)。
+  const weekStart = new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
   const raw = await fs.readFile(analyticsPath, "utf8");
   const analytics = JSON.parse(raw || "{}") as Record<string, Partial<AdminAnalyticsSummary>>;
   return Object.entries(analytics).reduce((summary, [date, counts]) => {
@@ -206,6 +208,12 @@ export async function readLocalAnalyticsSummary(): Promise<AdminAnalyticsSummary
     summary.total_swipes += totalSwipes;
     summary.viewer_register_clicks += viewer;
     summary.creator_register_clicks += creator;
+    if (date >= weekStart && date <= today) {
+      summary.week_swiped_visitors += swiped;
+      summary.week_total_swipes += totalSwipes;
+      summary.week_viewer_register_clicks += viewer;
+      summary.week_creator_register_clicks += creator;
+    }
     if (date === today) {
       summary.today_swiped_visitors += swiped;
       summary.today_total_swipes += totalSwipes;

@@ -7,6 +7,12 @@ export type AdminAnalyticsSummary = {
   today_total_swipes: number;
   today_viewer_register_clicks: number;
   today_creator_register_clicks: number;
+  // 2026-09-22: 管理画面の分析タブを「今日 / 7日間」のファネル表示にしたため、
+  // 直近7日間の合計も返す(従来は累計と今日しか無く、増減が読めなかった)。
+  week_swiped_visitors: number;
+  week_total_swipes: number;
+  week_viewer_register_clicks: number;
+  week_creator_register_clicks: number;
 };
 
 export const emptyAdminAnalyticsSummary: AdminAnalyticsSummary = {
@@ -18,6 +24,10 @@ export const emptyAdminAnalyticsSummary: AdminAnalyticsSummary = {
   today_total_swipes: 0,
   today_viewer_register_clicks: 0,
   today_creator_register_clicks: 0,
+  week_swiped_visitors: 0,
+  week_total_swipes: 0,
+  week_viewer_register_clicks: 0,
+  week_creator_register_clicks: 0,
 };
 
 export type AnalyticsEventType = "swiped_visitor" | "swipe_action" | "viewer_register_click" | "creator_register_click";
