@@ -59,9 +59,17 @@ export default async function VtuberSeoPage({ params }: VtuberSeoPageProps) {
   const image = streamerImagePath(streamer);
   const categories = streamer.categories || [];
   const tags = streamer.tags || [];
+  const jsonLd = buildStreamerJsonLd(streamer, image, categories, tags);
 
   return (
     <main className="vtuber-seo-page">
+      {/* 2026-09-24: 構造化データはこれまで layout.tsx のサイト全体分だけで、
+          配信者ページ個別のものが無かった。検索結果でVTuber名の指名検索に
+          引っかかる余地を増やすため ProfilePage + Person を出す。 */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <section className="vtuber-seo-hero">
         <div className="vtuber-seo-image-frame">
           <img src={image} alt={`${streamer.name}のプロフィール画像`} loading="eager" decoding="async" />
@@ -133,6 +141,51 @@ export default async function VtuberSeoPage({ params }: VtuberSeoPageProps) {
         </div>
       </section>
     </main>
+  );
+}
+
+function buildStreamerJsonLd(
+  streamer: Awaited<ReturnType<typeof getPublicStreamerBySlug>>,
+  image: string,
+  categories: string[],
+  tags: string[],
+) {
+  if (!streamer) return {};
+  const canonical = absoluteUrl(publicStreamerPath(streamer));
+  // 配信URL(YouTube/Twitch等)とXアカウントを sameAs に入れて、
+  // 同一人物であることを検索エンジンに伝える。
+  const sameAs = [
+    streamer.youtube_url || "",
+    streamer.x_account ? `https://x.com/${String(streamer.x_account).replace(/^@/, "")}` : "",
+  ].filter(Boolean);
+  const person = stripEmpty({
+    "@type": "Person",
+    name: streamer.name,
+    alternateName: streamer.yomi || undefined,
+    description: streamer.description || streamer.one_liner || undefined,
+    image: absoluteUrl(image),
+    url: canonical,
+    sameAs: sameAs.length ? sameAs : undefined,
+    knowsAbout: [...categories, ...tags].slice(0, 8),
+  });
+  return stripEmpty({
+    "@context": "https://schema.org",
+    "@type": "ProfilePage",
+    name: `${streamer.name} | ${siteName}`,
+    url: canonical,
+    mainEntity: person,
+    isPartOf: {
+      "@type": "WebSite",
+      name: siteName,
+      url: absoluteUrl("/"),
+    },
+  });
+}
+
+// undefined と空配列を落とす。JSON-LDに空キーが残ると構造化データテストで警告になる。
+function stripEmpty<T extends Record<string, unknown>>(value: T) {
+  return Object.fromEntries(
+    Object.entries(value).filter(([, v]) => v !== undefined && v !== "" && !(Array.isArray(v) && v.length === 0)),
   );
 }
 
