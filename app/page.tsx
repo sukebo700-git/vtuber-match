@@ -102,14 +102,6 @@ export default function HomePage() {
                 切り抜きショート動画を依頼する
               </span>
             </a>
-
-            {/* 上のバナーは「登録者限定・1本無料」なので、押すと依頼フォームで
-                ログインを求められる。登録するつもりのない初見の人を取り逃さない
-                よう、登録不要で注文できる道もここに出す(こちらも/clip経由) */}
-            <p className="landing-clip-onetime-note">
-              登録せずに注文することもできます
-              <a href="/clip">単発購入（1本 2,000円）</a>
-            </p>
           </AudienceVisibility>
 
           <LandingMoreVtubers />
