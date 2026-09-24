@@ -39,9 +39,12 @@ export default function CreatorLoginPage() {
         >
           <section className="status-band">
             <h2>配信者ログイン</h2>
-            <p>申し込み時のメールアドレスとパスワードでログインできます。</p>
+            <p>Googleアカウント、またはメールアドレス+パスワードのどちらか一方でログインできます。</p>
           </section>
+          <p className="auth-method-label">Googleアカウントでログイン</p>
           <CreatorGoogleLogin redirectTo="/creator?notify=1" />
+          <div className="auth-divider" role="separator"><span>または</span></div>
+          <p className="auth-method-label">メールアドレスでログイン</p>
           <CreatorLoginForm />
         </AuthVisibility>
       </main>

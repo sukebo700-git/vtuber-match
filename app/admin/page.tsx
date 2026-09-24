@@ -4,8 +4,7 @@ import { ShortVideoAdminPanel } from "@/components/ShortVideoAdminPanel";
 import { ReportAdminPanel } from "@/components/ReportAdminPanel";
 import { ViewerAdminPanel } from "@/components/ViewerAdminPanel";
 import { PasswordResetAdminPanel } from "@/components/PasswordResetAdminPanel";
-import { VisitStatsPanel } from "@/components/VisitStatsPanel";
-import { AdminAnalyticsPanel } from "@/components/AdminAnalyticsPanel";
+import { AdminAnalyticsFunnelPanel } from "@/components/AdminAnalyticsFunnelPanel";
 import { AdminImportantNotifications, type AdminImportantNotification } from "@/components/AdminImportantNotifications";
 import { PushNotificationButton } from "@/components/PushNotificationButton";
 import { AdminSwipeAdsPanel } from "@/components/AdminSwipeAdsPanel";
@@ -83,6 +82,7 @@ export default async function AdminPage({ searchParams }: { searchParams?: Admin
   const visitStats = needsAnalyticsData ? (db ? await readFirestoreVisitStats() : await readLocalVisitStats()) : { today: 0, week: 0, total: 0 };
   const visitSourceStats = needsAnalyticsData ? (db ? await readFirestoreVisitSourceStats() : await readLocalVisitSourceStats()) : { organic: 0, direct: 0, social: 0, referral: 0, ads: 0 };
   const analyticsStats = needsAnalyticsData ? (db ? await readFirestoreAnalyticsSummary() : await readLocalAnalyticsSummary()) : emptyAdminAnalyticsSummary;
+  const referrerStats = needsAnalyticsData && db ? await readFirestoreReferrerStats() : [];
 
   return (
     <div className="app-shell">
@@ -113,24 +113,25 @@ export default async function AdminPage({ searchParams }: { searchParams?: Admin
             <a className={xFilter === "unintroduced" ? "selected secondary-button" : "secondary-button"} href="/admin?tab=streamers&x=unintroduced">X未紹介</a>
           </nav>
         )}
-        <section className="status-band admin-registration-summary">
-          <h2>登録状況</h2>
-          <div className="metric-grid">
-            <div className="metric">
-              <strong>{activeTab === "viewers" ? viewerTotalCount.toLocaleString("ja-JP") : "—"}</strong>
-              <span>視聴者数（全体）</span>
+        {/* 2026-09-22: 分析タブでは視聴者数・配信者数のどちらも取得しておらず、
+            「—」の枠が2つ並ぶだけだったので、このタブでは登録状況を出さない。 */}
+        {activeTab !== "analytics" && (
+          <section className="status-band admin-registration-summary">
+            <h2>登録状況</h2>
+            <div className="metric-grid">
+              <div className="metric">
+                <strong>{activeTab === "viewers" ? viewerTotalCount.toLocaleString("ja-JP") : "—"}</strong>
+                <span>視聴者数（全体）</span>
+              </div>
+              <div className="metric">
+                <strong>{needsStreamerData ? streamerTotalCount.toLocaleString("ja-JP") : "—"}</strong>
+                <span>{xFilter === "unintroduced" ? "配信者数（X未紹介）" : "配信者数（全体）"}</span>
+              </div>
             </div>
-            <div className="metric">
-              <strong>{needsStreamerData ? streamerTotalCount.toLocaleString("ja-JP") : "—"}</strong>
-              <span>{xFilter === "unintroduced" ? "配信者数（X未紹介）" : "配信者数（全体）"}</span>
-            </div>
-          </div>
-        </section>
+          </section>
+        )}
         {activeTab === "analytics" && (
-          <>
-            <VisitStatsPanel stats={visitStats} sources={visitSourceStats} />
-            <AdminAnalyticsPanel analytics={analyticsStats} />
-          </>
+          <AdminAnalyticsFunnelPanel stats={visitStats} sources={visitSourceStats} analytics={analyticsStats} referrers={referrerStats} />
         )}
         {activeTab === "ads" && <AdminSwipeAdsPanel adminKey="" />}
         {activeTab === "streamers" && <ShortVideoAdminPanel adminKey="" />}
@@ -369,13 +370,24 @@ async function readImportantNotifications(): Promise<AdminImportantNotification[
 async function readFirestoreAnalyticsSummary(): Promise<AdminAnalyticsSummary> {
   const db = getAdminDb();
   if (!db) return emptyAdminAnalyticsSummary;
-  const today = new Date().toISOString().slice(0, 10);
-  const [totalsDoc, todayDoc] = await Promise.all([
+  // 2026-09-22: 直近7日間のファネルを出すため、analytics_daily を7日分読む。
+  // recentDateIds(7) の先頭が今日なので、今日の分もここから取る(従来は今日の1件だけ
+  // 読んでいたが、パネル側が表示しておらず読み取りが無駄になっていた)。
+  const dates = recentDateIds(7);
+  const [totalsDoc, ...dailyDocs] = await Promise.all([
     db.collection("aggregates").doc("analytics_totals").get(),
-    db.collection("analytics_daily").doc(today).get()
+    ...dates.map((date) => db.collection("analytics_daily").doc(date).get()),
   ]);
   const totals = totalsDoc.data() || {};
-  const todayData = todayDoc.data() || {};
+  const todayData = dailyDocs[0]?.data() || {};
+  const week = dailyDocs.reduce((sums, doc) => {
+    const data = doc.data() || {};
+    sums.swiped_visitors += Number(data.swiped_visitors || 0);
+    sums.total_swipes += Number(data.total_swipes || 0);
+    sums.viewer_register_clicks += Number(data.viewer_register_clicks || 0);
+    sums.creator_register_clicks += Number(data.creator_register_clicks || 0);
+    return sums;
+  }, { swiped_visitors: 0, total_swipes: 0, viewer_register_clicks: 0, creator_register_clicks: 0 });
   return {
     swiped_visitors: Number(totals.swiped_visitors || 0),
     total_swipes: Number(totals.total_swipes || 0),
@@ -385,6 +397,10 @@ async function readFirestoreAnalyticsSummary(): Promise<AdminAnalyticsSummary> {
     today_total_swipes: Number(todayData.total_swipes || 0),
     today_viewer_register_clicks: Number(todayData.viewer_register_clicks || 0),
     today_creator_register_clicks: Number(todayData.creator_register_clicks || 0),
+    week_swiped_visitors: week.swiped_visitors,
+    week_total_swipes: week.total_swipes,
+    week_viewer_register_clicks: week.viewer_register_clicks,
+    week_creator_register_clicks: week.creator_register_clicks,
   };
 }
 
@@ -403,6 +419,19 @@ async function readFirestoreVisitStats() {
   });
   const summary = summarizeVisits(visits);
   return { ...summary, total: Number(totalsDoc.data()?.site_visits_total || summary.total) };
+}
+
+// 2026-09-24: source_* の5分類ではYouTubeとXが同じ "social" に潰れて内訳が
+// 追えなかったため、参照元ホスト別の ref_* も読む(api/visits で記録している)。
+async function readFirestoreReferrerStats() {
+  const db = getAdminDb();
+  if (!db) return [] as Array<{ key: string; count: number }>;
+  const data = (await db.collection("aggregates").doc("analytics_totals").get()).data() || {};
+  return Object.entries(data)
+    .filter(([key, value]) => key.startsWith("ref_") && Number(value) > 0)
+    .map(([key, value]) => ({ key: key.slice(4), count: Number(value) }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 10);
 }
 
 async function readFirestoreVisitSourceStats() {

@@ -15,6 +15,7 @@ export async function POST(request: Request) {
     const userType = normalizeUserType(body.user_type);
     const durationSeconds = Math.max(0, Math.min(24 * 60 * 60, Number(body.duration_seconds || 0)));
     const source = classifySource(String(body.referrer || ""), String(body.search || ""));
+    const referrerHost = classifyReferrerHost(String(body.referrer || ""), String(body.search || ""));
     const db = getAdminDb();
 
     if (!db) {
@@ -43,6 +44,10 @@ export async function POST(request: Request) {
         db.collection("aggregates").doc("analytics_totals").set({
           site_visits_total: FieldValue.increment(1),
           [`source_${source}`]: FieldValue.increment(1),
+          // 2026-09-24: source は5分類(organic/direct/social/referral/ads)しかなく、
+          // YouTubeもXも同じ "social" に潰れていて内訳が追えなかった。
+          // 流入元ごとの打ち手を決められるよう、参照元ホストも別に数える。
+          [`ref_${referrerHost}`]: FieldValue.increment(1),
           [`${userType}_visits`]: FieldValue.increment(1),
           updated_at: FieldValue.serverTimestamp(),
         }, { merge: true })
@@ -133,6 +138,46 @@ function classifySource(referrer: string, search: string) {
   if (isSocial(host)) return "social";
   if (host.includes("vtuber-match.vercel.app") || host.includes("vtuber-seichi.web.app")) return "internal";
   return "referral";
+}
+
+// 参照元ホストを固定の短い識別子に寄せる。Firestoreのフィールド名になるため、
+// ホスト名をそのまま使わず既知のものだけを列挙し、それ以外は other にまとめる
+// (未知のホストでフィールドが無制限に増えるのを防ぐ)。
+const referrerHostRules: Array<{ slug: string; match: string[] }> = [
+  { slug: "youtube", match: ["youtube.", "youtu.be"] },
+  { slug: "x", match: ["x.com", "twitter.", "t.co"] },
+  { slug: "discord", match: ["discord."] },
+  { slug: "google", match: ["google."] },
+  { slug: "yahoo", match: ["yahoo."] },
+  { slug: "bing", match: ["bing."] },
+  { slug: "bluesky", match: ["bsky."] },
+  { slug: "misskey", match: ["misskey."] },
+  { slug: "note", match: ["note.com"] },
+  { slug: "reddit", match: ["reddit."] },
+  { slug: "tiktok", match: ["tiktok."] },
+  { slug: "instagram", match: ["instagram."] },
+];
+
+function classifyReferrerHost(referrer: string, search: string) {
+  // アプリ内ブラウザは referrer を落とすことが多い。投稿URLにutm_sourceを付けて
+  // おけば、referrerが無くても流入元を拾えるのでそちらを優先して見る。
+  const query = new URLSearchParams(search.startsWith("?") ? search : search ? `?${search}` : "");
+  const utmSource = (query.get("utm_source") || "").toLowerCase();
+  if (utmSource) {
+    const viaUtm = referrerHostRules.find((rule) => rule.match.some((m) => utmSource.includes(m.replace(/\.$/, ""))));
+    if (viaUtm) return viaUtm.slug;
+    if (/^[a-z0-9_-]{1,20}$/.test(utmSource)) return `utm_${utmSource}`;
+  }
+  if (!referrer) return "none";
+  let host = "";
+  try {
+    host = new URL(referrer).hostname.toLowerCase();
+  } catch {
+    return "other";
+  }
+  if (host.includes("vtubermatch.com") || host.includes("vtuber-match.vercel.app")) return "internal";
+  const hit = referrerHostRules.find((rule) => rule.match.some((m) => host.includes(m)));
+  return hit ? hit.slug : "other";
 }
 
 function isSearchEngine(value: string) {

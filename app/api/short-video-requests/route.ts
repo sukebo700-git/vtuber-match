@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { FieldValue, getAdminDb, stripUndefined } from "@/lib/firebaseAdmin";
+import { findShortVideoRequest, shortVideoRequestIdCandidates } from "@/lib/shortVideoRequests";
 import { creatorSessionCookie, readUserSession } from "@/lib/userSession";
 
 type CreatorSession = {
@@ -23,11 +24,12 @@ export async function GET(request: Request) {
     return NextResponse.json({ request: null, source: "local" });
   }
 
-  const requestId = resolveRequestId(session);
-  if (!requestId) return NextResponse.json({ request: null, source: "firestore" });
-
-  const doc = await db.collection("short_video_requests").doc(requestId).get();
-  if (!doc.exists) return NextResponse.json({ request: null, source: "firestore" });
+  const doc = await findShortVideoRequest(db, {
+    streamerId: session.streamer_id,
+    applicationId: session.application_id,
+    email: session.email,
+  });
+  if (!doc) return NextResponse.json({ request: null, source: "firestore" });
 
   const data = doc.data() || {};
   return NextResponse.json({
@@ -75,13 +77,22 @@ export async function POST(request: Request) {
   const streamer = streamerDoc?.data() || {};
   const application = applicationDoc?.data() || {};
   const name = String(streamer.name || application.name || email || streamerId || applicationId || "登録済み配信者");
-  const requestId = resolveRequestId(session);
+  // session.streamer_id が空(旧データなど)でも、申込書側に紐づく streamer_id を正とする。
+  const resolvedStreamerId = streamerId || String(application.streamer_id || "");
+  const owner = { streamerId: resolvedStreamerId, applicationId, email };
+  const requestId = shortVideoRequestIdCandidates(owner)[0] || "";
   if (!requestId) return NextResponse.json({ error: "配信者情報を確認できませんでした。" }, { status: 400 });
   const now = FieldValue.serverTimestamp();
 
-  const existing = await db.collection("short_video_requests").doc(requestId).get();
-  const existingStatus = String(existing.data()?.status || "");
-  if (existing.exists) {
+  // 2026-09-20: 別IDで登録済みの依頼も含めて重複チェックする(lib/shortVideoRequests.ts を参照)。
+  const existing = await findShortVideoRequest(db, owner);
+  const existingStatus = String(existing?.data()?.status || "");
+  if (existing) {
+    // 旧IDで作られた依頼に streamer_id が無いと動画ジェネレーターの同期対象から漏れるため、
+    // 判明している streamer_id だけは補完しておく(依頼内容・ステータスには触れない)。
+    if (resolvedStreamerId && !String(existing.data()?.streamer_id || "")) {
+      await existing.ref.set({ streamer_id: resolvedStreamerId, updated_at: now }, { merge: true });
+    }
     // 2026-08-10: 依頼は1配信者につき1回まで。statusがopenの間は何度でも
     // 上書き送信できてしまっていたため、既存の依頼がある時点で一律ブロックする。
     // 内容の修正・却下後の再依頼は運営への問い合わせ経由のみとする。
@@ -97,7 +108,7 @@ export async function POST(request: Request) {
   }
 
   await db.collection("short_video_requests").doc(requestId).set(stripUndefined({
-    streamer_id: streamerId || undefined,
+    streamer_id: resolvedStreamerId || undefined,
     application_id: applicationId || undefined,
     creator_login_id: session.creator_login_id || undefined,
     name,
@@ -109,15 +120,11 @@ export async function POST(request: Request) {
     appeal_points: appealPoints || undefined,
     notes: notes || undefined,
     status: "open",
-    requested_at: existing.exists ? existing.data()?.requested_at : now,
+    requested_at: now,
     updated_at: now,
   }), { merge: true });
 
   return NextResponse.json({ ok: true, status: "open" });
-}
-
-function resolveRequestId(session: CreatorSession) {
-  return String(session.streamer_id || "") || String(session.application_id || "") || (session.email ? encodeURIComponent(String(session.email)) : "");
 }
 
 function toIso(value: unknown) {

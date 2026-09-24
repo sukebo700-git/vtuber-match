@@ -2353,6 +2353,180 @@ button {
   margin-top: 10px;
 }
 
+/* 管理画面の分析タブ: 訪問 → スワイプ → 登録導線 のファネル表示 */
+.analytics-funnel {
+  margin-top: 16px;
+}
+
+.analytics-funnel h3 {
+  margin: 0 0 8px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.analytics-funnel ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.analytics-funnel li {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  border: 1px solid rgba(47, 125, 225, 0.12);
+  border-radius: 14px;
+  padding: 12px 15px;
+  background: #fff;
+  box-shadow: 0 8px 18px rgba(47, 125, 225, 0.08);
+}
+
+.analytics-funnel-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+}
+
+.analytics-funnel-bar {
+  display: block;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(47, 125, 225, 0.12);
+  overflow: hidden;
+}
+
+.analytics-funnel-bar i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--pink);
+}
+
+.analytics-funnel-label {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.analytics-funnel li strong {
+  color: var(--pink);
+  font-size: 26px;
+  line-height: 1;
+}
+
+.analytics-funnel li em {
+  font-style: normal;
+  font-weight: 850;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.analytics-funnel li em::before {
+  content: "→ ";
+}
+
+.analytics-funnel li small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.analytics-funnel-subheading {
+  margin: 22px 0 8px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.analytics-source-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.analytics-source-list li {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr) 84px;
+  align-items: center;
+  gap: 10px;
+}
+
+.analytics-source-label {
+  font-size: 13px;
+  font-weight: 850;
+  color: var(--muted);
+}
+
+.analytics-source-bar {
+  display: block;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(47, 125, 225, 0.12);
+  overflow: hidden;
+}
+
+.analytics-source-bar i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--pink);
+}
+
+.analytics-source-value {
+  font-size: 13px;
+  font-weight: 850;
+  text-align: right;
+}
+
+.analytics-source-value small {
+  display: block;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+/* 診断結果の直後に出す登録導線 */
+.diagnosis-register-cta {
+  display: grid;
+  gap: 8px;
+  justify-items: center;
+  text-align: center;
+  margin-top: 18px;
+  padding: 18px;
+  border: 1px solid rgba(47, 125, 225, 0.16);
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 10px 24px rgba(47, 125, 225, 0.1);
+}
+
+.diagnosis-register-cta strong {
+  font-size: 16px;
+}
+
+.diagnosis-register-cta p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.analytics-total-line {
+  margin: 16px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid rgba(47, 125, 225, 0.12);
+  font-size: 12px;
+  color: var(--muted);
+}
+
+@media (max-width: 640px) {
+  .analytics-source-list li {
+    grid-template-columns: 76px minmax(0, 1fr) 68px;
+  }
+}
+
 .metric,
 .checkout-summary div {
   border: 1px solid rgba(47, 125, 225, 0.12);
@@ -2415,6 +2589,30 @@ button {
   background: #fff;
   color: var(--pink);
   box-shadow: 0 8px 18px rgba(47, 125, 225, 0.12);
+}
+
+.auth-method-label {
+  margin: 0;
+  font-weight: 950;
+  color: #34415d;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 4px 0;
+  color: #8a93a8;
+  font-weight: 800;
+  font-size: 13px;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: rgba(47, 125, 225, 0.14);
 }
 
 .field label {
@@ -8053,8 +8251,7 @@ body::after {
     display: flex !important;
   }
 
-  .landing-clip-promo-banner,
-  .landing-clip-onetime-note {
+  .landing-clip-promo-banner {
     display: none !important;
   }
 
@@ -8636,28 +8833,6 @@ body::after {
   margin: 8px 0 0;
   color: #64728a;
   font-size: 12px;
-}
-
-/* 上の「登録者限定・1本無料」バナーの下に出す、登録不要で注文できる案内。
-   登録するつもりのない初見の人を取り逃さないための逃げ道 */
-.landing-clip-onetime-note {
-  /* .landing-hero は2カラムグリッド。上のバナー(.landing-promo-banner)は
-     grid-column: 1/-1 で全カラムをまたいで860px幅に中央寄せしているが、
-     このpにはそれが無かったため、狭い方のカラム内で中央寄せされて
-     バナーより左にずれて見えていた */
-  grid-column: 1 / -1;
-  width: min(860px, 100%);
-  margin: -6px auto 0;
-  text-align: center;
-  color: #64728a;
-  font-size: 13px;
-}
-
-.landing-clip-onetime-note a {
-  margin-left: 8px;
-  color: #d92762;
-  font-weight: 700;
-  text-decoration: underline;
 }
 
 .landing-clip-promo-new {

@@ -1,6 +1,7 @@
 import { HeaderAuthStatus } from "@/components/HeaderAuthStatus";
 import { AuthVisibility } from "@/components/AuthVisibility";
 import { ApplicationForm } from "@/components/ApplicationForm";
+import { ReloginEscapeHatch } from "@/components/ReloginEscapeHatch";
 import { CATEGORIES, TAGS } from "@/lib/constants";
 import type { Metadata } from "next";
 
@@ -35,9 +36,10 @@ export default function ApplyPage() {
           fallback={
             <section className="status-band">
               <h2>すでに配信者としてログイン中です</h2>
-              <p>掲載内容の変更は、プロフィール修正画面から行えます。</p>
-              <p style={{ marginTop: 12 }}>
+              <p>掲載内容の変更は、プロフィール修正画面から行えます。心当たりがない場合は、以前の端末での登録情報が残っている可能性があります。</p>
+              <p className="inline-actions" style={{ marginTop: 12 }}>
                 <a className="primary-button" href="/creator/edit">プロフィールを修正する</a>
+                <ReloginEscapeHatch prefix="vtuber-match-creator" />
               </p>
             </section>
           }

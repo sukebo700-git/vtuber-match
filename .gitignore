@@ -6,7 +6,8 @@ dist/
 .xdg-data/
 .xdg-config/
 .localappdata/
-npm-cache/
+.npm-cache/
+.tmp-*
 
 .env
 .env.local

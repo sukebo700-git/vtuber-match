@@ -5,6 +5,9 @@ import { loadGoogleIdentityScript } from "@/lib/googleIdentityClient";
 import { InAppBrowserNotice } from "@/components/InAppBrowserNotice";
 
 const CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+// GISスクリプトの読み込みや初期化がこの時間内に終わらなければ、広告ブロッカー等で
+// ブロックされているとみなしてフォールバック表示に切り替える。
+const loadTimeoutMs = 5000;
 
 type CreatorGoogleLoginProps = {
   redirectTo?: string;
@@ -12,13 +15,22 @@ type CreatorGoogleLoginProps = {
 
 export function CreatorGoogleLogin({ redirectTo = "/creator?notify=1" }: CreatorGoogleLoginProps) {
   const buttonRef = useRef<HTMLDivElement>(null);
+  // error: API側でログインが失敗したとき(検証NG・未登録など)のメッセージ。
+  // failed: Googleのスクリプト自体が読み込めずボタンが出せなかったとき。
+  // 原因が別なので両方持つ。
   const [error, setError] = useState("");
+  const [failed, setFailed] = useState(!CLIENT_ID);
 
   useEffect(() => {
     if (!CLIENT_ID) return;
     if (localStorage.getItem("vtuber-match-creator-email")) return;
 
     let cancelled = false;
+    let rendered = false;
+
+    const timeoutId = window.setTimeout(() => {
+      if (!cancelled && !rendered) setFailed(true);
+    }, loadTimeoutMs);
 
     async function handleCredentialResponse(response: { credential: string }) {
       setError("");
@@ -49,6 +61,8 @@ export function CreatorGoogleLogin({ redirectTo = "/creator?notify=1" }: Creator
 
     function init() {
       if (cancelled || !window.google?.accounts?.id) return;
+      rendered = true;
+      window.clearTimeout(timeoutId);
       window.google.accounts.id.initialize({
         client_id: CLIENT_ID,
         callback: handleCredentialResponse,
@@ -74,10 +88,20 @@ export function CreatorGoogleLogin({ redirectTo = "/creator?notify=1" }: Creator
 
     return () => {
       cancelled = true;
+      window.clearTimeout(timeoutId);
     };
   }, [redirectTo]);
 
   if (!CLIENT_ID) return null;
+  // ボタンが出せなかった場合は、アプリ内ブラウザの案内よりこちらを優先する
+  // (そもそも押せるボタンが無いため)。
+  if (failed) {
+    return (
+      <p className="notice-text">
+        Googleログインの読み込みに失敗しました。広告ブロッカーや拡張機能が影響している可能性があります。下のメールアドレスでログインしてください。
+      </p>
+    );
+  }
   return (
     <>
       <InAppBrowserNotice />

@@ -76,6 +76,16 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
     setGoogleEmail(decodeGoogleCredentialEmail(credential));
   }, []);
 
+  // Googleログインが読み込めない(広告ブロッカー等でブロックされている、設定不備など)場合に
+  // メールアドレス登録へ自動で切り替える。切り替えたことが分かるよう通知も出す。
+  const handleGoogleUnavailable = useCallback(() => {
+    setAuthMethod((current) => {
+      if (current !== "google") return current;
+      setStatus("Googleログインを利用できなかったため、メールアドレスでの登録に切り替えました。");
+      return "password";
+    });
+  }, []);
+
   const isFree = selectedPlan === "free";
   const categoryLimit = 3;
   const tagLimit = 3;
@@ -330,23 +340,23 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
         <p className="help-text">紹介動画のナレーションでお名前を正しく読み上げるために使います。</p>
       </div>
       <div className="field">
-        <span className="field-label">ログイン方法</span>
-        <div className="segmented-control" role="tablist" aria-label="配信者ログイン方法">
-          <button type="button" className={authMethod === "password" ? "selected" : ""} onClick={() => setAuthMethod("password")}>メール+パスワード</button>
-          <button type="button" className={authMethod === "google" ? "selected" : ""} onClick={() => setAuthMethod("google")}>Googleアカウント</button>
+        <span className="field-label">アカウント作成方法(今後のログインにも使います)</span>
+        <div className="segmented-control" role="tablist" aria-label="配信者アカウント作成方法">
+          <button type="button" className={authMethod === "password" ? "selected" : ""} onClick={() => setAuthMethod("password")}>メールアドレスで登録</button>
+          <button type="button" className={authMethod === "google" ? "selected" : ""} onClick={() => setAuthMethod("google")}>Googleで登録</button>
         </div>
       </div>
       {authMethod === "google" ? (
         <div className="field">
           <span className="field-label">Googleアカウント</span>
           {googleEmail ? (
-            <p className="help-text">認証済み: {googleEmail}(このアカウントでログインできるようになります)</p>
+            <p className="help-text">✓ 認証済み: {googleEmail}(このアカウントで今後もログインできます。下の「申し込む」ボタンから送信してください)</p>
           ) : (
             <>
-              <GoogleCredentialField onCredential={handleGoogleCredential} />
-              <p className="help-text">上のボタンからGoogleアカウントを選ぶと、パスワード不要でログインできるようになります。</p>
+              <GoogleCredentialField onCredential={handleGoogleCredential} onUnavailable={handleGoogleUnavailable} />
+              <p className="help-text">上のボタンでGoogleアカウントを選んで認証してください。認証が終わるまで「申し込む」ボタンは押せません。</p>
               <p className="help-text">
-                ボタンを押しても反応がない・進まない場合は、ブラウザのCookie設定(サードパーティCookieのブロックなど)が原因のことがあります。お手数ですが上の「メール+パスワード」に切り替えてお試しください。
+                ボタンを押しても反応がない・進まない場合は、ブラウザのCookie設定(サードパーティCookieのブロックなど)が原因のことがあります。お手数ですが上の「メールアドレスで登録」に切り替えてお試しください。
               </p>
             </>
           )}
@@ -486,13 +496,13 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
           紹介動画(Lo-Fi配信への掲載・紹介ショート動画)の作成・公開に同意し、作成を希望します
         </label>
         <p className="help-text">
-          チェックして申し込むと、紹介動画の作成依頼が運営に届きます(プラン問わず任意)。チェックがない場合、動画は作成されません。外部フォームへの登録は不要です。あとから配信サイトで変更もできます。
+          チェックして申し込むと、紹介動画の作成依頼が運営に届きます(プラン問わず任意・お一人様1回まで)。チェックがない場合、動画は作成されません。外部フォームへの登録は不要です。あとから配信者ページでも依頼できます。
         </p>
       </div>
 
-      <button className="primary-button" type="submit" disabled={busy}>
+      <button className="primary-button" type="submit" disabled={busy || (authMethod === "google" && !googleCredential)}>
         <Send size={18} />
-        {busy ? "送信中..." : "申し込む"}
+        {busy ? "送信中..." : authMethod === "google" && !googleCredential ? "先にGoogleで認証してください" : "申し込む"}
       </button>
       {status && <p className="notice-text">{status}</p>}
       {status && !completion && !busy && (
