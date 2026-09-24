@@ -8226,8 +8226,7 @@ body::after {
     display: flex !important;
   }
 
-  .landing-clip-promo-banner,
-  .landing-clip-onetime-note {
+  .landing-clip-promo-banner {
     display: none !important;
   }
 
@@ -8809,28 +8808,6 @@ body::after {
   margin: 8px 0 0;
   color: #64728a;
   font-size: 12px;
-}
-
-/* 上の「登録者限定・1本無料」バナーの下に出す、登録不要で注文できる案内。
-   登録するつもりのない初見の人を取り逃さないための逃げ道 */
-.landing-clip-onetime-note {
-  /* .landing-hero は2カラムグリッド。上のバナー(.landing-promo-banner)は
-     grid-column: 1/-1 で全カラムをまたいで860px幅に中央寄せしているが、
-     このpにはそれが無かったため、狭い方のカラム内で中央寄せされて
-     バナーより左にずれて見えていた */
-  grid-column: 1 / -1;
-  width: min(860px, 100%);
-  margin: -6px auto 0;
-  text-align: center;
-  color: #64728a;
-  font-size: 13px;
-}
-
-.landing-clip-onetime-note a {
-  margin-left: 8px;
-  color: #d92762;
-  font-weight: 700;
-  text-decoration: underline;
 }
 
 .landing-clip-promo-new {
