@@ -33,6 +33,13 @@ export function loadGoogleIdentityScript(onReady: () => void) {
   document.head.appendChild(script);
 }
 
+// X/Instagram/LINE等のアプリ内蔵ブラウザ(WebView)は、Googleが
+// disallowed_useragentとして弾くため、ボタンは反応してもログインが完了しない。
+// User-Agentから既知のWebViewを検知し、事前に案内を出すために使う。
+export function isInAppBrowserUA(ua: string): boolean {
+  return /Twitter|FBAN|FBAV|FB_IAB|Instagram|Line\//i.test(ua);
+}
+
 // 表示専用の簡易デコード(検証はしない)。IDトークンのpayload部分をUIに
 // 先読み表示するためだけに使う。実際の検証はサーバー側で必ず行う。
 export function decodeGoogleCredentialEmail(credential: string): string {

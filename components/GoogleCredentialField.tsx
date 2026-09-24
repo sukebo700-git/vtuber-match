@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { loadGoogleIdentityScript } from "@/lib/googleIdentityClient";
+import { InAppBrowserNotice } from "@/components/InAppBrowserNotice";
 
 const CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 // GISスクリプトの読み込みや初期化がこの時間内に終わらなければ、広告ブロッカー等で
@@ -68,6 +69,7 @@ export function GoogleCredentialField({ onCredential, onUnavailable }: GoogleCre
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [onCredential]);
 
+  // ボタンが出せなかった場合は、アプリ内ブラウザの案内よりこちらを優先する。
   if (failed) {
     return (
       <p className="notice-text">
@@ -75,5 +77,10 @@ export function GoogleCredentialField({ onCredential, onUnavailable }: GoogleCre
       </p>
     );
   }
-  return <div ref={buttonRef} className="google-signin-button" />;
+  return (
+    <>
+      <InAppBrowserNotice />
+      <div ref={buttonRef} className="google-signin-button" />
+    </>
+  );
 }

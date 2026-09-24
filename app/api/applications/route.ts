@@ -3,7 +3,7 @@ import { randomBytes } from "crypto";
 import { requireAdmin } from "@/lib/adminAuth";
 import { diagnosisTypes } from "@/lib/diagnosis";
 import { FieldValue, getAdminDb, stripUndefined } from "@/lib/firebaseAdmin";
-import { verifyGoogleIdToken } from "@/lib/googleAuth";
+import { logGoogleAuthFailure, verifyGoogleIdToken } from "@/lib/googleAuth";
 import { addLocalApplication, addLocalStreamer, findLocalStreamer, readLocalApplications, readLocalStreamers, updateLocalApplication } from "@/lib/localStore";
 import { notifyAdminNewApplication } from "@/lib/notifications";
 import { hashPassword, makeCreatorLoginId } from "@/lib/password";
@@ -71,6 +71,7 @@ export async function POST(request: Request) {
   if (googleCredential) {
     googleAuth = await verifyGoogleIdToken(googleCredential);
     if (!googleAuth) {
+      logGoogleAuthFailure(request, "applications", "verify_failed");
       return NextResponse.json({ error: "Google認証に失敗しました。もう一度お試しください。" }, { status: 401 });
     }
     body.email = googleAuth.email;
