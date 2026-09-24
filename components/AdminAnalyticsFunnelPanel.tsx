@@ -12,6 +12,27 @@ type AdminAnalyticsFunnelPanelProps = {
   stats: { today: number; week: number; total: number };
   sources: VisitSources;
   analytics: AdminAnalyticsSummary;
+  // 参照元ホスト別の内訳(2026-09-24以降に記録されたぶんのみ)。
+  referrers?: Array<{ key: string; count: number }>;
+};
+
+// api/visits の classifyReferrerHost が返す識別子の表示名。
+const referrerLabels: Record<string, string> = {
+  youtube: "YouTube",
+  x: "X (Twitter)",
+  discord: "Discord",
+  google: "Google",
+  yahoo: "Yahoo",
+  bing: "Bing",
+  bluesky: "Bluesky",
+  misskey: "Misskey",
+  note: "note",
+  reddit: "Reddit",
+  tiktok: "TikTok",
+  instagram: "Instagram",
+  internal: "サイト内",
+  none: "参照元なし(直接・アプリ内)",
+  other: "その他",
 };
 
 type FunnelStage = {
@@ -33,7 +54,7 @@ const sourceLabels: Array<{ key: keyof VisitSources; label: string }> = [
 // 2026-09-22: 以前は「訪問者数」「流入元」「スワイプ集計」が別々のカードに分かれ、
 // 全期間の絶対値だけが14個並んでいた。どこで離脱しているかが読めなかったため、
 // 訪問 → スワイプ → 登録導線 のファネルと到達率を主役に作り直した。
-export function AdminAnalyticsFunnelPanel({ stats, sources, analytics }: AdminAnalyticsFunnelPanelProps) {
+export function AdminAnalyticsFunnelPanel({ stats, sources, analytics, referrers = [] }: AdminAnalyticsFunnelPanelProps) {
   const today = buildFunnel(
     stats.today,
     analytics.today_swiped_visitors,
@@ -83,6 +104,29 @@ export function AdminAnalyticsFunnelPanel({ stats, sources, analytics }: AdminAn
           })}
         </ul>
       )}
+
+      {referrers.length ? (
+        <>
+          <h3 className="analytics-funnel-subheading">参照元サイト(2026-09-24以降の記録分)</h3>
+          <ul className="analytics-source-list">
+            {referrers.map((row) => {
+              const total = referrers.reduce((sum, item) => sum + item.count, 0);
+              const share = total ? Math.round((row.count / total) * 100) : 0;
+              return (
+                <li key={row.key}>
+                  <span className="analytics-source-label">{referrerLabels[row.key] || row.key}</span>
+                  <span className="analytics-source-bar" aria-hidden="true">
+                    <i style={{ width: `${share}%` }} />
+                  </span>
+                  <span className="analytics-source-value">
+                    {share}%<small>{row.count.toLocaleString("ja-JP")}</small>
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </>
+      ) : null}
 
       <p className="analytics-total-line">
         全期間: 訪問 {stats.total.toLocaleString("ja-JP")} / スワイプした人 {analytics.swiped_visitors.toLocaleString("ja-JP")}

@@ -2488,6 +2488,31 @@ button {
   color: var(--muted);
 }
 
+/* 診断結果の直後に出す登録導線 */
+.diagnosis-register-cta {
+  display: grid;
+  gap: 8px;
+  justify-items: center;
+  text-align: center;
+  margin-top: 18px;
+  padding: 18px;
+  border: 1px solid rgba(47, 125, 225, 0.16);
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 10px 24px rgba(47, 125, 225, 0.1);
+}
+
+.diagnosis-register-cta strong {
+  font-size: 16px;
+}
+
+.diagnosis-register-cta p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
 .analytics-total-line {
   margin: 16px 0 0;
   padding-top: 12px;

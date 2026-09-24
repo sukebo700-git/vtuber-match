@@ -82,6 +82,7 @@ export default async function AdminPage({ searchParams }: { searchParams?: Admin
   const visitStats = needsAnalyticsData ? (db ? await readFirestoreVisitStats() : await readLocalVisitStats()) : { today: 0, week: 0, total: 0 };
   const visitSourceStats = needsAnalyticsData ? (db ? await readFirestoreVisitSourceStats() : await readLocalVisitSourceStats()) : { organic: 0, direct: 0, social: 0, referral: 0, ads: 0 };
   const analyticsStats = needsAnalyticsData ? (db ? await readFirestoreAnalyticsSummary() : await readLocalAnalyticsSummary()) : emptyAdminAnalyticsSummary;
+  const referrerStats = needsAnalyticsData && db ? await readFirestoreReferrerStats() : [];
 
   return (
     <div className="app-shell">
@@ -130,7 +131,7 @@ export default async function AdminPage({ searchParams }: { searchParams?: Admin
           </section>
         )}
         {activeTab === "analytics" && (
-          <AdminAnalyticsFunnelPanel stats={visitStats} sources={visitSourceStats} analytics={analyticsStats} />
+          <AdminAnalyticsFunnelPanel stats={visitStats} sources={visitSourceStats} analytics={analyticsStats} referrers={referrerStats} />
         )}
         {activeTab === "ads" && <AdminSwipeAdsPanel adminKey="" />}
         {activeTab === "streamers" && <ShortVideoAdminPanel adminKey="" />}
@@ -418,6 +419,19 @@ async function readFirestoreVisitStats() {
   });
   const summary = summarizeVisits(visits);
   return { ...summary, total: Number(totalsDoc.data()?.site_visits_total || summary.total) };
+}
+
+// 2026-09-24: source_* の5分類ではYouTubeとXが同じ "social" に潰れて内訳が
+// 追えなかったため、参照元ホスト別の ref_* も読む(api/visits で記録している)。
+async function readFirestoreReferrerStats() {
+  const db = getAdminDb();
+  if (!db) return [] as Array<{ key: string; count: number }>;
+  const data = (await db.collection("aggregates").doc("analytics_totals").get()).data() || {};
+  return Object.entries(data)
+    .filter(([key, value]) => key.startsWith("ref_") && Number(value) > 0)
+    .map(([key, value]) => ({ key: key.slice(4), count: Number(value) }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 10);
 }
 
 async function readFirestoreVisitSourceStats() {

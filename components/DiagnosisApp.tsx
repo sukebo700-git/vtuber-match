@@ -274,6 +274,11 @@ export default function DiagnosisApp({ mode, previewTypeId }: DiagnosisAppProps)
             </a>
           </div>
           <NextDiagnosisCta />
+          {/* 2026-09-24: 診断は累計500件完了していて、サイト内で最も熱量が高い到達点。
+              これまで未ログイン者には「プロフィール画面で保存できます」という文言しか
+              なく、登録への導線が無かった。診断直後に登録を出す。
+              リスナー相性診断は視聴者登録へ、VTuber向け診断は配信者登録へ振り分ける。 */}
+          {!profileSaveTarget ? <DiagnosisRegisterCta mode={mode} /> : null}
 
           <div className="diagnosis-actions">
             {saveState === "saving" ? <span className="diagnosis-save-note">診断結果を保存中...</span> : null}
@@ -791,6 +796,23 @@ function DiagnosisNotice() {
     <p className="diagnosis-save-note">
       この診断は回答傾向に基づく簡易分析です。実際の人気・登録者増加・リスナー数を保証するものではありません。
     </p>
+  );
+}
+
+function DiagnosisRegisterCta({ mode }: { mode: string }) {
+  const isViewer = mode === "viewer";
+  return (
+    <section className="diagnosis-register-cta">
+      <strong>{isViewer ? "この結果を保存しませんか?" : "この診断結果をプロフィールに載せませんか?"}</strong>
+      <p>
+        {isViewer
+          ? "無料の視聴者登録で、診断タイプが保存され、いいねやマッチの履歴も残せます。"
+          : "無料の配信者登録で、診断タイプ付きの掲載ページが作られ、視聴者から見つけてもらえます。"}
+      </p>
+      <a className="diagnosis-primary-button" href={isViewer ? "/viewer/register" : "/creator/apply"}>
+        {isViewer ? "視聴者として無料登録" : "VTuberとして無料掲載"}
+      </a>
+    </section>
   );
 }
 
