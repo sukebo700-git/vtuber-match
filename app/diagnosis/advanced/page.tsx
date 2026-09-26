@@ -2,8 +2,13 @@ import type { Metadata } from "next";
 
 import DiagnosisApp from "@/components/DiagnosisApp";
 import { diagnosisTypes } from "@/lib/diagnosis";
+import { getSiteUrl } from "@/lib/seo";
 
-const baseUrl = "https://vtubermatch.com";
+// 2026-09-26: ここだけ www 無しを直書きしており、サイト全体(lib/seo.ts の
+// getSiteUrl は www 付きを返す)と canonical のドメインが分裂していた。
+// vtubermatch.com は www へ307リダイレクトするため、canonical が
+// リダイレクト元を指す状態になっていた。共通の定義に寄せる。
+const baseUrl = getSiteUrl();
 const ogImageVersion = "20260613-1";
 const defaultDescription = "VTYPE診断の100問版。配信スタイルをより詳しく診断します。";
 
