@@ -49,7 +49,10 @@ export function generateMetadata({ searchParams }: ViewerDiagnosisPageProps): Me
     };
   }
 
-  const image = { url: `${baseUrl}/diagnosis/ui/ogp.webp?v=${ogImageVersion}`, width: 1200, height: 630, alt: "VTYPE診断" };
+  // 2026-09-26: 旧 /diagnosis/ui/ogp.webp は実寸 218x207 しかなく、
+  // ここで宣言している 1200x630 と食い違っていたためOGPカードが出なかった。
+  // 型別OGPと同じ next/og で正しい寸法を動的に生成する。
+  const image = { url: `${baseUrl}/api/diagnosis/og-default?mode=viewer&v=${ogImageVersion}`, width: 1200, height: 630, alt: "VTYPE診断" };
 
   return {
     title: "リスナー向け 相性診断 | VTYPE診断",
