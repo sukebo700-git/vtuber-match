@@ -40,6 +40,15 @@ type SaveState = "idle" | "saving" | "saved" | "offline";
 type ImageSaveState = "idle" | "saving" | "saved" | "failed";
 type ProfileSaveTarget = "creator" | "viewer" | false;
 
+type StreamerMatchView = {
+  id: string;
+  name: string;
+  affinity: number;
+  vtype_name: string;
+  path: string;
+  image: string;
+};
+
 export default function DiagnosisApp({ mode, previewTypeId }: DiagnosisAppProps) {
   const questions = mode === "advanced" ? advancedQuestions : mode === "viewer" ? viewerQuestions : lightQuestions;
   const pages = Math.ceil(questions.length / 5);
@@ -63,6 +72,10 @@ export default function DiagnosisApp({ mode, previewTypeId }: DiagnosisAppProps)
   const [nameError, setNameError] = useState("");
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [profileSaveTarget, setProfileSaveTarget] = useState<ProfileSaveTarget>(false);
+  // 2026-09-26: リスナー相性診断の結果に、実在の掲載VTuberを出す。
+  // 以前はタイプ名を出して「探してみよう」で終わっており、結果と掲載配信者が
+  // 繋がっていなかった。名前が出ることでシェアの連鎖も狙える。
+  const [streamerMatches, setStreamerMatches] = useState<StreamerMatchView[]>([]);
   const [typeImageState, setTypeImageState] = useState<ImageSaveState>("idle");
   const [radarImageState, setRadarImageState] = useState<ImageSaveState>("idle");
   const currentQuestions = useMemo(() => {
@@ -83,6 +96,7 @@ export default function DiagnosisApp({ mode, previewTypeId }: DiagnosisAppProps)
     setResult(null);
     setSaveState("idle");
     setProfileSaveTarget(false);
+    setStreamerMatches([]);
   }, [questions]);
 
   useEffect(() => {
@@ -122,6 +136,9 @@ export default function DiagnosisApp({ mode, previewTypeId }: DiagnosisAppProps)
     const type = matches[0]?.type || decideDiagnosisTypeFromAnswers(answers, questions);
     setResult({ type, scores, resultId: null, matches });
     setSaveState("saving");
+    // 掲載VTuberとのマッチはリスナー相性診断のみ。結果表示より遅れて出るが、
+    // 失敗しても結果画面自体は成立するので待たずに走らせる。
+    if (mode === "viewer") void loadStreamerMatches(scores);
 
     try {
       const storedResultId =
@@ -157,6 +174,21 @@ export default function DiagnosisApp({ mode, previewTypeId }: DiagnosisAppProps)
     }
   }
 
+  async function loadStreamerMatches(scores: DiagnosisScores) {
+    try {
+      const response = await fetch("/api/diagnosis/matches", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ scores, limit: 3 }),
+      });
+      if (!response.ok) return;
+      const data = await response.json().catch(() => null);
+      if (Array.isArray(data?.matches)) setStreamerMatches(data.matches as StreamerMatchView[]);
+    } catch {
+      // マッチは付加要素。取得できなくても診断結果の表示は続ける。
+    }
+  }
+
   function nextPage() {
     const hasUnanswered = currentQuestions.some((question) => !answers[question.id]);
     if (hasUnanswered) {
@@ -188,7 +220,7 @@ export default function DiagnosisApp({ mode, previewTypeId }: DiagnosisAppProps)
 
   function openSharePost() {
     if (!result) return;
-    window.open(createShareUrl(result.type, mode, result.matches), "_blank", "noopener,noreferrer");
+    window.open(createShareUrl(result.type, mode, result.matches, streamerMatches[0]?.name || ""), "_blank", "noopener,noreferrer");
   }
 
   async function saveTypeImage() {
@@ -261,6 +293,7 @@ export default function DiagnosisApp({ mode, previewTypeId }: DiagnosisAppProps)
           <RadarScoreInsights scores={result.scores} mode={mode === "viewer" ? "viewer" : "vtuber"} />
 
           {mode === "viewer" ? <ListenerDeepDive type={result.type} /> : <StreamerDeepDive type={result.type} />}
+          {mode === "viewer" ? <StreamerMatchList matches={streamerMatches} /> : null}
           {mode === "viewer" ? <ViewerResultGuide type={result.type} /> : <ViewerMatchCard scores={result.scores} type={result.type} />}
           {mode !== "viewer" ? <CreatorDiagnosisRegisterCta /> : null}
           {mode === "advanced" ? <AdvancedDetails scores={result.scores} /> : null}
@@ -751,6 +784,32 @@ function CreatorDiagnosisRegisterCta() {
   );
 }
 
+// 掲載中のVTuberのうち、診断スコアが近い人を出す。
+// 取得前・0件のときは何も出さない(下の ViewerResultGuide が受け皿になる)。
+function StreamerMatchList({ matches }: { matches: StreamerMatchView[] }) {
+  if (!matches.length) return null;
+  return (
+    <section className="diagnosis-streamer-match">
+      <p className="diagnosis-kicker">あなたと相性がいい掲載VTuber</p>
+      <ul>
+        {matches.map((match) => (
+          <li key={match.id}>
+            <a href={match.path}>
+              {match.image ? <img src={match.image} alt="" loading="lazy" decoding="async" /> : <span className="diagnosis-match-avatar-fallback" aria-hidden="true" />}
+              <span className="diagnosis-match-body">
+                <strong>{match.name}</strong>
+                {match.vtype_name ? <small>{match.vtype_name}</small> : null}
+              </span>
+              <span className="diagnosis-match-affinity">{match.affinity}%</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+      <p className="help-text">掲載プロフィールから配信サイトへ移動できます。</p>
+    </section>
+  );
+}
+
 function ViewerResultGuide({ type }: { type: DiagnosisType }) {
   return (
     <section className="diagnosis-viewer-match">
@@ -915,11 +974,11 @@ function getModeMeta(mode: DiagnosisMode) {
 // VTuber向け版は、投稿を見るのが本人のリスナーであることを踏まえ、
 // 締めをリスナー版診断への誘導にしている(VTuberが投稿→リスナーが診断→
 // リスナーが投稿→そのフォロワーへ、という導線を意図している)。
-function createShareUrl(type: DiagnosisType, mode: DiagnosisMode, matches: DiagnosisTypeMatch[] = []) {
-  return `https://twitter.com/intent/tweet?text=${encodeURIComponent(createShareText(type, mode, matches))}`;
+function createShareUrl(type: DiagnosisType, mode: DiagnosisMode, matches: DiagnosisTypeMatch[] = [], topStreamerName = "") {
+  return `https://twitter.com/intent/tweet?text=${encodeURIComponent(createShareText(type, mode, matches, topStreamerName))}`;
 }
 
-function createShareText(type: DiagnosisType, mode: DiagnosisMode, matches: DiagnosisTypeMatch[] = []) {
+function createShareText(type: DiagnosisType, mode: DiagnosisMode, matches: DiagnosisTypeMatch[] = [], topStreamerName = "") {
   const version = mode === "advanced" ? "100問Ver" : mode === "viewer" ? "リスナーVer" : "30問Ver";
   const url = mode === "viewer"
     ? `https://vtubermatch.com/diagnosis/viewer?type=${type.id}`
@@ -942,7 +1001,11 @@ function createShareText(type: DiagnosisType, mode: DiagnosisMode, matches: Diag
         "",
         catchLine,
         "",
-        `${secondLine}あなたはどのタイプと相性いい？30問で出ます👇`,
+        // 実在のVTuber名が出せるときは、タイプ名より具体的なこちらを主役にする。
+        // @メンションはしない(自動投稿で通知を飛ばすと迷惑になりうるため)。
+        topStreamerName ? `診断では「${topStreamerName}」さんが一番相性よかった。` : "",
+        topStreamerName ? "" : secondLine.trim(),
+        "あなたはどのVTuberと相性いい？30問で出ます👇",
         "",
         url,
         "",

@@ -2489,6 +2489,70 @@ button {
 }
 
 /* 診断結果の直後に出す登録導線 */
+/* 診断結果に出す、相性のいい掲載VTuberの一覧 */
+.diagnosis-streamer-match {
+  margin-top: 18px;
+  padding: 18px;
+  border: 1px solid rgba(47, 125, 225, 0.16);
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 10px 24px rgba(47, 125, 225, 0.1);
+}
+
+.diagnosis-streamer-match ul {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.diagnosis-streamer-match a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid rgba(47, 125, 225, 0.12);
+  border-radius: 14px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.diagnosis-streamer-match img,
+.diagnosis-match-avatar-fallback {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  object-fit: cover;
+  background: rgba(47, 125, 225, 0.12);
+}
+
+.diagnosis-match-body {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.diagnosis-match-body strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.diagnosis-match-body small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.diagnosis-match-affinity {
+  flex: 0 0 auto;
+  font-weight: 850;
+  color: var(--pink);
+}
+
 .diagnosis-register-cta {
   display: grid;
   gap: 8px;
