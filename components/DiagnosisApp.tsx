@@ -992,18 +992,19 @@ function createShareText(type: DiagnosisType, mode: DiagnosisMode, matches: Diag
     ? `【${type.name}】${type.code}・一致度${primary.confidence}%`
     : `【${type.name}】${type.code}`;
   const secondLine = secondary ? `2番目は「${secondary.type.name}」。` : "";
-  const catchLine = type.catchCopy ? `“${type.catchCopy}”` : "";
 
   const lines = mode === "viewer"
     ? [
         "私と相性がいいVTuberは",
         `${headline}`,
         "",
-        catchLine,
-        "",
         // 実在のVTuber名が出せるときは、タイプ名より具体的なこちらを主役にする。
         // @メンションはしない(自動投稿で通知を飛ばすと迷惑になりうるため)。
-        topStreamerName ? `診断では「${topStreamerName}」さんが一番相性よかった。` : "",
+        //
+        // 「一番」「1位」とは書かない。掲載機会を配信者全体へ回すため、表示する
+        // 相性上位者は重み付きランダムで選んでおり、必ずしも最高相性の人が
+        // 先頭に来るとは限らないため(順位を断定すると事実と食い違う)。
+        topStreamerName ? `診断で相性ぴったりだったのは「${topStreamerName}」さん。` : "",
         topStreamerName ? "" : secondLine.trim(),
         "あなたはどのVTuberと相性いい？30問で出ます👇",
         "",
@@ -1015,8 +1016,6 @@ function createShareText(type: DiagnosisType, mode: DiagnosisMode, matches: Diag
     : [
         "私のVTuberタイプは",
         `${headline}(${version})`,
-        "",
-        catchLine,
         "",
         `${secondLine}リスナーのみんなは相性診断もできます👇`,
         "",
