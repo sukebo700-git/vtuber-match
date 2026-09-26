@@ -15,6 +15,11 @@ import type { Streamer } from "@/lib/types";
 
 const axisKeys = ["f", "t", "a", "n", "v", "d"] as const;
 
+// 傾向で寄せた枠を出す確率。毎回100%適用すると似たようなVTuberばかりになって
+// 機械的に見えるため、半分は全体プールからの純粋なおすすめにする。
+// 副次的に、VTYPE未設定の配信者(184人中121人)へ回る露出も増える。
+const TAILORED_SLOT_RATE = 0.5;
+
 export type RecommendedStreamer = {
   id: string;
   name: string;
@@ -38,17 +43,20 @@ export function pickRecommendations(
 
   // 1枠目: 診断の傾向が近い配信者から。上位プールの中で重み付き抽選するので、
   // 傾向は反映しつつ毎回同じ人にはならない。
-  const typed = eligible
-    .map((streamer) => ({ streamer, closeness: closenessScore(scores, streamer) }))
-    .filter((item): item is { streamer: Candidate; closeness: number } => item.closeness !== null)
-    .sort((a, b) => b.closeness - a.closeness);
-  if (typed.length) {
-    const pool = typed.slice(0, Math.max(10, limit * 5));
-    const chosen = weightedPick(pool.map((item) => ({ item: item.streamer, weight: Math.pow(item.closeness + 1, 2) })));
-    if (chosen) picked.push(chosen);
+  // ただし毎回は適用しない(TAILORED_SLOT_RATE の説明を参照)。
+  if (Math.random() < TAILORED_SLOT_RATE) {
+    const typed = eligible
+      .map((streamer) => ({ streamer, closeness: closenessScore(scores, streamer) }))
+      .filter((item): item is { streamer: Candidate; closeness: number } => item.closeness !== null)
+      .sort((a, b) => b.closeness - a.closeness);
+    if (typed.length) {
+      const pool = typed.slice(0, Math.max(10, limit * 5));
+      const chosen = weightedPick(pool.map((item) => ({ item: item.streamer, weight: Math.pow(item.closeness + 1, 2) })));
+      if (chosen) picked.push(chosen);
+    }
   }
 
-  // 2枠目以降: VTYPE未設定の配信者も含めた全体から均等に。
+  // 残り枠: VTYPE未設定の配信者も含めた全体から均等に。
   // ここが無いと121人に露出が回らない。
   while (picked.length < limit) {
     const rest = eligible.filter((streamer) => !picked.some((item) => item.id === streamer.id));
