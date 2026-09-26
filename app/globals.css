@@ -2490,6 +2490,23 @@ button {
 
 /* 診断結果の直後に出す登録導線 */
 /* 診断結果に出す、相性のいい掲載VTuberの一覧 */
+/* 診断まわりに置く、配信者向けの控えめな導線 */
+.diagnosis-creator-note {
+  margin: 12px 0 0;
+  padding-top: 10px;
+  border-top: 1px solid rgba(47, 125, 225, 0.12);
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.diagnosis-creator-note a {
+  margin-left: 6px;
+  color: var(--pink);
+  font-weight: 850;
+  text-decoration: underline;
+}
+
 .diagnosis-streamer-match {
   margin-top: 18px;
   padding: 18px;

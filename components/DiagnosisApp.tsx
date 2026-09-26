@@ -377,6 +377,12 @@ export default function DiagnosisApp({ mode, previewTypeId }: DiagnosisAppProps)
               {mode === "viewer" ? "配信者向け診断へ" : "リスナー向け 相性診断"}
             </a>
           </div>
+          {/* シェアを踏んで来た未登録のVTuberが最初に着地するのがこの画面。
+              これまで掲載登録への導線が無く、行き止まりになっていた。 */}
+          <p className="diagnosis-creator-note">
+            VTuberの方へ: 診断結果の「おすすめVTuber」欄は、VtuberMatchに掲載中の方から選ばれます。
+            <a href="/creator/apply">無料で掲載する</a>
+          </p>
         </section>
       </DiagnosisShell>
     );
@@ -806,6 +812,13 @@ function StreamerMatchList({ matches }: { matches: StreamerMatchView[] }) {
         ))}
       </ul>
       <p className="help-text">掲載プロフィールから配信サイトへ移動できます。</p>
+      {/* 2026-09-26: この欄に載りたいVTuberの受け皿。シェアを見た未登録の配信者が
+          「自分も載りたい」と思う地点がここなので、一覧の直下に置く。
+          視聴者には広告に見えないよう、文字サイズを落とした一行に留める。 */}
+      <p className="diagnosis-creator-note">
+        VTuberの方へ: この欄はVtuberMatchに掲載中の方から選ばれます。
+        <a href="/creator/apply">無料で掲載する</a>
+      </p>
     </section>
   );
 }
