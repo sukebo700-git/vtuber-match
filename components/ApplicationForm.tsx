@@ -609,7 +609,38 @@ function vtypePayload(profile: VtypeProfileFields | null) {
 // 小さすぎる画像(例: 数十〜数百px程度の縮小済み画像やスクリーンショット)は、
 // カード表示時に拡大されてブロックノイズ(「ガビガビ」)が目立つ原因になる
 // ため、この解像度未満はアップロード時点で弾く。
-const minImageSide = 500;
+// 2026-09-26: 500pxだとXのアイコン(400×400が既定)がそのまま弾かれてしまい、
+// 申込を諦める人が出ていた可能性が高いため300pxまで緩和した。
+const minImageSide = 300;
+
+const analyticsVisitorKey = "vtuber-match-analytics-visitor-id";
+
+// 画像が解像度制限で弾かれた回数と短辺を記録する。制限が申込の障害に
+// なっているかどうかを推測ではなく実数で判断するため。
+function reportImageRejected(width: number, height: number) {
+  if (typeof window === "undefined") return;
+  try {
+    if (localStorage.getItem("vtuber-match-admin-mode") === "1") return;
+    let visitorId = localStorage.getItem(analyticsVisitorKey);
+    if (!visitorId) {
+      visitorId = `visitor_${crypto.randomUUID()}`;
+      localStorage.setItem(analyticsVisitorKey, visitorId);
+    }
+    fetch("/api/analytics/event", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      keepalive: true,
+      body: JSON.stringify({
+        event_type: "apply_image_rejected",
+        visitor_id: visitorId,
+        image_min_side: Math.min(width, height),
+        path: window.location.pathname,
+      }),
+    }).catch(() => undefined);
+  } catch {
+    // 計測はベストエフォート。失敗しても申込フローは止めない。
+  }
+}
 
 function fileToDataUrl(file: File): Promise<{ dataUrl: string; error?: string }> {
   return new Promise((resolve, reject) => {
@@ -622,6 +653,7 @@ function fileToDataUrl(file: File): Promise<{ dataUrl: string; error?: string }>
       const image = new Image();
       image.onload = () => {
         if (image.width < minImageSide || image.height < minImageSide) {
+          reportImageRejected(image.width, image.height);
           resolve({
             dataUrl: "",
             error: `画像が小さすぎます(${image.width}×${image.height}px)。縦横とも${minImageSide}px以上の画像を選んでください。`,

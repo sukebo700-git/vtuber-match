@@ -133,6 +133,14 @@ export function AdminAnalyticsFunnelPanel({ stats, sources, analytics, referrers
         {" / "}総スワイプ {analytics.total_swipes.toLocaleString("ja-JP")}
         {" / "}登録導線 {(analytics.viewer_register_clicks + analytics.creator_register_clicks).toLocaleString("ja-JP")}
       </p>
+
+      {/* 2026-09-26: 申込フォームの画像バリデーションで離脱している人がいないかを
+          可視化する。0のままなら画像は原因ではない、と言い切れる。 */}
+      <p className="analytics-total-line">
+        画像サイズで弾かれた回数: 今日 {analytics.today_apply_image_rejected.toLocaleString("ja-JP")}
+        {" / "}直近7日 {analytics.week_apply_image_rejected.toLocaleString("ja-JP")}
+        {" / "}累計 {analytics.apply_image_rejected.toLocaleString("ja-JP")}
+      </p>
     </section>
   );
 }

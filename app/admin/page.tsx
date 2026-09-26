@@ -386,8 +386,9 @@ async function readFirestoreAnalyticsSummary(): Promise<AdminAnalyticsSummary> {
     sums.total_swipes += Number(data.total_swipes || 0);
     sums.viewer_register_clicks += Number(data.viewer_register_clicks || 0);
     sums.creator_register_clicks += Number(data.creator_register_clicks || 0);
+    sums.apply_image_rejected += Number(data.apply_image_rejected || 0);
     return sums;
-  }, { swiped_visitors: 0, total_swipes: 0, viewer_register_clicks: 0, creator_register_clicks: 0 });
+  }, { swiped_visitors: 0, total_swipes: 0, viewer_register_clicks: 0, creator_register_clicks: 0, apply_image_rejected: 0 });
   return {
     swiped_visitors: Number(totals.swiped_visitors || 0),
     total_swipes: Number(totals.total_swipes || 0),
@@ -401,6 +402,9 @@ async function readFirestoreAnalyticsSummary(): Promise<AdminAnalyticsSummary> {
     week_total_swipes: week.total_swipes,
     week_viewer_register_clicks: week.viewer_register_clicks,
     week_creator_register_clicks: week.creator_register_clicks,
+    apply_image_rejected: Number(totals.apply_image_rejected || 0),
+    today_apply_image_rejected: Number(todayData.apply_image_rejected || 0),
+    week_apply_image_rejected: week.apply_image_rejected,
   };
 }
 
