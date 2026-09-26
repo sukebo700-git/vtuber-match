@@ -369,6 +369,13 @@ export default function DiagnosisApp({ mode, previewTypeId }: DiagnosisAppProps)
           <RadarScoreInsights scores={previewScores} mode={mode === "viewer" ? "viewer" : "vtuber"} />
           {mode === "viewer" ? <ListenerDeepDive type={previewType} /> : <StreamerDeepDive type={previewType} />}
           <NextDiagnosisCta />
+          {/* シェアを踏んで来た未登録のVTuberが最初に着地するのがこの画面。
+              これまで掲載登録への導線が無く、行き止まりになっていた。
+              最下部だと到達率が低いため、主ボタンの直上に置いて目に入るようにする。 */}
+          <p className="diagnosis-creator-note">
+            VTuberの方へ: 診断結果の「おすすめVTuber」欄は、VtuberMatchに掲載中の方から選ばれます。
+            <a href="/creator/apply">無料で掲載する</a>
+          </p>
           <div className="diagnosis-actions">
             <button className="diagnosis-primary-button" type="button" onClick={startFromSharedPreview}>
               診断を始める
@@ -377,12 +384,6 @@ export default function DiagnosisApp({ mode, previewTypeId }: DiagnosisAppProps)
               {mode === "viewer" ? "配信者向け診断へ" : "リスナー向け 相性診断"}
             </a>
           </div>
-          {/* シェアを踏んで来た未登録のVTuberが最初に着地するのがこの画面。
-              これまで掲載登録への導線が無く、行き止まりになっていた。 */}
-          <p className="diagnosis-creator-note">
-            VTuberの方へ: 診断結果の「おすすめVTuber」欄は、VtuberMatchに掲載中の方から選ばれます。
-            <a href="/creator/apply">無料で掲載する</a>
-          </p>
         </section>
       </DiagnosisShell>
     );
