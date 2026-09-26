@@ -8,6 +8,12 @@ export const runtime = "edge";
 // 218x207 しかなく、メタデータの width/height 1200x630 とも食い違っていた。
 // X の summary_large_image は最低 300x157 を要求するため、カードが出なかった。
 // 型別OGP(/api/diagnosis/og/[id])と同じ next/og で正しい寸法を動的に作る。
+//
+// 2026-09-26: 当初 /api/diagnosis/og-default に置いたが、robots.txt の
+// Disallow: /api/ に前方一致して XのCard Validator が
+// 「robots.txtで制限されている可能性」を警告し続けた。Allow を追加しても
+// 解消しなかったため(クローラーによっては Allow の上書きを評価しない)、
+// /api/ の外へ移してパス自体を曖昧さの無いものにする。
 const size = { width: 1200, height: 630 };
 
 type ModeCopy = { badge: string; lead: string; sub: string };
