@@ -188,7 +188,7 @@ export default function DiagnosisApp({ mode, previewTypeId }: DiagnosisAppProps)
 
   function openSharePost() {
     if (!result) return;
-    window.open(createShareUrl(result.type, mode), "_blank", "noopener,noreferrer");
+    window.open(createShareUrl(result.type, mode, result.matches), "_blank", "noopener,noreferrer");
   }
 
   async function saveTypeImage() {
@@ -902,40 +902,68 @@ function getModeMeta(mode: DiagnosisMode) {
   };
 }
 
-function createShareUrl(type: DiagnosisType, mode: DiagnosisMode) {
-  return `https://twitter.com/intent/tweet?text=${encodeURIComponent(createShareText(type, mode))}`;
+// 2026-09-26: シェア文を作り直した。
+// 変更前は「診断結果は【CSARND:アトリエの職人】でした。」のように、
+// 読み手にとって暗号でしかない英字コードが先頭に来て、結果の中身が
+// 一切伝わらなかった。画面に出している一致度%もキャッチコピーも使っておらず、
+// 締めが「貼ってください🙏」という依頼だったため、読み手側に動機が無かった。
+//
+// 連鎖させるには2段必要なので、それぞれに材料を割り当てている。
+//  1. 読み手が「やりたい」と思う  → キャッチコピー(中身が伝わる) + 一致度%(比べたくなる)
+//  2. やった人が「貼りたい」と思う → 1位と2位の組み合わせ(自分固有の結果になる)
+//
+// VTuber向け版は、投稿を見るのが本人のリスナーであることを踏まえ、
+// 締めをリスナー版診断への誘導にしている(VTuberが投稿→リスナーが診断→
+// リスナーが投稿→そのフォロワーへ、という導線を意図している)。
+function createShareUrl(type: DiagnosisType, mode: DiagnosisMode, matches: DiagnosisTypeMatch[] = []) {
+  return `https://twitter.com/intent/tweet?text=${encodeURIComponent(createShareText(type, mode, matches))}`;
 }
 
-function createShareText(type: DiagnosisType, mode: DiagnosisMode) {
+function createShareText(type: DiagnosisType, mode: DiagnosisMode, matches: DiagnosisTypeMatch[] = []) {
   const version = mode === "advanced" ? "100問Ver" : mode === "viewer" ? "リスナーVer" : "30問Ver";
   const url = mode === "viewer"
     ? `https://vtubermatch.com/diagnosis/viewer?type=${type.id}`
     : `https://vtubermatch.com/diagnosis?type=${type.id}`;
-  if (mode === "viewer") {
-    return [
-      "私と相性がいいVTuberは",
-      `【${type.code}:${type.name}タイプ】でした。`,
-      "",
-      "他の人の結果も見たいので貼ってください🙏",
-      "",
-      url,
-      "",
-      "#vtuber16タイプ診断",
-      "#vtubermatch",
-    ].join("\n");
-  }
-  return [
-    "診断結果は",
-    `【${type.code}:${type.name}（${version}）】でした。`,
-    "",
-    "みんなはどんなタイプ？",
-    "",
-    url,
-    "リスナー診断もあります",
-    "",
-    "#vtuber16タイプ診断",
-    "#vtubermatch",
-  ].join("\n");
+
+  const primary = matches.find((match) => match.type.id === type.id) || matches[0];
+  const secondary = matches.find((match) => match.type.id !== type.id);
+  // 一致度は画面に出している値をそのまま使う。matchesが無い経路(共有リンクからの
+  // 復元表示など)では黙って省略し、文章が壊れないようにする。
+  const headline = primary
+    ? `【${type.name}】${type.code}・一致度${primary.confidence}%`
+    : `【${type.name}】${type.code}`;
+  const secondLine = secondary ? `2番目は「${secondary.type.name}」。` : "";
+  const catchLine = type.catchCopy ? `“${type.catchCopy}”` : "";
+
+  const lines = mode === "viewer"
+    ? [
+        "私と相性がいいVTuberは",
+        `${headline}`,
+        "",
+        catchLine,
+        "",
+        `${secondLine}あなたはどのタイプと相性いい？30問で出ます👇`,
+        "",
+        url,
+        "",
+        "#vtuber16タイプ診断",
+        "#vtubermatch",
+      ]
+    : [
+        "私のVTuberタイプは",
+        `${headline}(${version})`,
+        "",
+        catchLine,
+        "",
+        `${secondLine}リスナーのみんなは相性診断もできます👇`,
+        "",
+        url,
+        "",
+        "#vtuber16タイプ診断",
+        "#vtubermatch",
+      ];
+  // catchCopyが無いタイプがあっても空行が二重にならないように整える。
+  return lines.filter((line, index) => line !== "" || lines[index - 1] !== "").join("\n");
 }
 
 function downloadBlob(blob: Blob, filename: string) {
