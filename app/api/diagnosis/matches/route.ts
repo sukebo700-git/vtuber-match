@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { unstable_cache } from "next/cache";
 
 import { getAdminDb } from "@/lib/firebaseAdmin";
-import { findStreamerMatches } from "@/lib/diagnosisMatch";
+import { pickRecommendations } from "@/lib/diagnosisRecommend";
 import { normalizeStreamer, publicStreamerPath, streamerImagePath } from "@/lib/streamers";
 import { readLocalStreamers } from "@/lib/localStore";
 import type { DiagnosisScores } from "@/lib/diagnosis";
@@ -47,28 +47,26 @@ export async function POST(request: Request) {
     if (!scores) {
       return NextResponse.json({ error: "scores が不正です。" }, { status: 400 });
     }
-    const limit = Math.max(1, Math.min(5, Number(body.limit) || 3));
+    const limit = Math.max(1, Math.min(3, Number(body.limit) || 2));
     const candidates = await readMatchCandidates();
-    const matches = findStreamerMatches(scores, candidates, limit);
+    const picks = pickRecommendations(scores, candidates, limit);
 
     return NextResponse.json({
-      matches: matches.map((match) => {
-        const streamer = candidates.find((item) => item.id === match.id);
+      matches: picks.map((pick) => {
+        const streamer = candidates.find((item) => item.id === pick.id);
         return {
-          id: match.id,
-          name: match.name,
-          affinity: match.affinity,
-          vtype_name: match.vtypeName,
-          vtype_code: match.vtypeCode,
-          path: publicStreamerPath({ id: match.id, name: match.name }),
+          id: pick.id,
+          name: pick.name,
+          vtype_name: pick.vtypeName,
+          path: publicStreamerPath({ id: pick.id, name: pick.name }),
           image: streamer ? streamerImagePath(streamer) : "",
         };
       }),
       candidateCount: candidates.length,
     });
   } catch (error) {
-    // マッチングは結果表示の付加要素なので、失敗しても診断結果自体は壊さない。
-    console.error("diagnosis match failed:", error instanceof Error ? error.message : error);
+    // おすすめは結果表示の付加要素なので、失敗しても診断結果自体は壊さない。
+    console.error("diagnosis recommend failed:", error instanceof Error ? error.message : error);
     return NextResponse.json({ matches: [] });
   }
 }

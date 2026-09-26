@@ -43,7 +43,6 @@ type ProfileSaveTarget = "creator" | "viewer" | false;
 type StreamerMatchView = {
   id: string;
   name: string;
-  affinity: number;
   vtype_name: string;
   path: string;
   image: string;
@@ -72,9 +71,11 @@ export default function DiagnosisApp({ mode, previewTypeId }: DiagnosisAppProps)
   const [nameError, setNameError] = useState("");
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [profileSaveTarget, setProfileSaveTarget] = useState<ProfileSaveTarget>(false);
-  // 2026-09-26: リスナー相性診断の結果に、実在の掲載VTuberを出す。
+  // 2026-09-26: リスナー相性診断の結果に、実在の掲載VTuberをおすすめとして出す。
   // 以前はタイプ名を出して「探してみよう」で終わっており、結果と掲載配信者が
   // 繋がっていなかった。名前が出ることでシェアの連鎖も狙える。
+  // 相性%は出さない(VTYPE保有が63/184人、実スコア保有は40人しかおらず、
+  // 数字で示せるほどの確からしさが無いため)。
   const [streamerMatches, setStreamerMatches] = useState<StreamerMatchView[]>([]);
   const [typeImageState, setTypeImageState] = useState<ImageSaveState>("idle");
   const [radarImageState, setRadarImageState] = useState<ImageSaveState>("idle");
@@ -136,7 +137,7 @@ export default function DiagnosisApp({ mode, previewTypeId }: DiagnosisAppProps)
     const type = matches[0]?.type || decideDiagnosisTypeFromAnswers(answers, questions);
     setResult({ type, scores, resultId: null, matches });
     setSaveState("saving");
-    // 掲載VTuberとのマッチはリスナー相性診断のみ。結果表示より遅れて出るが、
+    // おすすめ表示はリスナー相性診断のみ。結果表示より遅れて出るが、
     // 失敗しても結果画面自体は成立するので待たずに走らせる。
     if (mode === "viewer") void loadStreamerMatches(scores);
 
@@ -179,7 +180,7 @@ export default function DiagnosisApp({ mode, previewTypeId }: DiagnosisAppProps)
       const response = await fetch("/api/diagnosis/matches", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ scores, limit: 3 }),
+        body: JSON.stringify({ scores, limit: 2 }),
       });
       if (!response.ok) return;
       const data = await response.json().catch(() => null);
@@ -784,13 +785,13 @@ function CreatorDiagnosisRegisterCta() {
   );
 }
 
-// 掲載中のVTuberのうち、診断スコアが近い人を出す。
+// 掲載中のVTuberからおすすめを出す。1枠目は診断の傾向で寄せ、2枠目は全体から。
 // 取得前・0件のときは何も出さない(下の ViewerResultGuide が受け皿になる)。
 function StreamerMatchList({ matches }: { matches: StreamerMatchView[] }) {
   if (!matches.length) return null;
   return (
     <section className="diagnosis-streamer-match">
-      <p className="diagnosis-kicker">あなたと相性がいい掲載VTuber</p>
+      <p className="diagnosis-kicker">あなたへのおすすめVTuber</p>
       <ul>
         {matches.map((match) => (
           <li key={match.id}>
@@ -800,7 +801,6 @@ function StreamerMatchList({ matches }: { matches: StreamerMatchView[] }) {
                 <strong>{match.name}</strong>
                 {match.vtype_name ? <small>{match.vtype_name}</small> : null}
               </span>
-              <span className="diagnosis-match-affinity">{match.affinity}%</span>
             </a>
           </li>
         ))}
@@ -1000,11 +1000,8 @@ function createShareText(type: DiagnosisType, mode: DiagnosisMode, matches: Diag
         "",
         // 実在のVTuber名が出せるときは、タイプ名より具体的なこちらを主役にする。
         // @メンションはしない(自動投稿で通知を飛ばすと迷惑になりうるため)。
-        //
-        // 「一番」「1位」とは書かない。掲載機会を配信者全体へ回すため、表示する
-        // 相性上位者は重み付きランダムで選んでおり、必ずしも最高相性の人が
-        // 先頭に来るとは限らないため(順位を断定すると事実と食い違う)。
-        topStreamerName ? `診断で相性ぴったりだったのは「${topStreamerName}」さん。` : "",
+        // 順位や相性の断定はしない(おすすめは抽選を含むため)。
+        topStreamerName ? `あなたへのおすすめVTuberは「${topStreamerName}」さんでした。` : "",
         topStreamerName ? "" : secondLine.trim(),
         "あなたはどのVTuberと相性いい？30問で出ます👇",
         "",

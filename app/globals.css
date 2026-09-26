@@ -2547,12 +2547,6 @@ button {
   font-size: 12px;
 }
 
-.diagnosis-match-affinity {
-  flex: 0 0 auto;
-  font-weight: 850;
-  color: var(--pink);
-}
-
 .diagnosis-register-cta {
   display: grid;
   gap: 8px;
