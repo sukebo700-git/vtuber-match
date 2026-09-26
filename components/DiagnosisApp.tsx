@@ -1028,7 +1028,7 @@ function createShareText(type: DiagnosisType, mode: DiagnosisMode, matches: Diag
         "私のVTuberタイプは",
         `${headline}(${version})`,
         "",
-        `${secondLine}リスナーのみんなは相性診断もできます👇`,
+        `${secondLine}リスナーさんの相性診断もあります👇`,
         "",
         url,
         "",
