@@ -28,7 +28,16 @@ export default function robots(): MetadataRoute.Robots {
       },
       {
         userAgent: "*",
-        allow: ["/", "/api/streamer-image/"],
+        // 2026-09-26: OGP画像を /api/diagnosis/og-default で動的生成するように
+        // したが、下の Disallow: /api/ に巻き込まれてクローラーが取得できず、
+        // XのCard Validatorが「robots.txtで制限されている可能性」を警告していた。
+        // 画像配信用のパスは streamer-image と同様に明示的に許可する。
+        allow: [
+          "/",
+          "/api/streamer-image/",
+          "/api/diagnosis/og-default",
+          "/api/diagnosis/og/",
+        ],
         disallow: [
           "/admin",
           "/admin-login",
