@@ -13,6 +13,11 @@ export type AdminAnalyticsSummary = {
   week_total_swipes: number;
   week_viewer_register_clicks: number;
   week_creator_register_clicks: number;
+  // 2026-09-26: 申込フォームで画像が解像度制限に弾かれた回数。
+  // 登録が止まった原因の切り分けに使う。
+  apply_image_rejected: number;
+  today_apply_image_rejected: number;
+  week_apply_image_rejected: number;
 };
 
 export const emptyAdminAnalyticsSummary: AdminAnalyticsSummary = {
@@ -28,9 +33,20 @@ export const emptyAdminAnalyticsSummary: AdminAnalyticsSummary = {
   week_total_swipes: 0,
   week_viewer_register_clicks: 0,
   week_creator_register_clicks: 0,
+  apply_image_rejected: 0,
+  today_apply_image_rejected: 0,
+  week_apply_image_rejected: 0,
 };
 
-export type AnalyticsEventType = "swiped_visitor" | "swipe_action" | "viewer_register_click" | "creator_register_click";
+export type AnalyticsEventType =
+  | "swiped_visitor"
+  | "swipe_action"
+  | "viewer_register_click"
+  | "creator_register_click"
+  // 2026-09-26: 申込フォームの画像が解像度制限で弾かれた回数。
+  // 9/16以降の新規登録が11日間ゼロになった原因を切り分けるために追加した。
+  // 弾かれた実数が分からないと、制限が原因かどうかを推測でしか言えないため。
+  | "apply_image_rejected";
 
 export type VisitAnalyticsDetail = {
   summary: {
@@ -101,6 +117,7 @@ export type DiagnosisAnalyticsResult = {
 };
 
 export function analyticsFieldForEvent(eventType: AnalyticsEventType) {
+  if (eventType === "apply_image_rejected") return "apply_image_rejected";
   if (eventType === "viewer_register_click") return "viewer_register_clicks";
   if (eventType === "creator_register_click") return "creator_register_clicks";
   if (eventType === "swipe_action") return "total_swipes";
