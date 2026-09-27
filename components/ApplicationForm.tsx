@@ -67,7 +67,13 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
   const [vtypeProfile, setVtypeProfile] = useState<VtypeProfileFields | null>(null);
   const [busy, setBusy] = useState(false);
   const [showXCampaignBanner, setShowXCampaignBanner] = useState(true);
-  const [authMethod, setAuthMethod] = useState<"password" | "google">("google");
+  // 2026-09-27: 既定をGoogleからメールアドレスに戻した。
+  // Google既定だと、認証が終わるまで「申し込む」ボタンが無効のままになる。
+  // ボタンが描画されたのに押しても進まないケース(X/Instagram/LINEのアプリ内ブラウザ、
+  // サードパーティCookieブロック等)はGoogleCredentialFieldのフォールバックでは
+  // 検知できず、訪問者は押せないボタンの前で詰まる。9/16以降の新規登録ゼロは
+  // これが原因の可能性が高い。メール既定なら、最悪でも申し込みは完了できる。
+  const [authMethod, setAuthMethod] = useState<"password" | "google">("password");
   const [googleCredential, setGoogleCredential] = useState<string | null>(null);
   const [googleEmail, setGoogleEmail] = useState("");
 
