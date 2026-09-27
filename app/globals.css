@@ -2660,6 +2660,13 @@ button {
   font-weight: 950;
 }
 
+/* 2026-09-27: 一時的に選べなくした選択肢(Googleでの登録など)を、
+   存在は残したままそれと分かるようにする。 */
+.segmented-control button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 .segmented-control button.selected {
   background: #fff;
   color: var(--pink);

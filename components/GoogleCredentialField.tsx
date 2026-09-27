@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { loadGoogleIdentityScript } from "@/lib/googleIdentityClient";
+import { reportGoogleAuthEvent, watchGoogleButtonClick } from "@/lib/googleAuthAnalytics";
 import { InAppBrowserNotice } from "@/components/InAppBrowserNotice";
 
 const CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
@@ -29,10 +30,12 @@ export function GoogleCredentialField({ onCredential, onUnavailable }: GoogleCre
     }
     let cancelled = false;
     let rendered = false;
+    let unwatchClick: (() => void) | undefined;
 
     const timeoutId = window.setTimeout(() => {
       if (!cancelled && !rendered) {
         setFailed(true);
+        reportGoogleAuthEvent("google_auth_unavailable", "apply");
         onUnavailable?.();
       }
     }, loadTimeoutMs);
@@ -43,7 +46,10 @@ export function GoogleCredentialField({ onCredential, onUnavailable }: GoogleCre
       window.clearTimeout(timeoutId);
       window.google.accounts.id.initialize({
         client_id: CLIENT_ID,
-        callback: (response: { credential: string }) => onCredential(response.credential),
+        callback: (response: { credential: string }) => {
+          reportGoogleAuthEvent("google_auth_success", "apply");
+          onCredential(response.credential);
+        },
         auto_select: false,
         cancel_on_tap_outside: false,
         use_fedcm_for_prompt: true,
@@ -58,6 +64,8 @@ export function GoogleCredentialField({ onCredential, onUnavailable }: GoogleCre
         // Googleの仕様上、幅はpx指定・最大400px。フィールドの実幅に合わせて広げる。
         width: Math.min(400, Math.max(280, Math.round(buttonRef.current.offsetWidth || 0))),
       });
+      reportGoogleAuthEvent("google_auth_rendered", "apply");
+      unwatchClick = watchGoogleButtonClick(buttonRef.current, "apply");
     }
 
     loadGoogleIdentityScript(init);
@@ -65,6 +73,7 @@ export function GoogleCredentialField({ onCredential, onUnavailable }: GoogleCre
     return () => {
       cancelled = true;
       window.clearTimeout(timeoutId);
+      unwatchClick?.();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [onCredential]);

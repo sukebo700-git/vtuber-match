@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { loadGoogleIdentityScript } from "@/lib/googleIdentityClient";
+import { reportGoogleAuthEvent, watchGoogleButtonClick } from "@/lib/googleAuthAnalytics";
 import { InAppBrowserNotice } from "@/components/InAppBrowserNotice";
 
 const CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
@@ -27,13 +28,18 @@ export function CreatorGoogleLogin({ redirectTo = "/creator?notify=1" }: Creator
 
     let cancelled = false;
     let rendered = false;
+    let unwatchClick: (() => void) | undefined;
 
     const timeoutId = window.setTimeout(() => {
-      if (!cancelled && !rendered) setFailed(true);
+      if (!cancelled && !rendered) {
+        setFailed(true);
+        reportGoogleAuthEvent("google_auth_unavailable", "creator_login");
+      }
     }, loadTimeoutMs);
 
     async function handleCredentialResponse(response: { credential: string }) {
       setError("");
+      reportGoogleAuthEvent("google_auth_success", "creator_login");
       const result = await fetch("/api/creator-login-google", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -81,6 +87,8 @@ export function CreatorGoogleLogin({ redirectTo = "/creator?notify=1" }: Creator
           // Googleの仕様上、幅はpx指定・最大400px。フィールドの実幅に合わせて広げる。
           width: Math.min(400, Math.max(280, Math.round(buttonRef.current.offsetWidth || 0))),
         });
+        reportGoogleAuthEvent("google_auth_rendered", "creator_login");
+        unwatchClick = watchGoogleButtonClick(buttonRef.current, "creator_login");
       }
     }
 
@@ -89,6 +97,7 @@ export function CreatorGoogleLogin({ redirectTo = "/creator?notify=1" }: Creator
     return () => {
       cancelled = true;
       window.clearTimeout(timeoutId);
+      unwatchClick?.();
     };
   }, [redirectTo]);
 
