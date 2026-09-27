@@ -141,6 +141,20 @@ export function AdminAnalyticsFunnelPanel({ stats, sources, analytics, referrers
         {" / "}直近7日 {analytics.week_apply_image_rejected.toLocaleString("ja-JP")}
         {" / "}累計 {analytics.apply_image_rejected.toLocaleString("ja-JP")}
       </p>
+
+      {/* 2026-09-27: Google認証で詰まっている人がいないかを可視化する。
+          表示された数と成功した数の差が、そのまま離脱人数になる。 */}
+      <p className="analytics-total-line">
+        Google認証(直近7日): 表示 {analytics.week_google_auth_rendered.toLocaleString("ja-JP")}
+        {" / "}クリック {analytics.week_google_auth_clicked.toLocaleString("ja-JP")}
+        {" / "}成功 {analytics.week_google_auth_success.toLocaleString("ja-JP")}
+        {" / "}読み込み失敗 {analytics.week_google_auth_unavailable.toLocaleString("ja-JP")}
+        {analytics.week_google_auth_clicked > analytics.week_google_auth_success ? (
+          <strong>
+            {" "}→ 押したのに認証できなかった人 {(analytics.week_google_auth_clicked - analytics.week_google_auth_success).toLocaleString("ja-JP")}
+          </strong>
+        ) : null}
+      </p>
     </section>
   );
 }

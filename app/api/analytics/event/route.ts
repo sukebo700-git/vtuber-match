@@ -3,7 +3,8 @@ import { analyticsFieldForEvent, type AnalyticsEventType } from "@/lib/analytics
 import { FieldValue, getAdminDb } from "@/lib/firebaseAdmin";
 import { recordLocalAnalyticsEvent } from "@/lib/localStore";
 
-const allowedEvents = new Set<AnalyticsEventType>(["swiped_visitor", "swipe_action", "viewer_register_click", "creator_register_click", "apply_image_rejected"]);
+const allowedEvents = new Set<AnalyticsEventType>(["swiped_visitor", "swipe_action", "viewer_register_click", "creator_register_click", "apply_image_rejected",
+  "google_auth_rendered", "google_auth_clicked", "google_auth_success", "google_auth_unavailable"]);
 
 export async function POST(request: Request) {
   try {
@@ -35,6 +36,10 @@ export async function POST(request: Request) {
     // 「制限を何pxまで緩めれば通るのか」が判断できないため。
     const sizeBucket = eventType === "apply_image_rejected" ? imageSizeBucket(body.image_min_side) : "";
     if (sizeBucket) payload[`${field}_${sizeBucket}`] = FieldValue.increment(1);
+    // Google認証はログイン画面・申込画面など複数箇所にあるので、
+    // どこで落ちたのかが分かるよう計測地点ごとの内訳も持つ。
+    const surface = eventType.startsWith("google_auth_") ? googleAuthSurface(body.surface) : "";
+    if (surface) payload[`${field}_${surface}`] = FieldValue.increment(1);
     await Promise.all([
       dailyDoc.set({ date, ...payload }, { merge: true }),
       totalsDoc.set(payload, { merge: true })
@@ -45,6 +50,15 @@ export async function POST(request: Request) {
     console.error("analytics event skipped:", error instanceof Error ? error.message : String(error || "unknown"));
     return NextResponse.json({ ok: true, skipped: true });
   }
+}
+
+// 任意の文字列がFirestoreのフィールド名になることを防ぐため、
+// 既知の計測地点だけを通す。
+const knownGoogleAuthSurfaces = new Set(["apply", "creator_login", "viewer_login", "top"]);
+
+function googleAuthSurface(value: unknown) {
+  const surface = String(value || "").trim();
+  return knownGoogleAuthSurfaces.has(surface) ? surface : "other";
 }
 
 // 任意の数値がFirestoreのフィールド名になることを防ぐため、

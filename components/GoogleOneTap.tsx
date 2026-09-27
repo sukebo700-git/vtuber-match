@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { anonymousViewerIdKey, rememberRegisteredViewer, viewerAuthKey } from "@/lib/viewerIdentity";
 import { loadGoogleIdentityScript } from "@/lib/googleIdentityClient";
+import { reportGoogleAuthEvent, watchGoogleButtonClick } from "@/lib/googleAuthAnalytics";
 
 const CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
@@ -23,8 +24,13 @@ export function GoogleOneTap({ showButton = false, redirectTo }: GoogleOneTapPro
     if (localStorage.getItem(viewerAuthKey)) return;
 
     let cancelled = false;
+    let unwatchClick: (() => void) | undefined;
+    // ボタンを出すのはログインページだけ。トップページはOne Tapの自動表示のみなので
+    // 計測地点を分けておく(落ちている場所が分からないと打ち手が決まらない)。
+    const surface = showButton ? "viewer_login" : "top";
 
     async function handleCredentialResponse(response: { credential: string }) {
+      reportGoogleAuthEvent("google_auth_success", surface);
       const result = await fetch("/api/viewer-login-google", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -72,6 +78,8 @@ export function GoogleOneTap({ showButton = false, redirectTo }: GoogleOneTapPro
           // Googleの仕様上、幅はpx指定・最大400px。フィールドの実幅に合わせて広げる。
           width: Math.min(400, Math.max(280, Math.round(buttonRef.current.offsetWidth || 0))),
         });
+        reportGoogleAuthEvent("google_auth_rendered", surface);
+        unwatchClick = watchGoogleButtonClick(buttonRef.current, surface);
       }
     }
 
@@ -79,6 +87,7 @@ export function GoogleOneTap({ showButton = false, redirectTo }: GoogleOneTapPro
 
     return () => {
       cancelled = true;
+      unwatchClick?.();
     };
   }, [showButton, redirectTo]);
 

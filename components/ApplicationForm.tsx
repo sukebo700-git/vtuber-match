@@ -349,8 +349,23 @@ export function ApplicationForm({ categories, tags }: ApplicationFormProps) {
         <span className="field-label">アカウント作成方法(今後のログインにも使います)</span>
         <div className="segmented-control" role="tablist" aria-label="配信者アカウント作成方法">
           <button type="button" className={authMethod === "password" ? "selected" : ""} onClick={() => setAuthMethod("password")}>メールアドレスで登録</button>
-          <button type="button" className={authMethod === "google" ? "selected" : ""} onClick={() => setAuthMethod("google")}>Googleで登録</button>
+          {/* 2026-09-27: Googleでの新規登録は一時停止中。ボタンは描画されるのに
+              認証が完了しない環境(アプリ内ブラウザ、サードパーティCookieブロック等)が
+              あり、そこに入ると申し込みごと詰まるため。存在は分かるようグレーアウトで残す。 */}
+          <button
+            type="button"
+            className={authMethod === "google" ? "selected" : ""}
+            disabled
+            aria-disabled="true"
+            title="Googleでの登録は現在ご利用いただけません"
+            onClick={() => setAuthMethod("google")}
+          >
+            Googleで登録
+          </button>
         </div>
+        <p className="help-text">
+          Googleでの登録は現在停止しています(一部のブラウザで認証が完了しないため)。メールアドレスでご登録ください。
+        </p>
       </div>
       {authMethod === "google" ? (
         <div className="field">

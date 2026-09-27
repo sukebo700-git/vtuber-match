@@ -387,8 +387,16 @@ async function readFirestoreAnalyticsSummary(): Promise<AdminAnalyticsSummary> {
     sums.viewer_register_clicks += Number(data.viewer_register_clicks || 0);
     sums.creator_register_clicks += Number(data.creator_register_clicks || 0);
     sums.apply_image_rejected += Number(data.apply_image_rejected || 0);
+    sums.google_auth_rendered += Number(data.google_auth_rendered || 0);
+    sums.google_auth_clicked += Number(data.google_auth_clicked || 0);
+    sums.google_auth_success += Number(data.google_auth_success || 0);
+    sums.google_auth_unavailable += Number(data.google_auth_unavailable || 0);
     return sums;
-  }, { swiped_visitors: 0, total_swipes: 0, viewer_register_clicks: 0, creator_register_clicks: 0, apply_image_rejected: 0 });
+  }, {
+    swiped_visitors: 0, total_swipes: 0, viewer_register_clicks: 0, creator_register_clicks: 0,
+    apply_image_rejected: 0,
+    google_auth_rendered: 0, google_auth_clicked: 0, google_auth_success: 0, google_auth_unavailable: 0,
+  });
   return {
     swiped_visitors: Number(totals.swiped_visitors || 0),
     total_swipes: Number(totals.total_swipes || 0),
@@ -405,6 +413,14 @@ async function readFirestoreAnalyticsSummary(): Promise<AdminAnalyticsSummary> {
     apply_image_rejected: Number(totals.apply_image_rejected || 0),
     today_apply_image_rejected: Number(todayData.apply_image_rejected || 0),
     week_apply_image_rejected: week.apply_image_rejected,
+    google_auth_rendered: Number(totals.google_auth_rendered || 0),
+    google_auth_clicked: Number(totals.google_auth_clicked || 0),
+    google_auth_success: Number(totals.google_auth_success || 0),
+    google_auth_unavailable: Number(totals.google_auth_unavailable || 0),
+    week_google_auth_rendered: week.google_auth_rendered,
+    week_google_auth_clicked: week.google_auth_clicked,
+    week_google_auth_success: week.google_auth_success,
+    week_google_auth_unavailable: week.google_auth_unavailable,
   };
 }
 
