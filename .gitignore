@@ -6,6 +6,8 @@ dist/
 .xdg-data/
 .xdg-config/
 .localappdata/
+.appdata/
+.vercel-data/
 .npm-cache/
 .tmp-*
 
@@ -21,6 +23,7 @@ edge-profile/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+*.log
 *.tsbuildinfo
 .env*
 
