@@ -46,6 +46,7 @@ type StreamerMatchView = {
   vtype_name: string;
   path: string;
   image: string;
+  x_handle?: string;
 };
 
 export default function DiagnosisApp({ mode, previewTypeId }: DiagnosisAppProps) {
@@ -221,7 +222,11 @@ export default function DiagnosisApp({ mode, previewTypeId }: DiagnosisAppProps)
 
   function openSharePost() {
     if (!result) return;
-    window.open(createShareUrl(result.type, mode, result.matches, streamerMatches[0]?.name || ""), "_blank", "noopener,noreferrer");
+    window.open(
+      createShareUrl(result.type, mode, result.matches, streamerMatches[0]?.name || "", streamerMatches[0]?.x_handle || ""),
+      "_blank",
+      "noopener,noreferrer"
+    );
   }
 
   async function saveTypeImage() {
@@ -988,11 +993,53 @@ function getModeMeta(mode: DiagnosisMode) {
 // VTuber向け版は、投稿を見るのが本人のリスナーであることを踏まえ、
 // 締めをリスナー版診断への誘導にしている(VTuberが投稿→リスナーが診断→
 // リスナーが投稿→そのフォロワーへ、という導線を意図している)。
-function createShareUrl(type: DiagnosisType, mode: DiagnosisMode, matches: DiagnosisTypeMatch[] = [], topStreamerName = "") {
-  return `https://twitter.com/intent/tweet?text=${encodeURIComponent(createShareText(type, mode, matches, topStreamerName))}`;
+function createShareUrl(
+  type: DiagnosisType,
+  mode: DiagnosisMode,
+  matches: DiagnosisTypeMatch[] = [],
+  topStreamerName = "",
+  topStreamerHandle = ""
+) {
+  return `https://twitter.com/intent/tweet?text=${encodeURIComponent(createShareText(type, mode, matches, topStreamerName, topStreamerHandle))}`;
 }
 
-function createShareText(type: DiagnosisType, mode: DiagnosisMode, matches: DiagnosisTypeMatch[] = [], topStreamerName = "") {
+// 配信者名は60文字まで登録できるため、@メンションと合わせるとXの280字制限を
+// 超えることがある。超えたら名前だけを末尾から詰める(通知が届くよう@は残す)。
+const maxXPostWeight = 280;
+
+function createShareText(
+  type: DiagnosisType,
+  mode: DiagnosisMode,
+  matches: DiagnosisTypeMatch[] = [],
+  topStreamerName = "",
+  topStreamerHandle = ""
+) {
+  let text = buildShareText(type, mode, matches, topStreamerName, topStreamerHandle);
+  const nameChars = Array.from(topStreamerName);
+  while (xPostWeight(text) > maxXPostWeight && nameChars.length > 1) {
+    nameChars.pop();
+    text = buildShareText(type, mode, matches, `${nameChars.join("")}…`, topStreamerHandle);
+  }
+  return text;
+}
+
+// Xの文字数の数え方: URLは一律23、Latin等は1、それ以外(日本語・絵文字など)は2。
+function xPostWeight(text: string) {
+  return Array.from(text.replace(/https?:\/\/\S+/g, "x".repeat(23))).reduce((sum, char) => {
+    const code = char.codePointAt(0) || 0;
+    const light =
+      code <= 4351 || (code >= 8192 && code <= 8205) || (code >= 8208 && code <= 8223) || (code >= 8242 && code <= 8247);
+    return sum + (light ? 1 : 2);
+  }, 0);
+}
+
+function buildShareText(
+  type: DiagnosisType,
+  mode: DiagnosisMode,
+  matches: DiagnosisTypeMatch[] = [],
+  topStreamerName = "",
+  topStreamerHandle = ""
+) {
   const version = mode === "advanced" ? "100問Ver" : mode === "viewer" ? "リスナーVer" : "30問Ver";
   const url = mode === "viewer"
     ? `https://vtubermatch.com/diagnosis/viewer?type=${type.id}`
@@ -1013,9 +1060,14 @@ function createShareText(type: DiagnosisType, mode: DiagnosisMode, matches: Diag
         `${headline}`,
         "",
         // 実在のVTuber名が出せるときは、タイプ名より具体的なこちらを主役にする。
-        // @メンションはしない(自動投稿で通知を飛ばすと迷惑になりうるため)。
+        // 2026-10-09: Xアカウントがあれば@メンションを付ける。本人に通知が届き、
+        // 引用やリポストでシェアが連鎖するのを狙う。投稿はリスナーが文面を見て
+        // 自分で行うので、自動投稿による一方的な通知にはならない。
+        // ハンドルはAPI側で形を検証済み。無ければ名前だけにする。
         // 順位や相性の断定はしない(おすすめは抽選を含むため)。
-        topStreamerName ? `あなたへのおすすめVTuberは「${topStreamerName}」さんでした。` : "",
+        topStreamerName
+          ? `あなたへのおすすめVTuberは「${topStreamerName}」さん${topStreamerHandle ? `(@${topStreamerHandle})` : ""}でした。`
+          : "",
         topStreamerName ? "" : secondLine.trim(),
         "あなたはどのVTuberと相性いい？30問で出ます👇",
         "",
