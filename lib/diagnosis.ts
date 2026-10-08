@@ -69,7 +69,6 @@ type AxisComment = {
 };
 
 type AxisNorm = { mean: number; std: number };
-type PatternSign = "+" | "0" | "-";
 
 const axisKeys = ["f", "t", "a", "n", "v", "d"] as const;
 const axisComments = (axisCommentsRaw as { axes: Record<DiagnosisAxis, AxisComment> }).axes;
@@ -85,44 +84,20 @@ const defaultNorms: Record<DiagnosisAxis, AxisNorm> = {
   d: { mean: 60, std: 15 },
 };
 
-const archetypePatterns: { id: number; pattern: Record<DiagnosisAxis, PatternSign> }[] = [
-  { id: 1, pattern: { f: "+", t: "+", a: "+", n: "+", v: "+", d: "0" } },
-  { id: 2, pattern: { f: "+", t: "+", a: "+", n: "-", v: "+", d: "0" } },
-  { id: 3, pattern: { f: "+", t: "+", a: "0", n: "+", v: "+", d: "+" } },
-  { id: 4, pattern: { f: "+", t: "+", a: "-", n: "-", v: "0", d: "0" } },
-  { id: 5, pattern: { f: "+", t: "-", a: "+", n: "+", v: "0", d: "0" } },
-  { id: 6, pattern: { f: "+", t: "-", a: "+", n: "-", v: "0", d: "0" } },
-  { id: 7, pattern: { f: "+", t: "-", a: "-", n: "0", v: "-", d: "0" } },
-  { id: 8, pattern: { f: "+", t: "-", a: "0", n: "-", v: "-", d: "0" } },
-  { id: 9, pattern: { f: "-", t: "+", a: "+", n: "+", v: "0", d: "+" } },
-  { id: 10, pattern: { f: "-", t: "+", a: "0", n: "-", v: "0", d: "0" } },
-  { id: 11, pattern: { f: "-", t: "+", a: "-", n: "+", v: "+", d: "+" } },
-  { id: 12, pattern: { f: "-", t: "+", a: "-", n: "-", v: "+", d: "+" } },
-  { id: 13, pattern: { f: "-", t: "-", a: "+", n: "0", v: "-", d: "0" } },
-  { id: 14, pattern: { f: "-", t: "-", a: "+", n: "-", v: "0", d: "0" } },
-  { id: 15, pattern: { f: "-", t: "-", a: "-", n: "0", v: "-", d: "0" } },
-  { id: 16, pattern: { f: "-", t: "-", a: "-", n: "-", v: "-", d: "0" } },
-];
+// Share of each axis z-score that is centered on the respondent's own average.
+// Type centroids are centered by the same share before matching; otherwise
+// all-high / all-low types (e.g. id 1, 16) are unreachable because a respondent's
+// z-scores can never be high (or low) on every axis at once.
+const personalWeight = 0.72;
 
-const patternZ: Record<PatternSign, number> = {
-  "+": 0.8,
-  "0": 0,
-  "-": -0.8,
-};
-
-const codeLabels: Record<string, string> = {
-  F: "交流寄り",
-  C: "内省寄り",
-  T: "企画寄り",
-  S: "自然体寄り",
-  A: "安定寄り",
-  R: "変化寄り",
-  N: "挑戦寄り",
-  W: "堅実寄り",
-  V: "世界観寄り",
-  G: "親近感寄り",
-  D: "深掘り寄り",
-  L: "軽やか寄り",
+// Labels follow axis_comments.json "scale": the left letter is the high side.
+const axisSideLabels: Record<DiagnosisAxis, { high: string; low: string }> = {
+  f: { high: "盛り上げ寄り", low: "まったり寄り" },
+  t: { high: "トーク主導寄り", low: "ショー主導寄り" },
+  a: { high: "冒険寄り", low: "日常寄り" },
+  n: { high: "素寄り", low: "世界観寄り" },
+  v: { high: "トーク寄り", low: "ガチ寄り" },
+  d: { high: "深い関係寄り", low: "気軽寄り" },
 };
 
 export const diagnosisAxes: { key: DiagnosisAxis; label: string; scale: string }[] = axisKeys.map((key) => ({
@@ -234,7 +209,7 @@ function scoreDiagnosisInternal(answers: Record<string, number>, questions: Diag
     axisKeys.map((key) => {
       const populationZ = (rawScores[key] - defaultNorms[key].mean) / defaultNorms[key].std;
       const personalZ = (rawScores[key] - personalMean) / 18;
-      return [key, populationZ * 0.28 + personalZ * 0.72];
+      return [key, populationZ * (1 - personalWeight) + personalZ * personalWeight];
     })
   ) as DiagnosisScores;
   const percentileScores = Object.fromEntries(
@@ -286,11 +261,14 @@ function createEmptyScores(): DiagnosisScores {
   return Object.fromEntries(axisKeys.map((key) => [key, 0])) as DiagnosisScores;
 }
 
+// Matching uses the same centroid that the result/preview radar shows for each type,
+// converted to z space and centered the same way as the respondent's scores.
+const matchCentroids = new Map(diagnosisTypes.map((type) => [type.id, centroidToMatchZ(type.centroid)]));
+
 function findClosestTypesFromZ(zScores: DiagnosisScores): DiagnosisTypeMatch[] {
-  return archetypePatterns
-    .map((archetype) => {
-      const type = diagnosisTypes.find((item) => item.id === archetype.id) || diagnosisTypes[0];
-      const centroid = centroidFromPattern(archetype.pattern);
+  return diagnosisTypes
+    .map((type) => {
+      const centroid = matchCentroids.get(type.id) || centroidToMatchZ(type.centroid);
       const distance = Math.sqrt(
         axisKeys.reduce((sum, key) => {
           const diff = zScores[key] - centroid[key];
@@ -303,14 +281,17 @@ function findClosestTypesFromZ(zScores: DiagnosisScores): DiagnosisTypeMatch[] {
         type,
         confidence,
         distance,
-        axisLabels: type.code.split("").map((letter) => codeLabel(letter)),
+        // type.code letters do not line up with axis positions, so labels come from the centroid.
+        axisLabels: axisKeys.map((key) => (type.centroid[key] >= 50 ? axisSideLabels[key].high : axisSideLabels[key].low)),
       };
     })
     .sort((a, b) => a.distance - b.distance);
 }
 
-function centroidFromPattern(pattern: Record<DiagnosisAxis, PatternSign>): DiagnosisScores {
-  return Object.fromEntries(axisKeys.map((key) => [key, patternZ[pattern[key]]])) as DiagnosisScores;
+function centroidToMatchZ(centroid: DiagnosisScores): DiagnosisScores {
+  const z = axisKeys.map((key) => inverseNormalCdf(centroid[key] / 100));
+  const mean = z.reduce((sum, value) => sum + value, 0) / z.length;
+  return Object.fromEntries(axisKeys.map((key, index) => [key, z[index] - mean * personalWeight])) as DiagnosisScores;
 }
 
 function normalCdf(value: number) {
@@ -331,16 +312,30 @@ function erf(value: number) {
   return sign * y;
 }
 
+// Acklam's rational approximation of the standard normal quantile function.
+function inverseNormalCdf(probability: number) {
+  const p = Math.max(0.01, Math.min(0.99, probability));
+  const a = [-39.69683028665376, 220.9460984245205, -275.9285104469687, 138.357751867269, -30.66479806614716, 2.506628277459239];
+  const b = [-54.47609879822406, 161.5858368580409, -155.6989798598866, 66.80131188771972, -13.28068155288572];
+  const c = [-0.007784894002430293, -0.3223964580411365, -2.400758277161838, -2.549732539343734, 4.374664141464968, 2.938163982698783];
+  const d = [0.007784695709041462, 0.3224671290700398, 2.445134137142996, 3.754408661907416];
+  const low = 0.02425;
+  if (p < low || p > 1 - low) {
+    const q = Math.sqrt(-2 * Math.log(p < low ? p : 1 - p));
+    const value = (((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) / ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1);
+    return p < low ? value : -value;
+  }
+  const q = p - 0.5;
+  const r = q * q;
+  return ((((((a[0] * r + a[1]) * r + a[2]) * r + a[3]) * r + a[4]) * r + a[5]) * q) / (((((b[0] * r + b[1]) * r + b[2]) * r + b[3]) * r + b[4]) * r + 1);
+}
+
 function percentileToZApprox(score: number) {
   return (Math.max(0, Math.min(100, score)) - 50) / 34;
 }
 
 function clampScore(value: number) {
   return Math.max(0, Math.min(100, Math.round(Number.isFinite(value) ? value : 50)));
-}
-
-function codeLabel(letter: string) {
-  return codeLabels[letter] || letter;
 }
 
 function isDiagnosisAxis(value: string): value is DiagnosisAxis {

@@ -9,7 +9,8 @@
     "lint": "next lint",
     "seed": "tsx scripts/seed.ts",
     "backfill:created-at": "tsx scripts/backfill-created-at.ts",
-    "build:analytics-totals": "tsx scripts/build-analytics-totals.ts"
+    "build:analytics-totals": "tsx scripts/build-analytics-totals.ts",
+    "diagnosis:calibrate": "tsx scripts/diagnosis-calibration.ts"
   },
   "dependencies": {
     "firebase": "^10.14.1",

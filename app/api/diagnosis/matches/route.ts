@@ -31,6 +31,8 @@ const readMatchCandidates = unstable_cache(
         "vtype_code",
         "vtype_name",
         "vtype_scores",
+        "x_account",
+        "twitter_id",
       )
       .limit(500)
       .get();
@@ -60,6 +62,7 @@ export async function POST(request: Request) {
           vtype_name: pick.vtypeName,
           path: publicStreamerPath({ id: pick.id, name: pick.name }),
           image: streamer ? streamerImagePath(streamer) : "",
+          x_handle: streamer ? extractXHandle(streamer.x_account) : "",
         };
       }),
       candidateCount: candidates.length,
@@ -69,6 +72,18 @@ export async function POST(request: Request) {
     console.error("diagnosis recommend failed:", error instanceof Error ? error.message : error);
     return NextResponse.json({ matches: [] });
   }
+}
+
+// シェア文に@メンションとして入るため、Xのハンドルとして正しい形だけを通す。
+// 保存値は "@name" / "name" / プロフィールURL(クエリ付きを含む)が混在している。
+// 形が崩れている値は空にして、シェア文に任意の文字列が混ざらないようにする。
+function extractXHandle(value: unknown) {
+  const input = String(value || "").trim();
+  const handle = input
+    .replace(/^https?:\/\/(www\.|mobile\.)?(x|twitter)\.com\//i, "")
+    .replace(/^@/, "")
+    .split(/[/?#]/)[0];
+  return /^[A-Za-z0-9_]{1,15}$/.test(handle) ? handle : "";
 }
 
 function normalizeScores(value: unknown): DiagnosisScores | null {
